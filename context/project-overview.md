@@ -214,6 +214,12 @@ During development, keep plan-gated features **unlocked behind a simple app flag
 - Smooth but restrained transitions
 - Clear hover and focus states
 
+### Screenshots
+Refer to the screenshots below as a base for the dashboard UI. It does not have to be exact. Use it as reference:
+
+- @context/screenshots/dashboard-ui-main.png
+- @context/screenshots/dashboard-ui-drawer.png
+
 ## 🏗️ Recommended Architecture
 
 ```mermaid
