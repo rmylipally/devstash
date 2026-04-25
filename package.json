@@ -13,12 +13,16 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:status": "prisma migrate status",
     "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "test:db": "node --import tsx scripts/test-db.ts",
+    "test:seed": "node --import tsx --test tests/seed-data.test.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
