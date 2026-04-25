@@ -19,12 +19,15 @@ import type { ReactNode } from "react";
 
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import {
-  collections,
+  getDashboardCollectionStats,
+  getDashboardCollections,
+  type DashboardCollection,
+} from "@/lib/db/collections";
+import {
   currentUser,
   items,
   itemTypes,
   type ItemKind,
-  type MockCollection,
   type MockItem,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -59,22 +62,7 @@ const itemKindAccentStyles: Record<ItemKind, string> = {
   link: "border-l-emerald-500",
 };
 
-const sortedCollections = [...collections].sort(
-  (first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt),
-);
-
-const recentSidebarCollections = sortedCollections.slice(0, 4);
-const recentDashboardCollections = sortedCollections.slice(0, 6);
-
-const favoriteCollections = collections
-  .filter((collection) => collection.isFavorite)
-  .slice(0, 4);
-
 const favoriteItems = items.filter((item) => item.isFavorite);
-
-const favoriteCollectionCount = collections.filter(
-  (collection) => collection.isFavorite,
-).length;
 
 const pinnedItems = items.filter((item) => item.isPinned);
 
@@ -85,34 +73,53 @@ const recentItems = [...items]
   )
   .slice(0, 10);
 
-const stats = [
-  {
-    label: "Items",
-    value: items.length,
-    icon: Archive,
-    description: "Saved resources",
-  },
-  {
-    label: "Collections",
-    value: collections.length,
-    icon: Folder,
-    description: "Curated groups",
-  },
-  {
-    label: "Favorite Items",
-    value: favoriteItems.length,
-    icon: Heart,
-    description: "Marked for reuse",
-  },
-  {
-    label: "Favorite Collections",
-    value: favoriteCollectionCount,
-    icon: Star,
-    description: "Pinned groups",
-  },
-];
+interface DashboardStat {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  description: string;
+}
 
-export function DashboardShell() {
+function getDashboardStats(collectionStats: { favorite: number; total: number }) {
+  return [
+    {
+      label: "Items",
+      value: items.length,
+      icon: Archive,
+      description: "Saved resources",
+    },
+    {
+      label: "Collections",
+      value: collectionStats.total,
+      icon: Folder,
+      description: "Curated groups",
+    },
+    {
+      label: "Favorite Items",
+      value: favoriteItems.length,
+      icon: Heart,
+      description: "Marked for reuse",
+    },
+    {
+      label: "Favorite Collections",
+      value: collectionStats.favorite,
+      icon: Star,
+      description: "Pinned groups",
+    },
+  ];
+}
+
+export async function DashboardShell() {
+  const [recentDashboardCollections, collectionStats] = await Promise.all([
+    getDashboardCollections({ limit: 6, userEmail: currentUser.email }),
+    getDashboardCollectionStats({ userEmail: currentUser.email }),
+  ]);
+  const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
+  const favoriteCollections = recentDashboardCollections
+    .filter((collection) => collection.isFavorite)
+    .slice(0, 4);
+  const stats = getDashboardStats(collectionStats);
+
   return (
     <DashboardFrame
       currentUser={currentUser}
@@ -120,12 +127,20 @@ export function DashboardShell() {
       itemTypes={itemTypes}
       recentCollections={recentSidebarCollections}
     >
-      <DashboardMain />
+      <DashboardMain
+        recentDashboardCollections={recentDashboardCollections}
+        stats={stats}
+      />
     </DashboardFrame>
   );
 }
 
-function DashboardMain() {
+interface DashboardMainProps {
+  recentDashboardCollections: DashboardCollection[];
+  stats: DashboardStat[];
+}
+
+function DashboardMain({ recentDashboardCollections, stats }: DashboardMainProps) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
@@ -239,15 +254,20 @@ function DashboardSection({
 }
 
 interface CollectionCardProps {
-  collection: MockCollection;
+  collection: DashboardCollection;
 }
 
 function CollectionCard({ collection }: CollectionCardProps) {
-  const visibleTypes = collection.itemTypeIds.slice(0, 4);
+  const visibleTypes = collection.itemTypeIds;
 
   return (
     <NextLink
-      className="group flex min-h-44 flex-col justify-between rounded-lg border border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50"
+      className={cn(
+        "group flex min-h-44 flex-col justify-between rounded-lg border border-l-4 border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50",
+        collection.dominantItemKind
+          ? itemKindAccentStyles[collection.dominantItemKind]
+          : "border-l-border",
+      )}
       href={`/collections/${collection.slug}`}
     >
       <div className="space-y-3">

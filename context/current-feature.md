@@ -34,3 +34,5 @@ Completed
 - 2026-04-25: Started Seed Database with Demo Data implementation on `feature/seed-database-demo-data`.
 - 2026-04-25: Completed Seed Database with Demo Data with typed seed fixtures, bcrypt-hashed demo credentials, idempotent Prisma upserts, 5 demo collections, 18 demo items, 38 tags, seed tests, and successful build verification.
 - 2026-04-25: Completed database smoke-test update to fetch, validate, and display seeded demo data from `scripts/test-db.ts`.
+- 2026-04-25: Started Dashboard Collections and set the feature status to In Progress.
+- 2026-04-25: Completed Dashboard Collections with Prisma-backed dashboard collection fetching, demo-user scoped collection stats, dominant-kind card accents, all item type icons on collection cards, dashboard route verification, and passing tests/build.

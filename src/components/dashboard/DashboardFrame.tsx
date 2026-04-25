@@ -24,9 +24,9 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { DashboardCollection } from "@/lib/db/collections";
 import {
   type ItemKind,
-  type MockCollection,
   type MockItemType,
   type MockUser,
 } from "@/lib/mock-data";
@@ -55,9 +55,9 @@ const itemKindStyles: Record<ItemKind, string> = {
 interface DashboardFrameProps {
   children: ReactNode;
   currentUser: MockUser;
-  favoriteCollections: MockCollection[];
+  favoriteCollections: DashboardCollection[];
   itemTypes: MockItemType[];
-  recentCollections: MockCollection[];
+  recentCollections: DashboardCollection[];
 }
 
 export function DashboardFrame({
@@ -168,11 +168,11 @@ export function DashboardFrame({
 interface SidebarContentProps {
   collapsed: boolean;
   currentUser: MockUser;
-  favoriteCollections: MockCollection[];
+  favoriteCollections: DashboardCollection[];
   itemTypes: MockItemType[];
   mobile?: boolean;
   onClose?: () => void;
-  recentCollections: MockCollection[];
+  recentCollections: DashboardCollection[];
 }
 
 function SidebarContent({
@@ -314,7 +314,7 @@ function SidebarSection({ children, collapsed, title }: SidebarSectionProps) {
 
 interface CollectionLinkProps {
   collapsed: boolean;
-  collection: MockCollection;
+  collection: Pick<DashboardCollection, "id" | "itemCount" | "name" | "slug">;
   onNavigate?: () => void;
   showStar?: boolean;
 }

@@ -63,9 +63,9 @@ export interface MockItem {
 }
 
 export const currentUser: MockUser = {
-  id: "user-john-doe",
-  name: "John Doe",
-  email: "demo@devstash.com",
+  id: "user-demo",
+  name: "Demo User",
+  email: "demo@devstash.io",
   imageUrl: "/avatars/john-doe.png",
   plan: "free",
 };
