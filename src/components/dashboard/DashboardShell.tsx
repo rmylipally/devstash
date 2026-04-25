@@ -1,35 +1,31 @@
-"use client";
-
 import {
+  Archive,
+  ChartNoAxesColumn,
   Code2,
   File,
   Folder,
+  Heart,
   Image,
-  Layers3,
   Link as LinkIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  Search,
-  Settings,
+  Pin,
   Sparkles,
   Star,
   StickyNote,
   Terminal,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import NextLink from "next/link";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import {
   collections,
   currentUser,
+  items,
   itemTypes,
   type ItemKind,
   type MockCollection,
+  type MockItem,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -53,326 +49,358 @@ const itemKindStyles: Record<ItemKind, string> = {
   link: "bg-emerald-500/10 text-emerald-400",
 };
 
-const recentCollections = [...collections]
-  .sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt))
-  .slice(0, 4);
+const itemKindAccentStyles: Record<ItemKind, string> = {
+  snippet: "border-l-blue-500",
+  prompt: "border-l-violet-500",
+  note: "border-l-yellow-300",
+  command: "border-l-orange-500",
+  file: "border-l-slate-500",
+  image: "border-l-pink-500",
+  link: "border-l-emerald-500",
+};
+
+const sortedCollections = [...collections].sort(
+  (first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt),
+);
+
+const recentSidebarCollections = sortedCollections.slice(0, 4);
+const recentDashboardCollections = sortedCollections.slice(0, 6);
 
 const favoriteCollections = collections
   .filter((collection) => collection.isFavorite)
   .slice(0, 4);
 
+const favoriteItems = items.filter((item) => item.isFavorite);
+
+const favoriteCollectionCount = collections.filter(
+  (collection) => collection.isFavorite,
+).length;
+
+const pinnedItems = items.filter((item) => item.isPinned);
+
+const recentItems = [...items]
+  .sort(
+    (first, second) =>
+      Date.parse(second.lastViewedAt) - Date.parse(first.lastViewedAt),
+  )
+  .slice(0, 10);
+
+const stats = [
+  {
+    label: "Items",
+    value: items.length,
+    icon: Archive,
+    description: "Saved resources",
+  },
+  {
+    label: "Collections",
+    value: collections.length,
+    icon: Folder,
+    description: "Curated groups",
+  },
+  {
+    label: "Favorite Items",
+    value: favoriteItems.length,
+    icon: Heart,
+    description: "Marked for reuse",
+  },
+  {
+    label: "Favorite Collections",
+    value: favoriteCollectionCount,
+    icon: Star,
+    description: "Pinned groups",
+  },
+];
+
 export function DashboardShell() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
   return (
-    <main className="min-h-dvh bg-background text-foreground">
-      <div className="flex min-h-dvh">
-        <aside
-          className={cn(
-            "hidden min-h-dvh shrink-0 border-r border-border bg-sidebar transition-[width] duration-200 md:flex",
-            isCollapsed ? "w-20" : "w-72",
-          )}
-        >
-          <SidebarContent collapsed={isCollapsed} />
-        </aside>
-
-        {isMobileOpen ? (
-          <div className="fixed inset-0 z-50 md:hidden">
-            <button
-              aria-label="Close sidebar"
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-              onClick={() => setIsMobileOpen(false)}
-              type="button"
-            />
-            <aside className="relative z-10 flex h-full w-[min(88vw,320px)] flex-col border-r border-border bg-sidebar shadow-2xl">
-              <SidebarContent
-                collapsed={false}
-                mobile
-                onClose={() => setIsMobileOpen(false)}
-              />
-            </aside>
-          </div>
-        ) : null}
-
-        <section className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-20 items-center justify-between gap-4 border-b border-border px-4 md:px-8">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Button
-                aria-label="Open sidebar"
-                className="md:hidden"
-                onClick={() => setIsMobileOpen(true)}
-                size="icon"
-                type="button"
-                variant="ghost"
-              >
-                <PanelLeftOpen className="size-5" />
-              </Button>
-
-              <Button
-                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                aria-expanded={!isCollapsed}
-                className="hidden md:inline-flex"
-                onClick={() => setIsCollapsed((current) => !current)}
-                size="icon"
-                type="button"
-                variant="ghost"
-              >
-                {isCollapsed ? (
-                  <PanelLeftOpen className="size-5" />
-                ) : (
-                  <PanelLeftClose className="size-5" />
-                )}
-              </Button>
-
-              <div className="relative min-w-0 flex-1 md:max-w-2xl">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  aria-label="Search items"
-                  className="h-11 rounded-lg bg-muted/40 pl-10 text-base"
-                  placeholder="Search items..."
-                  readOnly
-                  type="search"
-                />
-              </div>
-            </div>
-
-            <Button className="h-11 gap-2 px-4" type="button">
-              <Plus className="size-5" />
-              <span className="hidden sm:inline">New Item</span>
-            </Button>
-          </header>
-
-          <div className="flex flex-1 items-start px-4 py-10 md:px-8">
-            <h2 className="text-3xl font-semibold tracking-tight">Main</h2>
-          </div>
-        </section>
-      </div>
-    </main>
+    <DashboardFrame
+      currentUser={currentUser}
+      favoriteCollections={favoriteCollections}
+      itemTypes={itemTypes}
+      recentCollections={recentSidebarCollections}
+    >
+      <DashboardMain />
+    </DashboardFrame>
   );
 }
 
-interface SidebarContentProps {
-  collapsed: boolean;
-  mobile?: boolean;
-  onClose?: () => void;
-}
-
-function SidebarContent({ collapsed, mobile = false, onClose }: SidebarContentProps) {
+function DashboardMain() {
   return (
-    <div className="flex min-h-0 w-full flex-col">
-      <div
-        className={cn(
-          "flex h-20 items-center border-b border-sidebar-border px-4",
-          collapsed ? "justify-center" : "justify-between",
-        )}
-      >
-        <NextLink
-          className={cn(
-            "flex min-w-0 items-center gap-3",
-            collapsed && "justify-center",
-          )}
-          href="/dashboard"
-          onClick={onClose}
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-lg text-muted-foreground">
+            Your developer knowledge hub
+          </p>
+        </div>
+
+        <section
+          aria-label="Dashboard stats"
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Layers3 className="size-5" />
-          </span>
-          {!collapsed ? (
-            <span className="truncate text-xl font-semibold tracking-tight">
-              DevStash
-            </span>
-          ) : null}
-        </NextLink>
-
-        {mobile ? (
-          <Button
-            aria-label="Close sidebar"
-            onClick={onClose}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <X className="size-5" />
-          </Button>
-        ) : null}
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
-        <SidebarSection collapsed={collapsed} title="Types">
-          {itemTypes.map((itemType) => {
-            const Icon = itemKindIcons[itemType.id];
+          {stats.map((stat) => {
+            const Icon = stat.icon;
 
             return (
-              <NextLink
-                className={cn(
-                  "flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  collapsed && "justify-center px-0",
-                )}
-                href={`/items/${itemType.slug}`}
-                key={itemType.id}
-                onClick={onClose}
-                title={collapsed ? itemType.pluralLabel : undefined}
+              <div
+                className="rounded-lg border border-border bg-card p-5 text-card-foreground"
+                key={stat.label}
               >
-                <span
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-md",
-                    itemKindStyles[itemType.id],
-                  )}
-                >
-                  <Icon className="size-4" />
-                </span>
-                {!collapsed ? (
-                  <>
-                    <span className="min-w-0 flex-1 truncate">
-                      {itemType.pluralLabel}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {itemType.count}
-                    </span>
-                  </>
-                ) : null}
-              </NextLink>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="mt-2 text-3xl font-semibold tracking-tight">
+                      {stat.value}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {stat.description}
+                    </p>
+                  </div>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Icon className="size-5" />
+                  </span>
+                </div>
+              </div>
             );
           })}
-        </SidebarSection>
+        </section>
 
-        <SidebarSection collapsed={collapsed} title="Favorites">
-          {favoriteCollections.map((collection) => (
-            <CollectionLink
-              collapsed={collapsed}
-              collection={collection}
-              key={collection.id}
-              onNavigate={onClose}
-              showStar
-            />
-          ))}
-        </SidebarSection>
+        <DashboardSection
+          actionHref="/collections"
+          actionLabel="View all"
+          title="Recent Collections"
+          titleIcon={Folder}
+        >
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {recentDashboardCollections.map((collection) => (
+              <CollectionCard collection={collection} key={collection.id} />
+            ))}
+          </div>
+        </DashboardSection>
 
-        <SidebarSection collapsed={collapsed} title="Recent">
-          {recentCollections.map((collection) => (
-            <CollectionLink
-              collapsed={collapsed}
-              collection={collection}
-              key={collection.id}
-              onNavigate={onClose}
-            />
-          ))}
-        </SidebarSection>
+        <DashboardSection title="Pinned Items" titleIcon={Pin}>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {pinnedItems.map((item) => (
+              <ItemCard item={item} key={item.id} />
+            ))}
+          </div>
+        </DashboardSection>
+
+        <DashboardSection title="Recent Items" titleIcon={ChartNoAxesColumn}>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            {recentItems.map((item) => (
+              <RecentItemRow item={item} key={item.id} />
+            ))}
+          </div>
+        </DashboardSection>
       </div>
-
-      <UserFooter collapsed={collapsed} />
     </div>
   );
 }
 
-interface SidebarSectionProps {
+interface DashboardSectionProps {
+  actionHref?: string;
+  actionLabel?: string;
   children: ReactNode;
-  collapsed: boolean;
   title: string;
+  titleIcon: LucideIcon;
 }
 
-function SidebarSection({ children, collapsed, title }: SidebarSectionProps) {
+function DashboardSection({
+  actionHref,
+  actionLabel,
+  children,
+  title,
+  titleIcon: TitleIcon,
+}: DashboardSectionProps) {
   return (
-    <section className="mb-7 last:mb-0">
-      {!collapsed ? (
-        <h2 className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {title}
-        </h2>
-      ) : (
-        <h2 className="sr-only">{title}</h2>
-      )}
-      <div className="space-y-1">{children}</div>
+    <section className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <TitleIcon className="size-5 shrink-0 text-muted-foreground" />
+          <h2 className="truncate text-2xl font-semibold tracking-tight">
+            {title}
+          </h2>
+        </div>
+        {actionHref && actionLabel ? (
+          <NextLink
+            className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            href={actionHref}
+          >
+            {actionLabel}
+          </NextLink>
+        ) : null}
+      </div>
+      {children}
     </section>
   );
 }
 
-interface CollectionLinkProps {
-  collapsed: boolean;
+interface CollectionCardProps {
   collection: MockCollection;
-  onNavigate?: () => void;
-  showStar?: boolean;
 }
 
-function CollectionLink({
-  collapsed,
-  collection,
-  onNavigate,
-  showStar = false,
-}: CollectionLinkProps) {
+function CollectionCard({ collection }: CollectionCardProps) {
+  const visibleTypes = collection.itemTypeIds.slice(0, 4);
+
   return (
     <NextLink
-      className={cn(
-        "flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        collapsed && "justify-center px-0",
-      )}
+      className="group flex min-h-44 flex-col justify-between rounded-lg border border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50"
       href={`/collections/${collection.slug}`}
-      onClick={onNavigate}
-      title={collapsed ? collection.name : undefined}
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-muted-foreground">
-        <Folder className="size-4" />
-      </span>
-      {!collapsed ? (
-        <>
-          <span className="min-w-0 flex-1 truncate">{collection.name}</span>
-          {showStar ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              {collection.itemCount}
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <h3 className="truncate text-lg font-semibold">
+                {collection.name}
+              </h3>
+              {collection.isFavorite ? (
+                <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+              ) : null}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {collection.itemCount} items
+            </p>
+          </div>
+          <Folder className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+        </div>
+        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+          {collection.description}
+        </p>
+      </div>
+
+      <div className="mt-5 flex items-center gap-2">
+        {visibleTypes.map((itemTypeId) => {
+          const Icon = itemKindIcons[itemTypeId];
+
+          return (
+            <span
+              className={cn(
+                "flex size-7 items-center justify-center rounded-md",
+                itemKindStyles[itemTypeId],
+              )}
+              key={itemTypeId}
+            >
+              <Icon className="size-4" />
             </span>
-          )}
-        </>
-      ) : null}
+          );
+        })}
+      </div>
     </NextLink>
   );
 }
 
-interface UserFooterProps {
-  collapsed: boolean;
+interface ItemCardProps {
+  item: MockItem;
 }
 
-function UserFooter({ collapsed }: UserFooterProps) {
-  const initials = currentUser.name
-    .split(" ")
-    .map((namePart) => namePart[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function ItemCard({ item }: ItemCardProps) {
+  const Icon = itemKindIcons[item.kind];
 
   return (
-    <div className="border-t border-sidebar-border p-3">
-      <div
+    <NextLink
+      className={cn(
+        "flex min-h-32 gap-4 rounded-lg border border-l-4 border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50",
+        itemKindAccentStyles[item.kind],
+      )}
+      href={`/items/${item.kind}s/${item.id}`}
+    >
+      <span
         className={cn(
-          "flex min-w-0 items-center rounded-lg px-2 py-2",
-          collapsed ? "justify-center" : "gap-3",
+          "flex size-12 shrink-0 items-center justify-center rounded-lg",
+          itemKindStyles[item.kind],
         )}
       >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
-          {initials}
-        </span>
-        {!collapsed ? (
-          <>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">
-                {currentUser.name}
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {currentUser.email}
-              </span>
-            </span>
-            <Button
-              aria-label="User settings"
-              size="icon-sm"
-              type="button"
-              variant="ghost"
-            >
-              <Settings className="size-4" />
-            </Button>
-          </>
-        ) : null}
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate text-lg font-semibold">{item.title}</h3>
+          <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+          {item.isFavorite ? (
+            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+          ) : null}
+        </div>
+        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+          {item.description}
+        </p>
+        <TagList tags={item.tags} />
       </div>
+    </NextLink>
+  );
+}
+
+interface RecentItemRowProps {
+  item: MockItem;
+}
+
+function RecentItemRow({ item }: RecentItemRowProps) {
+  const Icon = itemKindIcons[item.kind];
+
+  return (
+    <NextLink
+      className="flex min-w-0 items-center gap-4 border-b border-border px-4 py-4 text-card-foreground transition-colors last:border-b-0 hover:bg-muted/40 sm:px-5"
+      href={`/items/${item.kind}s/${item.id}`}
+    >
+      <span
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-lg",
+          itemKindStyles[item.kind],
+        )}
+      >
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate font-medium">{item.title}</h3>
+          {item.isPinned ? (
+            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+          ) : null}
+          {item.isFavorite ? (
+            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+          ) : null}
+        </div>
+        <p className="mt-1 truncate text-sm text-muted-foreground">
+          {item.description}
+        </p>
+      </div>
+      <div className="hidden shrink-0 items-center gap-3 sm:flex">
+        <span className="rounded-md bg-muted px-2 py-1 text-xs capitalize text-muted-foreground">
+          {item.kind}
+        </span>
+        <span className="w-16 text-right text-sm text-muted-foreground">
+          {formatShortDate(item.lastViewedAt)}
+        </span>
+      </div>
+    </NextLink>
+  );
+}
+
+interface TagListProps {
+  tags: string[];
+}
+
+function TagList({ tags }: TagListProps) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tags.slice(0, 3).map((tag) => (
+        <span
+          className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
+          key={tag}
+        >
+          {tag}
+        </span>
+      ))}
     </div>
   );
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
 }
