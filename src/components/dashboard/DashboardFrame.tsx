@@ -25,14 +25,14 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { DashboardCollection } from "@/lib/db/collections";
-import {
-  type ItemKind,
-  type MockItemType,
-  type MockUser,
-} from "@/lib/mock-data";
+import type {
+  DashboardItemKind,
+  DashboardItemType,
+} from "@/lib/db/items";
+import type { MockUser } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-const itemKindIcons: Record<ItemKind, LucideIcon> = {
+const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
   snippet: Code2,
   prompt: Sparkles,
   note: StickyNote,
@@ -42,7 +42,7 @@ const itemKindIcons: Record<ItemKind, LucideIcon> = {
   link: LinkIcon,
 };
 
-const itemKindStyles: Record<ItemKind, string> = {
+const itemKindStyles: Record<DashboardItemKind, string> = {
   snippet: "bg-blue-500/10 text-blue-400",
   prompt: "bg-violet-500/10 text-violet-400",
   note: "bg-yellow-500/10 text-yellow-300",
@@ -56,7 +56,7 @@ interface DashboardFrameProps {
   children: ReactNode;
   currentUser: MockUser;
   favoriteCollections: DashboardCollection[];
-  itemTypes: MockItemType[];
+  itemTypes: DashboardItemType[];
   recentCollections: DashboardCollection[];
 }
 
@@ -169,7 +169,7 @@ interface SidebarContentProps {
   collapsed: boolean;
   currentUser: MockUser;
   favoriteCollections: DashboardCollection[];
-  itemTypes: MockItemType[];
+  itemTypes: DashboardItemType[];
   mobile?: boolean;
   onClose?: () => void;
   recentCollections: DashboardCollection[];
@@ -283,6 +283,7 @@ function SidebarContent({
               onNavigate={onClose}
             />
           ))}
+          <ViewAllCollectionsLink collapsed={collapsed} onNavigate={onClose} />
         </SidebarSection>
       </div>
 
@@ -314,7 +315,10 @@ function SidebarSection({ children, collapsed, title }: SidebarSectionProps) {
 
 interface CollectionLinkProps {
   collapsed: boolean;
-  collection: Pick<DashboardCollection, "id" | "itemCount" | "name" | "slug">;
+  collection: Pick<
+    DashboardCollection,
+    "dominantItemKind" | "id" | "itemCount" | "name" | "slug"
+  >;
   onNavigate?: () => void;
   showStar?: boolean;
 }
@@ -335,9 +339,7 @@ function CollectionLink({
       onClick={onNavigate}
       title={collapsed ? collection.name : undefined}
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-muted-foreground">
-        <Folder className="size-4" />
-      </span>
+      <CollectionLinkMarker collection={collection} showStar={showStar} />
       {!collapsed ? (
         <>
           <span className="min-w-0 flex-1 truncate">{collection.name}</span>
@@ -349,6 +351,64 @@ function CollectionLink({
             </span>
           )}
         </>
+      ) : null}
+    </NextLink>
+  );
+}
+
+interface CollectionLinkMarkerProps {
+  collection: Pick<DashboardCollection, "dominantItemKind">;
+  showStar: boolean;
+}
+
+function CollectionLinkMarker({
+  collection,
+  showStar,
+}: CollectionLinkMarkerProps) {
+  if (!showStar && collection.dominantItemKind) {
+    return (
+      <span
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-md",
+          itemKindStyles[collection.dominantItemKind],
+        )}
+      >
+        <span className="size-2.5 rounded-full bg-current" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-muted-foreground">
+      <Folder className="size-4" />
+    </span>
+  );
+}
+
+interface ViewAllCollectionsLinkProps {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}
+
+function ViewAllCollectionsLink({
+  collapsed,
+  onNavigate,
+}: ViewAllCollectionsLinkProps) {
+  return (
+    <NextLink
+      className={cn(
+        "mt-2 flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        collapsed && "justify-center px-0",
+      )}
+      href="/collections"
+      onClick={onNavigate}
+      title={collapsed ? "View all collections" : undefined}
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-muted-foreground">
+        <Folder className="size-4" />
+      </span>
+      {!collapsed ? (
+        <span className="min-w-0 flex-1 truncate">View all collections</span>
       ) : null}
     </NextLink>
   );

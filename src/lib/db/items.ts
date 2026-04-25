@@ -20,6 +20,17 @@ export interface DashboardItem {
   lastViewedAt: string;
 }
 
+export interface DashboardItemType {
+  id: DashboardItemKind;
+  label: string;
+  pluralLabel: string;
+  slug: string;
+  icon: string;
+  color: string;
+  count: number;
+  isPro: boolean;
+}
+
 export interface DashboardItemStats {
   favorite: number;
   total: number;
@@ -44,6 +55,7 @@ export interface DashboardItemRow {
 export interface DashboardItemWhere {
   isFavorite?: boolean;
   isPinned?: boolean;
+  kind?: PrismaItemKind;
   lastViewedAt?: {
     not: null;
   };
@@ -98,6 +110,81 @@ interface GetDashboardItemsOptions {
 }
 
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
+
+const dashboardItemTypeMetadata: Array<
+  Omit<DashboardItemType, "count"> & { prismaKind: PrismaItemKind }
+> = [
+  {
+    color: "#3b82f6",
+    icon: "Code",
+    id: "snippet",
+    isPro: false,
+    label: "Snippet",
+    pluralLabel: "Snippets",
+    prismaKind: "SNIPPET",
+    slug: "snippets",
+  },
+  {
+    color: "#8b5cf6",
+    icon: "Sparkles",
+    id: "prompt",
+    isPro: false,
+    label: "Prompt",
+    pluralLabel: "Prompts",
+    prismaKind: "PROMPT",
+    slug: "prompts",
+  },
+  {
+    color: "#f97316",
+    icon: "Terminal",
+    id: "command",
+    isPro: false,
+    label: "Command",
+    pluralLabel: "Commands",
+    prismaKind: "COMMAND",
+    slug: "commands",
+  },
+  {
+    color: "#fde047",
+    icon: "StickyNote",
+    id: "note",
+    isPro: false,
+    label: "Note",
+    pluralLabel: "Notes",
+    prismaKind: "NOTE",
+    slug: "notes",
+  },
+  {
+    color: "#6b7280",
+    icon: "File",
+    id: "file",
+    isPro: true,
+    label: "File",
+    pluralLabel: "Files",
+    prismaKind: "FILE",
+    slug: "files",
+  },
+  {
+    color: "#ec4899",
+    icon: "Image",
+    id: "image",
+    isPro: true,
+    label: "Image",
+    pluralLabel: "Images",
+    prismaKind: "IMAGE",
+    slug: "images",
+  },
+  {
+    color: "#10b981",
+    icon: "Link",
+    id: "link",
+    isPro: false,
+    label: "Link",
+    pluralLabel: "Links",
+    prismaKind: "LINK",
+    slug: "links",
+  },
+];
 
 const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
   {
@@ -228,4 +315,27 @@ export async function getDashboardItemStats(
     favorite,
     total,
   };
+}
+
+export async function getDashboardItemTypes(
+  options: Pick<GetDashboardItemsOptions, "userEmail" | "userId"> = {},
+  client?: DashboardItemClient,
+): Promise<DashboardItemType[]> {
+  const itemClient = client ?? (await getDefaultItemClient());
+  const where = getUserWhere(options);
+  const counts = await Promise.all(
+    dashboardItemTypeMetadata.map(({ prismaKind }) =>
+      itemClient.item.count({
+        where: {
+          kind: prismaKind,
+          ...where,
+        },
+      }),
+    ),
+  );
+
+  return dashboardItemTypeMetadata.map(({ prismaKind, ...itemType }, index) => ({
+    ...itemType,
+    count: counts[index] ?? 0,
+  }));
 }

@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  getDashboardItemTypes,
   getDashboardItemStats,
   getDashboardPinnedItems,
   getDashboardRecentItems,
   toDashboardItem,
   type DashboardItemClient,
+  type DashboardItemCountArgs,
   type DashboardItemFindManyArgs,
   type DashboardItemRow,
 } from "../src/lib/db/items";
@@ -158,5 +160,132 @@ describe("dashboard item data", () => {
       { user: { email: "demo@devstash.io" } },
       { isFavorite: true, user: { email: "demo@devstash.io" } },
     ]);
+  });
+
+  it("fetches sidebar item types with database counts and system metadata", async () => {
+    const countArgs: DashboardItemCountArgs[] = [];
+    const countsByKind = new Map([
+      ["SNIPPET", 7],
+      ["PROMPT", 5],
+      ["NOTE", 3],
+      ["COMMAND", 2],
+      ["FILE", 1],
+      ["IMAGE", 0],
+      ["LINK", 4],
+    ]);
+    const client: DashboardItemClient = {
+      item: {
+        count: async (args) => {
+          countArgs.push(args);
+
+          return countsByKind.get(args.where?.kind ?? "") ?? 0;
+        },
+        findMany: async () => [],
+      },
+    };
+
+    const itemTypes = await getDashboardItemTypes(
+      { userId: "user-123" },
+      client,
+    );
+
+    assert.deepEqual(
+      itemTypes.map(
+        ({ color, count, icon, id, isPro, label, pluralLabel, slug }) => ({
+          color,
+          count,
+          icon,
+          id,
+          isPro,
+          label,
+          pluralLabel,
+          slug,
+        }),
+      ),
+      [
+        {
+          color: "#3b82f6",
+          count: 7,
+          icon: "Code",
+          id: "snippet",
+          isPro: false,
+          label: "Snippet",
+          pluralLabel: "Snippets",
+          slug: "snippets",
+        },
+        {
+          color: "#8b5cf6",
+          count: 5,
+          icon: "Sparkles",
+          id: "prompt",
+          isPro: false,
+          label: "Prompt",
+          pluralLabel: "Prompts",
+          slug: "prompts",
+        },
+        {
+          color: "#f97316",
+          count: 2,
+          icon: "Terminal",
+          id: "command",
+          isPro: false,
+          label: "Command",
+          pluralLabel: "Commands",
+          slug: "commands",
+        },
+        {
+          color: "#fde047",
+          count: 3,
+          icon: "StickyNote",
+          id: "note",
+          isPro: false,
+          label: "Note",
+          pluralLabel: "Notes",
+          slug: "notes",
+        },
+        {
+          color: "#6b7280",
+          count: 1,
+          icon: "File",
+          id: "file",
+          isPro: true,
+          label: "File",
+          pluralLabel: "Files",
+          slug: "files",
+        },
+        {
+          color: "#ec4899",
+          count: 0,
+          icon: "Image",
+          id: "image",
+          isPro: true,
+          label: "Image",
+          pluralLabel: "Images",
+          slug: "images",
+        },
+        {
+          color: "#10b981",
+          count: 4,
+          icon: "Link",
+          id: "link",
+          isPro: false,
+          label: "Link",
+          pluralLabel: "Links",
+          slug: "links",
+        },
+      ],
+    );
+    assert.deepEqual(
+      countArgs.map((args) => args.where),
+      [
+        { kind: "SNIPPET", userId: "user-123" },
+        { kind: "PROMPT", userId: "user-123" },
+        { kind: "COMMAND", userId: "user-123" },
+        { kind: "NOTE", userId: "user-123" },
+        { kind: "FILE", userId: "user-123" },
+        { kind: "IMAGE", userId: "user-123" },
+        { kind: "LINK", userId: "user-123" },
+      ],
+    );
   });
 });

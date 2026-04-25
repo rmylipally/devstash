@@ -25,15 +25,13 @@ import {
 } from "@/lib/db/collections";
 import {
   getDashboardItemStats,
+  getDashboardItemTypes,
   getDashboardPinnedItems,
   getDashboardRecentItems,
   type DashboardItem,
   type DashboardItemKind,
 } from "@/lib/db/items";
-import {
-  currentUser,
-  itemTypes,
-} from "@/lib/mock-data";
+import { currentUser } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
@@ -110,12 +108,14 @@ export async function DashboardShell() {
     recentDashboardCollections,
     collectionStats,
     itemStats,
+    sidebarItemTypes,
     pinnedDashboardItems,
     recentDashboardItems,
   ] = await Promise.all([
     getDashboardCollections({ limit: 6, userEmail: currentUser.email }),
     getDashboardCollectionStats({ userEmail: currentUser.email }),
     getDashboardItemStats({ userEmail: currentUser.email }),
+    getDashboardItemTypes({ userEmail: currentUser.email }),
     getDashboardPinnedItems({ userEmail: currentUser.email }),
     getDashboardRecentItems({ limit: 10, userEmail: currentUser.email }),
   ]);
@@ -129,7 +129,7 @@ export async function DashboardShell() {
     <DashboardFrame
       currentUser={currentUser}
       favoriteCollections={favoriteCollections}
-      itemTypes={itemTypes}
+      itemTypes={sidebarItemTypes}
       recentCollections={recentSidebarCollections}
     >
       <DashboardMain
