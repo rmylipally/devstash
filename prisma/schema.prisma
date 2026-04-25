@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PlanTier {
+  FREE
+  PRO
+}
+
+enum ItemKind {
+  SNIPPET
+  PROMPT
+  NOTE
+  COMMAND
+  FILE
+  IMAGE
+  LINK
+}
+
+enum ContentKind {
+  TEXT
+  FILE
+  URL
+}
+
+enum AiJobType {
+  AUTO_TAG
+  SUMMARIZE
+  EXPLAIN_CODE
+  OPTIMIZE_PROMPT
+}
+
+enum AiJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id                   String       @id @default(cuid())
+  email                String       @unique
+  emailVerified        DateTime?
+  name                 String?
+  image                String?
+  passwordHash         String?
+  plan                 PlanTier     @default(FREE)
+  stripeCustomerId     String?      @unique
+  stripeSubscriptionId String?      @unique
+
+  accounts             Account[]
+  sessions             Session[]
+  items                Item[]
+  customTypes          CustomType[]
+  collections          Collection[]
+  tags                 Tag[]
+  aiJobs               AiJob[]
+
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @id
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Item {
+  id               String           @id @default(cuid())
+  title            String
+  kind             ItemKind
+  contentKind      ContentKind
+  description      String?
+  content          String?          @db.Text
+  sourceUrl        String?
+  language         String?
+  mimeType         String?
+  storageKey       String?
+  originalFileName String?
+  fileSizeBytes    Int?
+  metadata         Json?
+  aiSummary        String?          @db.Text
+  isFavorite       Boolean          @default(false)
+  isPinned         Boolean          @default(false)
+  lastViewedAt     DateTime?
+
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  customTypeId     String?
+  customType       CustomType?      @relation(fields: [customTypeId], references: [id], onDelete: SetNull)
+
+  tags             ItemTag[]
+  collections      CollectionItem[]
+  aiJobs           AiJob[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([userId, kind])
+  @@index([userId, updatedAt])
+  @@index([userId, lastViewedAt])
+  @@index([customTypeId])
+}
+
+model CustomType {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String
+  icon      String?
+  color     String?
+  baseKind  ItemKind
+  isActive  Boolean    @default(true)
+
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items     Item[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model Collection {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  color       String?
+  icon        String?
+  isFavorite  Boolean          @default(false)
+  defaultKind ItemKind?
+
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items       CollectionItem[]
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId, updatedAt])
+}
+
+model CollectionItem {
+  collectionId String
+  itemId       String
+  position     Int?
+  addedAt      DateTime    @default(now())
+
+  collection   Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  item         Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, itemId])
+  @@index([itemId])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String
+  color     String?
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items     ItemTag[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model ItemTag {
+  itemId String
+  tagId  String
+
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@index([tagId])
+}
+
+model AiJob {
+  id            String      @id @default(cuid())
+  type          AiJobType
+  status        AiJobStatus @default(PENDING)
+  model         String      @default("gpt-5.4-nano")
+  promptVersion String?
+  result        Json?
+  error         String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  itemId        String
+  item          Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId, status])
+  @@index([itemId, type])
+}
