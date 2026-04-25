@@ -24,15 +24,19 @@ import {
   type DashboardCollection,
 } from "@/lib/db/collections";
 import {
+  getDashboardItemStats,
+  getDashboardPinnedItems,
+  getDashboardRecentItems,
+  type DashboardItem,
+  type DashboardItemKind,
+} from "@/lib/db/items";
+import {
   currentUser,
-  items,
   itemTypes,
-  type ItemKind,
-  type MockItem,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-const itemKindIcons: Record<ItemKind, LucideIcon> = {
+const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
   snippet: Code2,
   prompt: Sparkles,
   note: StickyNote,
@@ -42,7 +46,7 @@ const itemKindIcons: Record<ItemKind, LucideIcon> = {
   link: LinkIcon,
 };
 
-const itemKindStyles: Record<ItemKind, string> = {
+const itemKindStyles: Record<DashboardItemKind, string> = {
   snippet: "bg-blue-500/10 text-blue-400",
   prompt: "bg-violet-500/10 text-violet-400",
   note: "bg-yellow-500/10 text-yellow-300",
@@ -52,7 +56,7 @@ const itemKindStyles: Record<ItemKind, string> = {
   link: "bg-emerald-500/10 text-emerald-400",
 };
 
-const itemKindAccentStyles: Record<ItemKind, string> = {
+const itemKindAccentStyles: Record<DashboardItemKind, string> = {
   snippet: "border-l-blue-500",
   prompt: "border-l-violet-500",
   note: "border-l-yellow-300",
@@ -62,17 +66,6 @@ const itemKindAccentStyles: Record<ItemKind, string> = {
   link: "border-l-emerald-500",
 };
 
-const favoriteItems = items.filter((item) => item.isFavorite);
-
-const pinnedItems = items.filter((item) => item.isPinned);
-
-const recentItems = [...items]
-  .sort(
-    (first, second) =>
-      Date.parse(second.lastViewedAt) - Date.parse(first.lastViewedAt),
-  )
-  .slice(0, 10);
-
 interface DashboardStat {
   label: string;
   value: number;
@@ -80,11 +73,14 @@ interface DashboardStat {
   description: string;
 }
 
-function getDashboardStats(collectionStats: { favorite: number; total: number }) {
+function getDashboardStats(
+  collectionStats: { favorite: number; total: number },
+  itemStats: { favorite: number; total: number },
+) {
   return [
     {
       label: "Items",
-      value: items.length,
+      value: itemStats.total,
       icon: Archive,
       description: "Saved resources",
     },
@@ -96,7 +92,7 @@ function getDashboardStats(collectionStats: { favorite: number; total: number })
     },
     {
       label: "Favorite Items",
-      value: favoriteItems.length,
+      value: itemStats.favorite,
       icon: Heart,
       description: "Marked for reuse",
     },
@@ -110,15 +106,24 @@ function getDashboardStats(collectionStats: { favorite: number; total: number })
 }
 
 export async function DashboardShell() {
-  const [recentDashboardCollections, collectionStats] = await Promise.all([
+  const [
+    recentDashboardCollections,
+    collectionStats,
+    itemStats,
+    pinnedDashboardItems,
+    recentDashboardItems,
+  ] = await Promise.all([
     getDashboardCollections({ limit: 6, userEmail: currentUser.email }),
     getDashboardCollectionStats({ userEmail: currentUser.email }),
+    getDashboardItemStats({ userEmail: currentUser.email }),
+    getDashboardPinnedItems({ userEmail: currentUser.email }),
+    getDashboardRecentItems({ limit: 10, userEmail: currentUser.email }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
   const favoriteCollections = recentDashboardCollections
     .filter((collection) => collection.isFavorite)
     .slice(0, 4);
-  const stats = getDashboardStats(collectionStats);
+  const stats = getDashboardStats(collectionStats, itemStats);
 
   return (
     <DashboardFrame
@@ -128,7 +133,9 @@ export async function DashboardShell() {
       recentCollections={recentSidebarCollections}
     >
       <DashboardMain
+        pinnedDashboardItems={pinnedDashboardItems}
         recentDashboardCollections={recentDashboardCollections}
+        recentDashboardItems={recentDashboardItems}
         stats={stats}
       />
     </DashboardFrame>
@@ -136,11 +143,18 @@ export async function DashboardShell() {
 }
 
 interface DashboardMainProps {
+  pinnedDashboardItems: DashboardItem[];
   recentDashboardCollections: DashboardCollection[];
+  recentDashboardItems: DashboardItem[];
   stats: DashboardStat[];
 }
 
-function DashboardMain({ recentDashboardCollections, stats }: DashboardMainProps) {
+function DashboardMain({
+  pinnedDashboardItems,
+  recentDashboardCollections,
+  recentDashboardItems,
+  stats,
+}: DashboardMainProps) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
@@ -195,17 +209,19 @@ function DashboardMain({ recentDashboardCollections, stats }: DashboardMainProps
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Pinned Items" titleIcon={Pin}>
-          <div className="grid gap-4 xl:grid-cols-2">
-            {pinnedItems.map((item) => (
-              <ItemCard item={item} key={item.id} />
-            ))}
-          </div>
-        </DashboardSection>
+        {pinnedDashboardItems.length > 0 ? (
+          <DashboardSection title="Pinned Items" titleIcon={Pin}>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {pinnedDashboardItems.map((item) => (
+                <ItemCard item={item} key={item.id} />
+              ))}
+            </div>
+          </DashboardSection>
+        ) : null}
 
         <DashboardSection title="Recent Items" titleIcon={ChartNoAxesColumn}>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            {recentItems.map((item) => (
+            {recentDashboardItems.map((item) => (
               <RecentItemRow item={item} key={item.id} />
             ))}
           </div>
@@ -314,7 +330,7 @@ function CollectionCard({ collection }: CollectionCardProps) {
 }
 
 interface ItemCardProps {
-  item: MockItem;
+  item: DashboardItem;
 }
 
 function ItemCard({ item }: ItemCardProps) {
@@ -354,7 +370,7 @@ function ItemCard({ item }: ItemCardProps) {
 }
 
 interface RecentItemRowProps {
-  item: MockItem;
+  item: DashboardItem;
 }
 
 function RecentItemRow({ item }: RecentItemRowProps) {
