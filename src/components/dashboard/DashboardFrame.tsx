@@ -23,6 +23,7 @@ import NextLink from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import type { DashboardCollection } from "@/lib/db/collections";
 import type {
@@ -51,6 +52,8 @@ const itemKindStyles: Record<DashboardItemKind, string> = {
   image: "bg-pink-500/10 text-pink-400",
   link: "bg-emerald-500/10 text-emerald-400",
 };
+
+const proItemKinds = new Set<DashboardItemKind>(["file", "image"]);
 
 interface DashboardFrameProps {
   children: ReactNode;
@@ -252,6 +255,14 @@ function SidebarContent({
                     <span className="min-w-0 flex-1 truncate">
                       {itemType.pluralLabel}
                     </span>
+                    {proItemKinds.has(itemType.id) ? (
+                      <Badge
+                        className="h-5 border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-semibold text-muted-foreground"
+                        variant="outline"
+                      >
+                        PRO
+                      </Badge>
+                    ) : null}
                     <span className="text-xs text-muted-foreground">
                       {itemType.count}
                     </span>
