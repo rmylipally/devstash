@@ -1,6 +1,6 @@
 # Current Feature
 
-<!-- Feature Name -->
+Optimize Dashboard Item Type Counts
 
 ## Status
 
@@ -12,9 +12,18 @@ Completed
 
 <!-- Goals & requirements -->
 
+- Replace the per-item-type count queries in `getDashboardItemTypes` with one grouped Prisma query by item kind.
+- Preserve the existing database-backed item type metadata, sidebar ordering, labels, colors, icons, and counts.
+- Keep the change low risk and limited to the dashboard item type data path plus focused tests.
+- Add or update tests that prove item type counts are produced from grouped results without one count query per type.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Quick win selected from the `code-scanner` findings: remove the bounded N+1 query pattern in `src/lib/db/items.ts`.
+- No schema or migration changes expected.
+- UI behavior should remain unchanged; only the data-loading implementation should be optimized.
 
 ## History
 
@@ -47,3 +56,6 @@ Completed
 - 2026-04-26: Completed Add Pro Badge to Sidebar with a reusable ShadCN-style badge component and subtle uppercase `PRO` badges for the Files and Images sidebar types.
 - 2026-04-27: Started Add ItemType Table implementation on `feature/item-type-table`.
 - 2026-04-27: Completed Add ItemType Table with a database-backed `ItemType` model, migration, seeded built-in type rows, database-driven sidebar item type metadata, updated DB smoke checks, and passing tests/build.
+- 2026-04-27: Documented Optimize Dashboard Item Type Counts as the next quick-win feature from the code scan.
+- 2026-04-27: Started Optimize Dashboard Item Type Counts implementation on `feature/optimize-dashboard-item-type-counts`.
+- 2026-04-27: Completed Optimize Dashboard Item Type Counts by replacing per-kind item count queries with one grouped Prisma query while preserving sidebar item type metadata and counts.

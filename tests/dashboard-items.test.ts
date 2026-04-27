@@ -8,7 +8,6 @@ import {
   getDashboardRecentItems,
   toDashboardItem,
   type DashboardItemClient,
-  type DashboardItemCountArgs,
   type DashboardItemFindManyArgs,
   type DashboardItemRow,
 } from "../src/lib/db/items";
@@ -162,26 +161,27 @@ describe("dashboard item data", () => {
     ]);
   });
 
-  it("fetches sidebar item types with database counts and system metadata", async () => {
-    const countArgs: DashboardItemCountArgs[] = [];
+  it("fetches sidebar item types with grouped database counts and system metadata", async () => {
+    const groupByArgs: unknown[] = [];
     const itemTypeFindManyArgs: unknown[] = [];
-    const countsByKind = new Map([
-      ["SNIPPET", 7],
-      ["PROMPT", 5],
-      ["NOTE", 3],
-      ["COMMAND", 2],
-      ["FILE", 1],
-      ["IMAGE", 0],
-      ["LINK", 4],
-    ]);
-    const client: DashboardItemClient = {
+    const client = {
       item: {
-        count: async (args) => {
-          countArgs.push(args);
-
-          return countsByKind.get(args.where?.kind ?? "") ?? 0;
+        count: async () => {
+          throw new Error("item.count should not be called for item type counts");
         },
         findMany: async () => [],
+        groupBy: async (args: unknown) => {
+          groupByArgs.push(args);
+
+          return [
+            { _count: { _all: 7 }, kind: "SNIPPET" },
+            { _count: { _all: 5 }, kind: "PROMPT" },
+            { _count: { _all: 3 }, kind: "NOTE" },
+            { _count: { _all: 2 }, kind: "COMMAND" },
+            { _count: { _all: 1 }, kind: "FILE" },
+            { _count: { _all: 4 }, kind: "LINK" },
+          ];
+        },
       },
       itemType: {
         findMany: async (args: unknown) => {
@@ -261,7 +261,7 @@ describe("dashboard item data", () => {
           ];
         },
       },
-    };
+    } as unknown as DashboardItemClient;
 
     const itemTypes = await getDashboardItemTypes(
       { userId: "user-123" },
@@ -354,18 +354,13 @@ describe("dashboard item data", () => {
         },
       ],
     );
-    assert.deepEqual(
-      countArgs.map((args) => args.where),
-      [
-        { kind: "SNIPPET", userId: "user-123" },
-        { kind: "PROMPT", userId: "user-123" },
-        { kind: "COMMAND", userId: "user-123" },
-        { kind: "NOTE", userId: "user-123" },
-        { kind: "FILE", userId: "user-123" },
-        { kind: "IMAGE", userId: "user-123" },
-        { kind: "LINK", userId: "user-123" },
-      ],
-    );
+    assert.deepEqual(groupByArgs, [
+      {
+        _count: { _all: true },
+        by: ["kind"],
+        where: { userId: "user-123" },
+      },
+    ]);
     assert.deepEqual(itemTypeFindManyArgs, [
       {
         orderBy: { sortOrder: "asc" },

@@ -96,6 +96,21 @@ export interface DashboardItemCountArgs {
   where?: DashboardItemWhere;
 }
 
+export interface DashboardItemGroupByArgs {
+  _count: {
+    _all: true;
+  };
+  by: ["kind"];
+  where?: DashboardItemWhere;
+}
+
+export interface DashboardItemGroupByRow {
+  _count: {
+    _all: number;
+  };
+  kind: PrismaItemKind;
+}
+
 export interface DashboardItemTypeRow {
   color: string;
   icon: string;
@@ -130,6 +145,9 @@ export interface DashboardItemClient {
   item: {
     count(args: DashboardItemCountArgs): Promise<number>;
     findMany(args: DashboardItemFindManyArgs): Promise<DashboardItemRow[]>;
+    groupBy?(
+      args: DashboardItemGroupByArgs,
+    ): Promise<DashboardItemGroupByRow[]>;
   };
   itemType?: {
     findMany(
@@ -296,6 +314,9 @@ export async function getDashboardItemTypes(
   if (!itemClient.itemType) {
     throw new Error("Dashboard item type client is required.");
   }
+  if (!itemClient.item.groupBy) {
+    throw new Error("Dashboard item groupBy client is required.");
+  }
 
   const where = getUserWhere(options);
   const itemTypes = await itemClient.itemType.findMany({
@@ -303,18 +324,16 @@ export async function getDashboardItemTypes(
     select: dashboardItemTypeSelect,
     where: { isSystem: true },
   });
-  const counts = await Promise.all(
-    itemTypes.map(({ kind }) =>
-      itemClient.item.count({
-        where: {
-          kind,
-          ...where,
-        },
-      }),
-    ),
+  const itemCounts = await itemClient.item.groupBy({
+    _count: { _all: true },
+    by: ["kind"],
+    where,
+  });
+  const countByKind = new Map<PrismaItemKind, number>(
+    itemCounts.map(({ _count, kind }) => [kind, _count._all]),
   );
 
-  return itemTypes.map((itemType, index) => ({
+  return itemTypes.map((itemType) => ({
     color: itemType.color,
     icon: itemType.icon,
     id: dashboardItemKindByPrismaKind[itemType.kind],
@@ -322,6 +341,6 @@ export async function getDashboardItemTypes(
     label: itemType.label,
     slug: itemType.slug,
     pluralLabel: itemType.pluralLabel,
-    count: counts[index] ?? 0,
+    count: countByKind.get(itemType.kind) ?? 0,
   }));
 }
