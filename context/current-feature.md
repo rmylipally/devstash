@@ -45,3 +45,5 @@ Completed
 - 2026-04-26: Documented Add Pro Badge to Sidebar as the current feature and set the feature status to Not Started.
 - 2026-04-26: Started Add Pro Badge to Sidebar implementation on `feature/add-pro-badge-sidebar`.
 - 2026-04-26: Completed Add Pro Badge to Sidebar with a reusable ShadCN-style badge component and subtle uppercase `PRO` badges for the Files and Images sidebar types.
+- 2026-04-27: Started Add ItemType Table implementation on `feature/item-type-table`.
+- 2026-04-27: Completed Add ItemType Table with a database-backed `ItemType` model, migration, seeded built-in type rows, database-driven sidebar item type metadata, updated DB smoke checks, and passing tests/build.

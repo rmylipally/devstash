@@ -57,6 +57,35 @@ async function main() {
   const seededAt = new Date();
 
   await prisma.$transaction(async (tx) => {
+    for (const itemType of systemItemTypeSeeds) {
+      await tx.itemType.upsert({
+        where: { id: itemType.name },
+        update: {
+          color: itemType.color,
+          icon: itemType.icon,
+          isPro: itemType.isPro,
+          isSystem: itemType.isSystem,
+          kind: itemType.kind,
+          label: itemType.label,
+          pluralLabel: itemType.pluralLabel,
+          slug: itemType.slug,
+          sortOrder: itemType.sortOrder,
+        },
+        create: {
+          color: itemType.color,
+          icon: itemType.icon,
+          id: itemType.name,
+          isPro: itemType.isPro,
+          isSystem: itemType.isSystem,
+          kind: itemType.kind,
+          label: itemType.label,
+          pluralLabel: itemType.pluralLabel,
+          slug: itemType.slug,
+          sortOrder: itemType.sortOrder,
+        },
+      });
+    }
+
     const user = await tx.user.upsert({
       where: { email: demoUserSeed.email },
       update: {

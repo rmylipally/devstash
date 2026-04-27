@@ -43,26 +43,26 @@ enum AiJobStatus {
 }
 
 model User {
-  id                   String       @id @default(cuid())
-  email                String       @unique
+  id                   String    @id @default(cuid())
+  email                String    @unique
   emailVerified        DateTime?
   name                 String?
   image                String?
   passwordHash         String?
-  plan                 PlanTier     @default(FREE)
-  stripeCustomerId     String?      @unique
-  stripeSubscriptionId String?      @unique
+  plan                 PlanTier  @default(FREE)
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
 
-  accounts             Account[]
-  sessions             Session[]
-  items                Item[]
-  customTypes          CustomType[]
-  collections          Collection[]
-  tags                 Tag[]
-  aiJobs               AiJob[]
+  accounts    Account[]
+  sessions    Session[]
+  items       Item[]
+  customTypes CustomType[]
+  collections Collection[]
+  tags        Tag[]
+  aiJobs      AiJob[]
 
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -70,15 +70,15 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?  @db.Text
+  id_token          String? @db.Text
   session_state     String?
 
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
   @@index([userId])
@@ -89,7 +89,7 @@ model Session {
   userId       String
   expires      DateTime
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -102,13 +102,29 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+model ItemType {
+  id          String   @id
+  kind        ItemKind @unique
+  label       String
+  pluralLabel String
+  slug        String   @unique
+  icon        String
+  color       String
+  isSystem    Boolean  @default(true)
+  isPro       Boolean  @default(false)
+  sortOrder   Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Item {
-  id               String           @id @default(cuid())
+  id               String      @id @default(cuid())
   title            String
   kind             ItemKind
   contentKind      ContentKind
   description      String?
-  content          String?          @db.Text
+  content          String?     @db.Text
   sourceUrl        String?
   language         String?
   mimeType         String?
@@ -116,23 +132,23 @@ model Item {
   originalFileName String?
   fileSizeBytes    Int?
   metadata         Json?
-  aiSummary        String?          @db.Text
-  isFavorite       Boolean          @default(false)
-  isPinned         Boolean          @default(false)
+  aiSummary        String?     @db.Text
+  isFavorite       Boolean     @default(false)
+  isPinned         Boolean     @default(false)
   lastViewedAt     DateTime?
 
-  userId           String
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  customTypeId     String?
-  customType       CustomType?      @relation(fields: [customTypeId], references: [id], onDelete: SetNull)
+  customTypeId String?
+  customType   CustomType? @relation(fields: [customTypeId], references: [id], onDelete: SetNull)
 
-  tags             ItemTag[]
-  collections      CollectionItem[]
-  aiJobs           AiJob[]
+  tags        ItemTag[]
+  collections CollectionItem[]
+  aiJobs      AiJob[]
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, kind])
   @@index([userId, updatedAt])
@@ -141,43 +157,43 @@ model Item {
 }
 
 model CustomType {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String
-  icon      String?
-  color     String?
-  baseKind  ItemKind
-  isActive  Boolean    @default(true)
+  id       String   @id @default(cuid())
+  name     String
+  slug     String
+  icon     String?
+  color    String?
+  baseKind ItemKind
+  isActive Boolean  @default(true)
 
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  items     Item[]
+  items Item[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, slug])
   @@index([userId])
 }
 
 model Collection {
-  id          String           @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   slug        String
   description String?
   color       String?
   icon        String?
-  isFavorite  Boolean          @default(false)
+  isFavorite  Boolean   @default(false)
   defaultKind ItemKind?
 
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  items       CollectionItem[]
+  items CollectionItem[]
 
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, slug])
   @@index([userId, updatedAt])
@@ -187,28 +203,28 @@ model CollectionItem {
   collectionId String
   itemId       String
   position     Int?
-  addedAt      DateTime    @default(now())
+  addedAt      DateTime @default(now())
 
-  collection   Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  item         Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  item       Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([collectionId, itemId])
   @@index([itemId])
 }
 
 model Tag {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String
-  color     String?
+  id    String  @id @default(cuid())
+  name  String
+  slug  String
+  color String?
 
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  items     ItemTag[]
+  items ItemTag[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, slug])
   @@index([userId])
@@ -218,8 +234,8 @@ model ItemTag {
   itemId String
   tagId  String
 
-  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([itemId, tagId])
   @@index([tagId])
@@ -236,14 +252,14 @@ model AiJob {
   startedAt     DateTime?
   completedAt   DateTime?
 
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  itemId        String
-  item          Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, status])
   @@index([itemId, type])

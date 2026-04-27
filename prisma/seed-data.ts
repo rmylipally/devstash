@@ -19,11 +19,16 @@ export interface DemoUserSeed {
 }
 
 export interface SystemItemTypeSeed {
+  color: string;
+  icon: string;
+  isPro: boolean;
+  isSystem: true;
   name: string;
   kind: ItemKind;
-  icon: string;
-  color: string;
-  isSystem: true;
+  label: string;
+  pluralLabel: string;
+  slug: string;
+  sortOrder: number;
 }
 
 export interface CollectionSeed {
@@ -64,53 +69,88 @@ export const demoUserSeed: DemoUserSeed = {
 
 export const systemItemTypeSeeds: SystemItemTypeSeed[] = [
   {
-    name: "snippet",
-    kind: "SNIPPET",
-    icon: "Code",
     color: "#3b82f6",
+    icon: "Code",
+    isPro: false,
     isSystem: true,
+    kind: "SNIPPET",
+    label: "Snippet",
+    name: "snippet",
+    pluralLabel: "Snippets",
+    slug: "snippets",
+    sortOrder: 1,
   },
   {
-    name: "prompt",
-    kind: "PROMPT",
-    icon: "Sparkles",
     color: "#8b5cf6",
+    icon: "Sparkles",
+    isPro: false,
     isSystem: true,
+    kind: "PROMPT",
+    label: "Prompt",
+    name: "prompt",
+    pluralLabel: "Prompts",
+    slug: "prompts",
+    sortOrder: 2,
   },
   {
-    name: "command",
-    kind: "COMMAND",
-    icon: "Terminal",
     color: "#f97316",
+    icon: "Terminal",
+    isPro: false,
     isSystem: true,
+    kind: "COMMAND",
+    label: "Command",
+    name: "command",
+    pluralLabel: "Commands",
+    slug: "commands",
+    sortOrder: 3,
   },
   {
-    name: "note",
-    kind: "NOTE",
-    icon: "StickyNote",
     color: "#fde047",
+    icon: "StickyNote",
+    isPro: false,
     isSystem: true,
+    kind: "NOTE",
+    label: "Note",
+    name: "note",
+    pluralLabel: "Notes",
+    slug: "notes",
+    sortOrder: 4,
   },
   {
-    name: "file",
-    kind: "FILE",
-    icon: "File",
     color: "#6b7280",
+    icon: "File",
+    isPro: true,
     isSystem: true,
+    kind: "FILE",
+    label: "File",
+    name: "file",
+    pluralLabel: "Files",
+    slug: "files",
+    sortOrder: 5,
   },
   {
-    name: "image",
-    kind: "IMAGE",
-    icon: "Image",
     color: "#ec4899",
+    icon: "Image",
+    isPro: true,
     isSystem: true,
+    kind: "IMAGE",
+    label: "Image",
+    name: "image",
+    pluralLabel: "Images",
+    slug: "images",
+    sortOrder: 6,
   },
   {
-    name: "link",
-    kind: "LINK",
-    icon: "Link",
     color: "#10b981",
+    icon: "Link",
+    isPro: false,
     isSystem: true,
+    kind: "LINK",
+    label: "Link",
+    name: "link",
+    pluralLabel: "Links",
+    slug: "links",
+    sortOrder: 7,
   },
 ];
 

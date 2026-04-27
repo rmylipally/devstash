@@ -297,6 +297,7 @@ This version cleans up the original schema in a few important ways:
 
 - collections are many-to-many
 - built-in behavior comes from `ItemKind`
+- built-in item type metadata lives in `ItemType`
 - custom types are separate and optional
 - uploaded files live in object storage, not in the database
 - AI work is stored as jobs/results instead of being fully implicit
@@ -357,6 +358,22 @@ model User {
 
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
+}
+
+model ItemType {
+  id          String   @id
+  kind        ItemKind @unique
+  label       String
+  pluralLabel String
+  slug        String   @unique
+  icon        String
+  color       String
+  isSystem    Boolean  @default(true)
+  isPro       Boolean  @default(false)
+  sortOrder   Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Item {
@@ -506,6 +523,7 @@ model AiJob {
 ## 🧠 Data Modeling Decisions Worth Keeping
 
 - **`ItemKind` drives system behavior.** This keeps built-in rules stable.
+- **`ItemType` stores built-in type metadata.** This makes sidebar labels, icons, colors, Pro flags, slugs, and ordering visible in the database while preserving `Item.kind`.
 - **`CustomType` is optional metadata.** It supports Pro differentiation without making the whole app dynamic.
 - **`CollectionItem` is explicit.** This preserves many-to-many membership and future ordering.
 - **`lastViewedAt` is enough for recent items in MVP.** No extra analytics table needed yet.
@@ -522,21 +540,22 @@ model AiJob {
 
 ## 📍 Current Repo State
 
-As of **April 24, 2026**, this repo already includes:
+As of **April 27, 2026**, this repo already includes:
 
 - `next@16.2.4`
 - `react@19.2.4`
 - `tailwindcss@4`
+- Prisma 7, `@prisma/client`, generated Prisma client, initial migration, seed data, and database smoke-test script
+- Database-backed `ItemType` rows for the seven built-in item types
+- Neon/Postgres database wiring through `DATABASE_URL`
+- shadcn/Base UI component setup with reusable `Button`, `Input`, and `Badge` components
 
 Still to be added for the full product foundation:
 
-- Prisma + `@prisma/client`
-- Auth.js integration
-- Neon database setup
+- Auth.js runtime integration
 - Cloudflare R2 integration
 - Stripe billing setup
 - OpenAI integration
-- shadcn/ui setup
 
 ## 🗺️ Suggested Delivery Phases
 

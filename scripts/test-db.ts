@@ -22,18 +22,21 @@ const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 interface CountSummary {
-  users: number;
+  collectionItems: number;
   collections: number;
+  itemTypes: number;
   items: number;
   tags: number;
-  collectionItems: number;
+  users: number;
 }
 
 interface DemoSummary {
   collections: number;
   expectedCollections: number;
+  expectedItemTypes: number;
   items: number;
   expectedItems: number;
+  itemTypes: number;
   tags: number;
   expectedTags: number;
   collectionItems: number;
@@ -60,6 +63,17 @@ interface LinkRow {
   title: string;
   collection: string;
   url: string;
+}
+
+interface SystemItemTypeRow {
+  color: string;
+  icon: string;
+  isPro: boolean;
+  isSystem: boolean;
+  kind: string;
+  label: string;
+  slug: string;
+  sortOrder: number;
 }
 
 function formatDate(value: Date | null) {
@@ -105,10 +119,12 @@ async function main() {
     demoCollections,
     recentItems,
     linkItems,
+    systemItemTypes,
   ] = await Promise.all([
     Promise.all([
       prisma.user.count(),
       prisma.collection.count(),
+      prisma.itemType.count(),
       prisma.item.count(),
       prisma.tag.count(),
       prisma.collectionItem.count(),
@@ -118,6 +134,12 @@ async function main() {
         where: {
           slug: { in: expectedCollectionSlugs },
           userId: demoUser.id,
+        },
+      }),
+      prisma.itemType.count({
+        where: {
+          id: { in: systemItemTypeSeeds.map((itemType) => itemType.name) },
+          isSystem: true,
         },
       }),
       prisma.item.count({
@@ -225,23 +247,42 @@ async function main() {
         userId: demoUser.id,
       },
     }),
+    prisma.itemType.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: {
+        color: true,
+        icon: true,
+        isPro: true,
+        isSystem: true,
+        kind: true,
+        label: true,
+        slug: true,
+        sortOrder: true,
+      },
+      where: {
+        isSystem: true,
+      },
+    }),
   ]);
 
   const [
     userCount,
     collectionCount,
+    itemTypeCount,
     itemCount,
     tagCount,
     collectionItemCount,
   ] = databaseCounts;
   const [
     demoCollectionCount,
+    demoItemTypeCount,
     demoItemCount,
     demoTagCount,
     demoCollectionItemCount,
   ] = demoCounts;
 
   assert.equal(demoCollectionCount, collectionSeeds.length);
+  assert.equal(demoItemTypeCount, systemItemTypeSeeds.length);
   assert.equal(demoItemCount, itemSeeds.length);
   assert.equal(demoTagCount, expectedTagCount);
   assert.equal(demoCollectionItemCount, itemSeeds.length);
@@ -258,18 +299,21 @@ async function main() {
   );
 
   const countSummary: CountSummary = {
-    users: userCount,
+    collectionItems: collectionItemCount,
     collections: collectionCount,
+    itemTypes: itemTypeCount,
     items: itemCount,
     tags: tagCount,
-    collectionItems: collectionItemCount,
+    users: userCount,
   };
 
   const demoSummary: DemoSummary = {
     collections: demoCollectionCount,
     expectedCollections: collectionSeeds.length,
+    expectedItemTypes: systemItemTypeSeeds.length,
     items: demoItemCount,
     expectedItems: itemSeeds.length,
+    itemTypes: demoItemTypeCount,
     tags: demoTagCount,
     expectedTags: expectedTagCount,
     collectionItems: demoCollectionItemCount,
@@ -306,6 +350,19 @@ async function main() {
     url: item.sourceUrl ?? "",
   }));
 
+  const systemItemTypeRows: SystemItemTypeRow[] = systemItemTypes.map(
+    (itemType) => ({
+      color: itemType.color,
+      icon: itemType.icon,
+      isPro: itemType.isPro,
+      isSystem: itemType.isSystem,
+      kind: itemType.kind,
+      label: itemType.label,
+      slug: itemType.slug,
+      sortOrder: itemType.sortOrder,
+    }),
+  );
+
   console.log("Database connection OK");
   console.log("Demo seed data OK");
   console.log({
@@ -323,14 +380,7 @@ async function main() {
   console.table([demoSummary]);
 
   console.log("\nSystem item type definitions");
-  console.table(
-    systemItemTypeSeeds.map(({ color, icon, isSystem, name }) => ({
-      color,
-      icon,
-      isSystem,
-      name,
-    })),
-  );
+  console.table(systemItemTypeRows);
 
   console.log("\nDemo collections");
   console.table(collectionRows);

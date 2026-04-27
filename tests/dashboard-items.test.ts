@@ -164,6 +164,7 @@ describe("dashboard item data", () => {
 
   it("fetches sidebar item types with database counts and system metadata", async () => {
     const countArgs: DashboardItemCountArgs[] = [];
+    const itemTypeFindManyArgs: unknown[] = [];
     const countsByKind = new Map([
       ["SNIPPET", 7],
       ["PROMPT", 5],
@@ -181,6 +182,84 @@ describe("dashboard item data", () => {
           return countsByKind.get(args.where?.kind ?? "") ?? 0;
         },
         findMany: async () => [],
+      },
+      itemType: {
+        findMany: async (args: unknown) => {
+          itemTypeFindManyArgs.push(args);
+
+          return [
+            {
+              color: "#3b82f6",
+              icon: "Code",
+              id: "snippet",
+              isPro: false,
+              kind: "SNIPPET",
+              label: "Saved Snippet",
+              pluralLabel: "Saved Snippets",
+              slug: "snippets",
+            },
+            {
+              color: "#8b5cf6",
+              icon: "Sparkles",
+              id: "prompt",
+              isPro: false,
+              kind: "PROMPT",
+              label: "Prompt",
+              pluralLabel: "Prompts",
+              slug: "prompts",
+            },
+            {
+              color: "#f97316",
+              icon: "Terminal",
+              id: "command",
+              isPro: false,
+              kind: "COMMAND",
+              label: "Command",
+              pluralLabel: "Commands",
+              slug: "commands",
+            },
+            {
+              color: "#fde047",
+              icon: "StickyNote",
+              id: "note",
+              isPro: false,
+              kind: "NOTE",
+              label: "Note",
+              pluralLabel: "Notes",
+              slug: "notes",
+            },
+            {
+              color: "#6b7280",
+              icon: "File",
+              id: "file",
+              isPro: true,
+              kind: "FILE",
+              label: "File",
+              pluralLabel: "Files",
+              slug: "files",
+            },
+            {
+              color: "#ec4899",
+              icon: "Image",
+              id: "image",
+              isPro: true,
+              kind: "IMAGE",
+              label: "Image",
+              pluralLabel: "Images",
+              slug: "images",
+            },
+            {
+              color: "#10b981",
+              icon: "Link",
+              id: "link",
+              isPro: false,
+              kind: "LINK",
+              label: "Link",
+              pluralLabel: "Links",
+              slug: "links",
+            },
+          ];
+        },
       },
     };
 
@@ -209,8 +288,8 @@ describe("dashboard item data", () => {
           icon: "Code",
           id: "snippet",
           isPro: false,
-          label: "Snippet",
-          pluralLabel: "Snippets",
+          label: "Saved Snippet",
+          pluralLabel: "Saved Snippets",
           slug: "snippets",
         },
         {
@@ -287,5 +366,21 @@ describe("dashboard item data", () => {
         { kind: "LINK", userId: "user-123" },
       ],
     );
+    assert.deepEqual(itemTypeFindManyArgs, [
+      {
+        orderBy: { sortOrder: "asc" },
+        select: {
+          color: true,
+          icon: true,
+          id: true,
+          isPro: true,
+          kind: true,
+          label: true,
+          pluralLabel: true,
+          slug: true,
+        },
+        where: { isSystem: true },
+      },
+    ]);
   });
 });

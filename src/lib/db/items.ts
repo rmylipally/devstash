@@ -96,10 +96,45 @@ export interface DashboardItemCountArgs {
   where?: DashboardItemWhere;
 }
 
+export interface DashboardItemTypeRow {
+  color: string;
+  icon: string;
+  id: string;
+  isPro: boolean;
+  kind: PrismaItemKind;
+  label: string;
+  pluralLabel: string;
+  slug: string;
+}
+
+export interface DashboardItemTypeFindManyArgs {
+  orderBy: {
+    sortOrder: "asc";
+  };
+  select: {
+    color: true;
+    icon: true;
+    id: true;
+    isPro: true;
+    kind: true;
+    label: true;
+    pluralLabel: true;
+    slug: true;
+  };
+  where: {
+    isSystem: true;
+  };
+}
+
 export interface DashboardItemClient {
   item: {
     count(args: DashboardItemCountArgs): Promise<number>;
     findMany(args: DashboardItemFindManyArgs): Promise<DashboardItemRow[]>;
+  };
+  itemType?: {
+    findMany(
+      args: DashboardItemTypeFindManyArgs,
+    ): Promise<DashboardItemTypeRow[]>;
   };
 }
 
@@ -111,81 +146,6 @@ interface GetDashboardItemsOptions {
 
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
 
-const dashboardItemTypeMetadata: Array<
-  Omit<DashboardItemType, "count"> & { prismaKind: PrismaItemKind }
-> = [
-  {
-    color: "#3b82f6",
-    icon: "Code",
-    id: "snippet",
-    isPro: false,
-    label: "Snippet",
-    pluralLabel: "Snippets",
-    prismaKind: "SNIPPET",
-    slug: "snippets",
-  },
-  {
-    color: "#8b5cf6",
-    icon: "Sparkles",
-    id: "prompt",
-    isPro: false,
-    label: "Prompt",
-    pluralLabel: "Prompts",
-    prismaKind: "PROMPT",
-    slug: "prompts",
-  },
-  {
-    color: "#f97316",
-    icon: "Terminal",
-    id: "command",
-    isPro: false,
-    label: "Command",
-    pluralLabel: "Commands",
-    prismaKind: "COMMAND",
-    slug: "commands",
-  },
-  {
-    color: "#fde047",
-    icon: "StickyNote",
-    id: "note",
-    isPro: false,
-    label: "Note",
-    pluralLabel: "Notes",
-    prismaKind: "NOTE",
-    slug: "notes",
-  },
-  {
-    color: "#6b7280",
-    icon: "File",
-    id: "file",
-    isPro: true,
-    label: "File",
-    pluralLabel: "Files",
-    prismaKind: "FILE",
-    slug: "files",
-  },
-  {
-    color: "#ec4899",
-    icon: "Image",
-    id: "image",
-    isPro: true,
-    label: "Image",
-    pluralLabel: "Images",
-    prismaKind: "IMAGE",
-    slug: "images",
-  },
-  {
-    color: "#10b981",
-    icon: "Link",
-    id: "link",
-    isPro: false,
-    label: "Link",
-    pluralLabel: "Links",
-    prismaKind: "LINK",
-    slug: "links",
-  },
-];
-
 const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
   {
     COMMAND: "command",
@@ -196,6 +156,17 @@ const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
     PROMPT: "prompt",
     SNIPPET: "snippet",
   };
+
+const dashboardItemTypeSelect: DashboardItemTypeFindManyArgs["select"] = {
+  color: true,
+  icon: true,
+  id: true,
+  isPro: true,
+  kind: true,
+  label: true,
+  pluralLabel: true,
+  slug: true,
+};
 
 const dashboardItemSelect: DashboardItemFindManyArgs["select"] = {
   description: true,
@@ -322,20 +293,35 @@ export async function getDashboardItemTypes(
   client?: DashboardItemClient,
 ): Promise<DashboardItemType[]> {
   const itemClient = client ?? (await getDefaultItemClient());
+  if (!itemClient.itemType) {
+    throw new Error("Dashboard item type client is required.");
+  }
+
   const where = getUserWhere(options);
+  const itemTypes = await itemClient.itemType.findMany({
+    orderBy: { sortOrder: "asc" },
+    select: dashboardItemTypeSelect,
+    where: { isSystem: true },
+  });
   const counts = await Promise.all(
-    dashboardItemTypeMetadata.map(({ prismaKind }) =>
+    itemTypes.map(({ kind }) =>
       itemClient.item.count({
         where: {
-          kind: prismaKind,
+          kind,
           ...where,
         },
       }),
     ),
   );
 
-  return dashboardItemTypeMetadata.map(({ prismaKind, ...itemType }, index) => ({
-    ...itemType,
+  return itemTypes.map((itemType, index) => ({
+    color: itemType.color,
+    icon: itemType.icon,
+    id: dashboardItemKindByPrismaKind[itemType.kind],
+    isPro: itemType.isPro,
+    label: itemType.label,
+    slug: itemType.slug,
+    pluralLabel: itemType.pluralLabel,
     count: counts[index] ?? 0,
   }));
 }
