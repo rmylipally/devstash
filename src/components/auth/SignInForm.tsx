@@ -63,7 +63,11 @@ export function SignInForm({
       return;
     }
 
-    setFormError("Invalid email or password.");
+    setFormError(
+      response?.code === "email_not_verified"
+        ? "Check your email to verify your account before signing in."
+        : "Invalid email or password.",
+    );
   }
 
   return (

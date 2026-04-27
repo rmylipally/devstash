@@ -1,20 +1,35 @@
-# Current Feature
+# Current Feature: Email Verification on Register
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Require email verification for credentials-based registrations.
+- Generate a secure, expiring verification token when a user registers.
+- Send the verification email through Resend using the existing environment API key.
+- Include a clickable verification link in the email.
+- Add an app route or API handler that verifies the token and marks the user's email as verified.
+- Prevent credentials sign-in until the user's email has been verified.
+- Show clear user-facing messages for successful verification, invalid links, and expired links.
+- Update the post-register experience so users know to check their email before logging in.
+- Keep GitHub OAuth sign-in behavior unchanged.
+- Add focused tests for token creation, verification, unverified sign-in blocking, and registration messaging.
 
 ## Notes
 
 <!-- Any extra notes -->
 
+- Inline feature request: "Setup email verification on register. Users need to click on the link in their email. We are using Resend."
+- Use the Resend API key from `.env`; do not hard-code, print, or commit secret values.
+- This applies to credentials/email-password registration.
+- Prefer the existing Auth.js/Prisma models where possible, including `emailVerified` on `User`.
+- Verification links should be local-app-safe and should not allow arbitrary redirects.
 
 ## History
 
@@ -59,3 +74,5 @@ Completed
 - 2026-04-27: Loaded Auth UI - Sign In, Register & Sign Out from `context/features/auth-phase-3-spec.md` and set the feature status to Not Started.
 - 2026-04-27: Started Auth UI - Sign In, Register & Sign Out implementation on `feature/auth-ui-sign-in-register-sign-out`.
 - 2026-04-27: Completed Auth UI - Sign In, Register & Sign Out with custom sign-in, registration, and profile pages; credentials and GitHub sign-in UI; registration validation and post-register toast; session-aware dashboard avatar/profile/sign-out controls; and passing lint, tests, and build.
+- 2026-04-27: Loaded Email Verification on Register from inline description and set the feature status to Not Started.
+- 2026-04-27: Started Email Verification on Register implementation on `feature/email-verification-on-register`.

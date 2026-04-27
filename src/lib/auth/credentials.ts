@@ -1,6 +1,13 @@
 import { compare, hash } from "bcryptjs";
-import type { User } from "next-auth";
+import { CredentialsSignin, type User } from "next-auth";
 
+import {
+  createEmailVerificationRequest,
+  sendVerificationEmail as sendResendVerificationEmail,
+  type CreateEmailVerificationOptions,
+  type VerificationEmailInput,
+  type VerificationTokenRegistrationDataStore,
+} from "@/lib/auth/email-verification";
 import { prisma } from "@/lib/prisma";
 
 const PASSWORD_HASH_ROUNDS = 12;
@@ -8,6 +15,7 @@ const PASSWORD_HASH_ROUNDS = 12;
 interface CredentialsUserRecord {
   id: string;
   email: string;
+  emailVerified: Date | null;
   name: string | null;
   image: string | null;
   passwordHash: string | null;
@@ -31,6 +39,7 @@ interface CredentialsDataStore {
       select: {
         id: true;
         email: true;
+        emailVerified: true;
         name: true;
         image: true;
         passwordHash: true;
@@ -39,7 +48,7 @@ interface CredentialsDataStore {
   };
 }
 
-interface RegistrationDataStore {
+interface RegistrationDataStore extends VerificationTokenRegistrationDataStore {
   user: {
     findUnique(args: {
       where: { email: string };
@@ -61,7 +70,12 @@ interface RegistrationDataStore {
 }
 
 interface RegistrationOptions {
+  appUrl?: string;
+  expiresInMs?: number;
+  now?: () => Date;
   passwordHashRounds?: number;
+  sendVerificationEmail?: (input: VerificationEmailInput) => Promise<void>;
+  tokenGenerator?: () => string;
 }
 
 interface RegistrationInput {
@@ -77,6 +91,7 @@ export type RegisterUserResult =
       status: 201;
       data: {
         user: RegisteredUser;
+        verificationRequired: true;
       };
     }
   | {
@@ -91,6 +106,10 @@ function getCredentialsDataStore(): CredentialsDataStore {
 
 function getRegistrationDataStore(): RegistrationDataStore {
   return prisma as unknown as RegistrationDataStore;
+}
+
+export class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -198,6 +217,7 @@ export async function authorizeCredentials(
     select: {
       id: true,
       email: true,
+      emailVerified: true,
       name: true,
       image: true,
       passwordHash: true,
@@ -212,6 +232,10 @@ export async function authorizeCredentials(
 
   if (!isPasswordValid) {
     return null;
+  }
+
+  if (!user.emailVerified) {
+    throw new EmailNotVerifiedError();
   }
 
   return {
@@ -246,26 +270,70 @@ export async function registerUser(
     };
   }
 
-  const passwordHash = await hash(
-    validationResult.password,
-    options.passwordHashRounds ?? PASSWORD_HASH_ROUNDS,
-  );
-  const user = await dataStore.user.create({
-    data: {
-      name: validationResult.name,
-      email: validationResult.email,
-      passwordHash,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-    },
-  });
+  let user: RegisteredUser;
+
+  try {
+    const passwordHash = await hash(
+      validationResult.password,
+      options.passwordHashRounds ?? PASSWORD_HASH_ROUNDS,
+    );
+    user = await dataStore.user.create({
+      data: {
+        name: validationResult.name,
+        email: validationResult.email,
+        passwordHash,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+  } catch {
+    return {
+      success: false,
+      status: 500,
+      error: "Could not create your account. Try again.",
+    };
+  }
+
+  try {
+    const verificationOptions: CreateEmailVerificationOptions = {
+      appUrl: options.appUrl,
+      expiresInMs: options.expiresInMs,
+      now: options.now,
+      tokenGenerator: options.tokenGenerator,
+    };
+    const verificationRequest = await createEmailVerificationRequest(
+      {
+        appUrl: options.appUrl,
+        email: user.email,
+      },
+      dataStore,
+      verificationOptions,
+    );
+    const sendVerificationEmail =
+      options.sendVerificationEmail ?? sendResendVerificationEmail;
+
+    await sendVerificationEmail({
+      name: user.name,
+      to: user.email,
+      verificationUrl: verificationRequest.verificationUrl,
+    });
+  } catch {
+    return {
+      success: false,
+      status: 500,
+      error: "Could not send verification email. Try again.",
+    };
+  }
 
   return {
     success: true,
     status: 201,
-    data: { user },
+    data: {
+      user,
+      verificationRequired: true,
+    },
   };
 }

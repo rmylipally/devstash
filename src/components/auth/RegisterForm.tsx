@@ -65,7 +65,8 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
 
     if (response.ok && result.success) {
       router.push(
-        "/sign-in?registered=1&callbackUrl=" + encodeURIComponent(callbackUrl),
+        "/sign-in?registered=1&verification=sent&callbackUrl=" +
+          encodeURIComponent(callbackUrl),
       );
       return;
     }

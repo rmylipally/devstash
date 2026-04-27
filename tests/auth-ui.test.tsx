@@ -115,25 +115,45 @@ describe("auth ui", () => {
   });
 
   it("adds custom sign-in and register pages with expected form wiring", async () => {
-    const [signInPage, registerPage, signInForm, registerForm, authToast] =
+    const [
+      signInPage,
+      registerPage,
+      signInForm,
+      registerForm,
+      authToast,
+      verifyEmailRoute,
+      envExample,
+    ] =
       await Promise.all([
         readFile("src/app/sign-in/page.tsx", "utf8"),
         readFile("src/app/register/page.tsx", "utf8"),
         readFile("src/components/auth/SignInForm.tsx", "utf8"),
         readFile("src/components/auth/RegisterForm.tsx", "utf8"),
         readFile("src/components/auth/AuthToast.tsx", "utf8"),
+        readFile("src/app/verify-email/route.ts", "utf8"),
+        readFile(".env.example", "utf8"),
       ]);
 
     assert.match(signInPage, /SignInForm/);
     assert.match(registerPage, /RegisterForm/);
-    assert.match(signInPage, /Account created\. You can now log in\./);
+    assert.match(
+      signInPage,
+      /Account created\. Check your email to verify your account before logging in\./,
+    );
+    assert.match(signInPage, /Email verified\. You can now log in\./);
+    assert.match(signInPage, /Verification link expired\./);
     assert.match(signInForm, /AuthToast/);
     assert.match(signInForm, /signIn\("credentials"/);
     assert.match(signInForm, /signIn\("github"/);
+    assert.match(signInForm, /email_not_verified/);
     assert.doesNotMatch(signInForm, /initialMessage \? \(/);
     assert.match(registerForm, /\/api\/auth\/register/);
-    assert.match(registerForm, /router\.push\([\s\S]*\/sign-in/);
+    assert.match(registerForm, /verification=sent/);
     assert.match(authToast, /role="status"/);
     assert.match(authToast, /aria-live="polite"/);
+    assert.match(verifyEmailRoute, /verifyEmailToken/);
+    assert.match(verifyEmailRoute, /NextResponse\.redirect/);
+    assert.match(envExample, /RESEND_API_KEY=/);
+    assert.match(envExample, /RESEND_FROM_EMAIL=/);
   });
 });
