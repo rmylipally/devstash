@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { compare, hash } from "bcryptjs";
 import { describe, it } from "node:test";
 
@@ -25,6 +26,7 @@ describe("auth credentials", () => {
           findUnique: async () => ({
             id: "user_1",
             email: "test@example.com",
+            emailVerified: new Date("2026-04-27T12:00:00.000Z"),
             name: "Test User",
             image: null,
             passwordHash,
@@ -52,6 +54,7 @@ describe("auth credentials", () => {
           findUnique: async () => ({
             id: "user_1",
             email: "test@example.com",
+            emailVerified: new Date("2026-04-27T12:00:00.000Z"),
             name: "Test User",
             image: null,
             passwordHash,
@@ -66,6 +69,7 @@ describe("auth credentials", () => {
           findUnique: async () => ({
             id: "user_2",
             email: "oauth@example.com",
+            emailVerified: new Date("2026-04-27T12:00:00.000Z"),
             name: "OAuth User",
             image: null,
             passwordHash: null,
@@ -85,6 +89,33 @@ describe("auth credentials", () => {
     assert.equal(wrongPassword, null);
     assert.equal(oauthOnlyUser, null);
     assert.equal(missingInput, null);
+  });
+
+  it("blocks credentials sign-in until the email address has been verified", async () => {
+    const { authorizeCredentials, EmailNotVerifiedError } = await import(
+      "../src/lib/auth/credentials"
+    );
+    const passwordHash = await hash("password123", 4);
+
+    await assert.rejects(
+      () =>
+        authorizeCredentials(
+          { email: "test@example.com", password: "password123" },
+          {
+            user: {
+              findUnique: async () => ({
+                id: "user_1",
+                email: "test@example.com",
+                emailVerified: null,
+                name: "Test User",
+                image: null,
+                passwordHash,
+              }),
+            },
+          },
+        ),
+      EmailNotVerifiedError,
+    );
   });
 
   it("validates registration input before creating a user", async () => {
@@ -147,6 +178,9 @@ describe("auth credentials", () => {
   it("hashes a new user's password and returns a consistent success response", async () => {
     const { registerUser } = await import("../src/lib/auth/credentials");
     let savedPasswordHash = "";
+    let savedVerificationToken = "";
+    let sentVerificationUrl = "";
+    const now = new Date("2026-04-27T12:00:00.000Z");
 
     const result = await registerUser(
       {
@@ -168,16 +202,41 @@ describe("auth credentials", () => {
             };
           },
         },
+        verificationToken: {
+          deleteMany: async () => ({ count: 0 }),
+          create: async ({ data }) => {
+            savedVerificationToken = data.token;
+
+            return data;
+          },
+        },
       },
-      { passwordHashRounds: 4 },
+      {
+        appUrl: "https://devstash.test",
+        now: () => now,
+        passwordHashRounds: 4,
+        sendVerificationEmail: async ({ verificationUrl }) => {
+          sentVerificationUrl = verificationUrl;
+        },
+        tokenGenerator: () => "raw-token",
+      },
     );
 
     assert.equal(await compare("password123", savedPasswordHash), true);
     assert.notEqual(savedPasswordHash, "password123");
+    assert.equal(
+      savedVerificationToken,
+      createHash("sha256").update("raw-token").digest("hex"),
+    );
+    assert.equal(
+      sentVerificationUrl,
+      "https://devstash.test/verify-email?email=test%40example.com&token=raw-token",
+    );
     assert.deepEqual(result, {
       success: true,
       status: 201,
       data: {
+        verificationRequired: true,
         user: {
           id: "user_1",
           email: "test@example.com",
@@ -185,6 +244,61 @@ describe("auth credentials", () => {
         },
       },
     });
+  });
+
+  it("verifies unexpired email tokens and consumes them", async () => {
+    const { verifyEmailToken } = await import("../src/lib/auth/email-verification");
+    const now = new Date("2026-04-27T12:00:00.000Z");
+    const tokenHash = createHash("sha256").update("raw-token").digest("hex");
+    const state: { updatedEmailVerified: Date | null } = {
+      updatedEmailVerified: null,
+    };
+    let deletedToken = "";
+
+    const result = await verifyEmailToken(
+      { email: " TEST@example.com ", token: "raw-token" },
+      {
+        user: {
+          update: async ({ data }) => {
+            state.updatedEmailVerified = data.emailVerified;
+
+            return {
+              email: "test@example.com",
+              emailVerified: data.emailVerified,
+              id: "user_1",
+            };
+          },
+        },
+        verificationToken: {
+          delete: async ({ where }) => {
+            deletedToken = where.identifier_token.token;
+
+            return {
+              expires: new Date("2026-04-28T12:00:00.000Z"),
+              identifier: "test@example.com",
+              token: tokenHash,
+            };
+          },
+          findUnique: async ({ where }) =>
+            where.identifier_token.identifier === "test@example.com" &&
+            where.identifier_token.token === tokenHash
+              ? {
+                  expires: new Date("2026-04-28T12:00:00.000Z"),
+                  identifier: "test@example.com",
+                  token: tokenHash,
+                }
+              : null,
+        },
+      },
+      { now: () => now },
+    );
+
+    assert.deepEqual(result, { success: true, status: "verified" });
+    if (!state.updatedEmailVerified) {
+      throw new Error("emailVerified was not updated");
+    }
+    assert.equal(state.updatedEmailVerified.toISOString(), now.toISOString());
+    assert.equal(deletedToken, tokenHash);
   });
 
   it("exposes a registration POST route", async () => {
