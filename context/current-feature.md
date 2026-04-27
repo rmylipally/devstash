@@ -1,6 +1,6 @@
 # Current Feature
 
-Optimize Dashboard Item Type Counts
+<!-- Feature Name -->
 
 ## Status
 
@@ -12,18 +12,9 @@ Completed
 
 <!-- Goals & requirements -->
 
-- Replace the per-item-type count queries in `getDashboardItemTypes` with one grouped Prisma query by item kind.
-- Preserve the existing database-backed item type metadata, sidebar ordering, labels, colors, icons, and counts.
-- Keep the change low risk and limited to the dashboard item type data path plus focused tests.
-- Add or update tests that prove item type counts are produced from grouped results without one count query per type.
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Quick win selected from the `code-scanner` findings: remove the bounded N+1 query pattern in `src/lib/db/items.ts`.
-- No schema or migration changes expected.
-- UI behavior should remain unchanged; only the data-loading implementation should be optimized.
 
 ## History
 
