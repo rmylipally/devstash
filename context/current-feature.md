@@ -1,42 +1,20 @@
-# Current Feature: Auth UI - Sign In, Register & Sign Out
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Replace NextAuth default pages with custom authentication UI.
-- Create a custom `/sign-in` page.
-- Add email and password input fields to the sign-in page.
-- Add a "Sign in with GitHub" button to the sign-in page.
-- Add a link from the sign-in page to the register page.
-- Add form validation and error display for sign-in.
-- Create a custom `/register` page.
-- Add name, email, password, and confirm password fields to the register page.
-- Validate registration input, including password match and email format.
-- Submit registration to `POST /api/auth/register`.
-- Redirect users to sign-in after successful registration.
-- Update the bottom of the sidebar to show the current user's avatar, email, and username.
-- Use GitHub image when available, otherwise show initials fallback.
-- Add an avatar dropdown/up menu with a "Sign out" link.
-- Make clicking the user icon navigate to `/profile`.
-- Verify GitHub sign-in, credentials sign-in, registration, sidebar avatar, dropdown, sign out, and redirects.
 
 ## Notes
 
 <!-- Any extra notes -->
 
-- Source spec: `context/features/auth-phase-3-spec.md`.
-- Custom auth pages should replace the default Auth.js pages for sign-in and registration.
-- Avatar logic: use `session.user.image` for GitHub users when available.
-- Initials fallback: generate initials from the user's name, for example `Brad Traversy` -> `BT`.
-- Create a reusable avatar component that handles image and initials display.
-- Testing path: `/sign-in`, `/register`, credentials sign-in, GitHub sign-in, dashboard/sidebar avatar, avatar dropdown, sign out, and post-register redirect.
 
 ## History
 
@@ -80,3 +58,4 @@ In Progress
 - 2026-04-27: Completed Auth Credentials - Email/Password Provider with an edge-safe Credentials placeholder, bcrypt-backed database validation, registration API, password hashing, duplicate-email handling, protected dashboard proxy config, and focused auth credentials tests.
 - 2026-04-27: Loaded Auth UI - Sign In, Register & Sign Out from `context/features/auth-phase-3-spec.md` and set the feature status to Not Started.
 - 2026-04-27: Started Auth UI - Sign In, Register & Sign Out implementation on `feature/auth-ui-sign-in-register-sign-out`.
+- 2026-04-27: Completed Auth UI - Sign In, Register & Sign Out with custom sign-in, registration, and profile pages; credentials and GitHub sign-in UI; registration validation and post-register toast; session-aware dashboard avatar/profile/sign-out controls; and passing lint, tests, and build.
