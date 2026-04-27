@@ -1,38 +1,18 @@
-# Current Feature: Auth Credentials - Email/Password Provider
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add Credentials provider support for email/password authentication.
-- Use existing `bcryptjs` for password hashing and password verification.
-- Confirm the `User.passwordHash` field already exists before deciding whether a migration is needed.
-- Add a Credentials provider placeholder in `src/auth.config.ts` for the split config pattern.
-- Override Credentials provider behavior in `src/auth.ts` with database-backed bcrypt validation.
-- Create `POST /api/auth/register` at `src/app/api/auth/register/route.ts`.
-- Validate registration input: name, email, password, and confirmPassword.
-- Reject mismatched passwords and duplicate email addresses.
-- Hash the password and create the user in the database.
-- Return consistent success/error JSON responses from the registration API.
-- Verify registration works, credentials sign-in works, dashboard redirect works, and GitHub OAuth still works.
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Source spec: `context/features/auth-phase-2-spec.md`.
-- `bcryptjs` is already installed.
-- Current Prisma schema already has `User.passwordHash`; only create a migration if the field is missing or changes are required.
-- Split config pattern: keep `src/auth.config.ts` edge-compatible by using a Credentials placeholder with `authorize: () => null`.
-- Full auth config: override Credentials in `src/auth.ts` with actual bcrypt validation logic.
-- Test registration with `curl -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" -d '{"name":"Test","email":"test@test.com","password":"password123","confirmPassword":"password123"}'`.
-- Reference: https://authjs.dev/getting-started/authentication/credentials.
 
 ## History
 
@@ -73,3 +53,4 @@ In Progress
 - 2026-04-27: Completed Auth Setup - NextAuth + GitHub Provider with Auth.js v5 dependencies, split config, Prisma adapter, GitHub provider, Auth route handlers, dashboard proxy protection, session typing, environment placeholders, and focused auth setup tests.
 - 2026-04-27: Loaded Auth Credentials - Email/Password Provider from `context/features/auth-phase-2-spec.md` and set the feature status to Not Started.
 - 2026-04-27: Started Auth Credentials - Email/Password Provider implementation on `feature/auth-credentials-email-password-provider`.
+- 2026-04-27: Completed Auth Credentials - Email/Password Provider with an edge-safe Credentials placeholder, bcrypt-backed database validation, registration API, password hashing, duplicate-email handling, protected dashboard proxy config, and focused auth credentials tests.
