@@ -1,6 +1,4 @@
-# Current Feature
-
-<!-- Feature Name -->
+# Current Feature: Auth Setup - NextAuth + GitHub Provider
 
 ## Status
 
@@ -12,9 +10,29 @@ Completed
 
 <!-- Goals & requirements -->
 
+- Install NextAuth v5 (`next-auth@beta`) and `@auth/prisma-adapter`.
+- Set up the split auth config pattern for edge compatibility.
+- Add GitHub OAuth provider support.
+- Create `src/auth.config.ts` for edge-compatible provider config.
+- Create `src/auth.ts` with the Prisma adapter and JWT session strategy.
+- Create `src/app/api/auth/[...nextauth]/route.ts` to export NextAuth handlers.
+- Create `src/proxy.ts` to protect `/dashboard/*` routes and redirect unauthenticated users to sign in.
+- Create `src/types/next-auth.d.ts` to extend the session type with `user.id`.
+- Verify unauthenticated `/dashboard` access redirects to sign-in and GitHub sign-in redirects back to `/dashboard`.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Source spec: `context/features/auth-phase-1-spec.md`.
+- Use Context7 to verify current Auth.js / NextAuth v5 conventions before implementation.
+- Use `next-auth@beta`; do not install `next-auth@latest` if it resolves to v4.
+- Keep `src/proxy.ts` at the same level as `src/app/`.
+- Use named export `export const proxy = auth(...)`, not a default export.
+- Use `session: { strategy: "jwt" }` with the split config pattern.
+- Do not set a custom `pages.signIn`; use the default NextAuth page for testing.
+- Required environment variables: `AUTH_SECRET`, `AUTH_GITHUB_ID`, and `AUTH_GITHUB_SECRET`.
+- References: https://authjs.dev/getting-started/installation#edge-compatibility and https://authjs.dev/getting-started/adapters/prisma.
 
 ## History
 
@@ -50,3 +68,6 @@ Completed
 - 2026-04-27: Documented Optimize Dashboard Item Type Counts as the next quick-win feature from the code scan.
 - 2026-04-27: Started Optimize Dashboard Item Type Counts implementation on `feature/optimize-dashboard-item-type-counts`.
 - 2026-04-27: Completed Optimize Dashboard Item Type Counts by replacing per-kind item count queries with one grouped Prisma query while preserving sidebar item type metadata and counts.
+- 2026-04-27: Loaded Auth Setup - NextAuth + GitHub Provider from `context/features/auth-phase-1-spec.md` and set the feature status to Not Started.
+- 2026-04-27: Started Auth Setup - NextAuth + GitHub Provider implementation on `feature/auth-setup-nextauth-github-provider`.
+- 2026-04-27: Completed Auth Setup - NextAuth + GitHub Provider with Auth.js v5 dependencies, split config, Prisma adapter, GitHub provider, Auth route handlers, dashboard proxy protection, session typing, environment placeholders, and focused auth setup tests.

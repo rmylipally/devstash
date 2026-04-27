@@ -1,6 +1,6 @@
 # Complete Action
 
-1. Stage all changes and commit with a descriptive message
+1. Stage all changes including all untracked files and commit with a descriptive message
 2. Switch to main and merge the feature branch (no push yet)
 3. Delete the local feature branch
 4. Reset current-feature.md:
