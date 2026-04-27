@@ -140,6 +140,7 @@ describe("auth ui", () => {
       signInPage,
       /Account created\. Check your email to verify your account before logging in\./,
     );
+    assert.match(signInPage, /Account created\. You can now log in\./);
     assert.match(signInPage, /Email verified\. You can now log in\./);
     assert.match(signInPage, /Verification link expired\./);
     assert.match(signInForm, /AuthToast/);
@@ -148,12 +149,15 @@ describe("auth ui", () => {
     assert.match(signInForm, /email_not_verified/);
     assert.doesNotMatch(signInForm, /initialMessage \? \(/);
     assert.match(registerForm, /\/api\/auth\/register/);
-    assert.match(registerForm, /verification=sent/);
+    assert.match(registerForm, /verificationStatus/);
+    assert.match(registerForm, /"sent"/);
+    assert.match(registerForm, /"skipped"/);
     assert.match(authToast, /role="status"/);
     assert.match(authToast, /aria-live="polite"/);
     assert.match(verifyEmailRoute, /verifyEmailToken/);
     assert.match(verifyEmailRoute, /NextResponse\.redirect/);
     assert.match(envExample, /RESEND_API_KEY=/);
     assert.match(envExample, /RESEND_FROM_EMAIL=/);
+    assert.match(envExample, /EMAIL_VERIFICATION_ENABLED=true/);
   });
 });

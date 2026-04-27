@@ -118,6 +118,35 @@ describe("auth credentials", () => {
     );
   });
 
+  it("allows unverified credentials sign-in when email verification is disabled", async () => {
+    const { authorizeCredentials } = await import("../src/lib/auth/credentials");
+    const passwordHash = await hash("password123", 4);
+
+    const user = await authorizeCredentials(
+      { email: "test@example.com", password: "password123" },
+      {
+        user: {
+          findUnique: async () => ({
+            id: "user_1",
+            email: "test@example.com",
+            emailVerified: null,
+            name: "Test User",
+            image: null,
+            passwordHash,
+          }),
+        },
+      },
+      { emailVerificationEnabled: false },
+    );
+
+    assert.deepEqual(user, {
+      id: "user_1",
+      email: "test@example.com",
+      image: null,
+      name: "Test User",
+    });
+  });
+
   it("validates registration input before creating a user", async () => {
     const { registerUser } = await import("../src/lib/auth/credentials");
 
@@ -237,6 +266,71 @@ describe("auth credentials", () => {
       status: 201,
       data: {
         verificationRequired: true,
+        user: {
+          id: "user_1",
+          email: "test@example.com",
+          name: "Test User",
+        },
+      },
+    });
+  });
+
+  it("skips verification token and email creation when verification is disabled", async () => {
+    const { registerUser } = await import("../src/lib/auth/credentials");
+    const now = new Date("2026-04-27T12:00:00.000Z");
+    let savedEmailVerified: Date | null | undefined;
+    let verificationTokenWasUsed = false;
+    let verificationEmailWasSent = false;
+
+    const result = await registerUser(
+      {
+        name: "Test User",
+        email: " TEST@example.com ",
+        password: "password123",
+        confirmPassword: "password123",
+      },
+      {
+        user: {
+          findUnique: async () => null,
+          create: async ({ data }) => {
+            savedEmailVerified = data.emailVerified;
+
+            return {
+              id: "user_1",
+              email: data.email,
+              name: data.name,
+            };
+          },
+        },
+        verificationToken: {
+          deleteMany: async () => {
+            verificationTokenWasUsed = true;
+            return { count: 0 };
+          },
+          create: async ({ data }) => {
+            verificationTokenWasUsed = true;
+            return data;
+          },
+        },
+      },
+      {
+        emailVerificationEnabled: false,
+        now: () => now,
+        passwordHashRounds: 4,
+        sendVerificationEmail: async () => {
+          verificationEmailWasSent = true;
+        },
+      },
+    );
+
+    assert.equal(savedEmailVerified?.toISOString(), now.toISOString());
+    assert.equal(verificationTokenWasUsed, false);
+    assert.equal(verificationEmailWasSent, false);
+    assert.deepEqual(result, {
+      success: true,
+      status: 201,
+      data: {
+        verificationRequired: false,
         user: {
           id: "user_1",
           email: "test@example.com",

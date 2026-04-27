@@ -3,6 +3,7 @@ import { CredentialsSignin, type User } from "next-auth";
 
 import {
   createEmailVerificationRequest,
+  isEmailVerificationEnabled,
   sendVerificationEmail as sendResendVerificationEmail,
   type CreateEmailVerificationOptions,
   type VerificationEmailInput,
@@ -56,6 +57,7 @@ interface RegistrationDataStore extends VerificationTokenRegistrationDataStore {
     }): Promise<ExistingRegistrationUser | null>;
     create(args: {
       data: {
+        emailVerified?: Date;
         name: string;
         email: string;
         passwordHash: string;
@@ -69,8 +71,13 @@ interface RegistrationDataStore extends VerificationTokenRegistrationDataStore {
   };
 }
 
+interface CredentialsOptions {
+  emailVerificationEnabled?: boolean;
+}
+
 interface RegistrationOptions {
   appUrl?: string;
+  emailVerificationEnabled?: boolean;
   expiresInMs?: number;
   now?: () => Date;
   passwordHashRounds?: number;
@@ -91,7 +98,7 @@ export type RegisterUserResult =
       status: 201;
       data: {
         user: RegisteredUser;
-        verificationRequired: true;
+        verificationRequired: boolean;
       };
     }
   | {
@@ -205,6 +212,7 @@ function validateRegistrationInput(input: unknown): RegistrationInput | Register
 export async function authorizeCredentials(
   credentials: unknown,
   dataStore: CredentialsDataStore = getCredentialsDataStore(),
+  options: CredentialsOptions = {},
 ): Promise<User | null> {
   const parsedCredentials = parseCredentials(credentials);
 
@@ -234,7 +242,10 @@ export async function authorizeCredentials(
     return null;
   }
 
-  if (!user.emailVerified) {
+  const emailVerificationEnabled =
+    options.emailVerificationEnabled ?? isEmailVerificationEnabled();
+
+  if (emailVerificationEnabled && !user.emailVerified) {
     throw new EmailNotVerifiedError();
   }
 
@@ -271,6 +282,9 @@ export async function registerUser(
   }
 
   let user: RegisteredUser;
+  const now = options.now?.() ?? new Date();
+  const emailVerificationEnabled =
+    options.emailVerificationEnabled ?? isEmailVerificationEnabled();
 
   try {
     const passwordHash = await hash(
@@ -279,6 +293,7 @@ export async function registerUser(
     );
     user = await dataStore.user.create({
       data: {
+        emailVerified: emailVerificationEnabled ? undefined : now,
         name: validationResult.name,
         email: validationResult.email,
         passwordHash,
@@ -294,6 +309,17 @@ export async function registerUser(
       success: false,
       status: 500,
       error: "Could not create your account. Try again.",
+    };
+  }
+
+  if (!emailVerificationEnabled) {
+    return {
+      success: true,
+      status: 201,
+      data: {
+        user,
+        verificationRequired: false,
+      },
     };
   }
 
