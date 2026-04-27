@@ -14,6 +14,9 @@ interface RegisterFormProps {
 }
 
 interface RegisterApiResponse {
+  data?: {
+    verificationRequired?: boolean;
+  };
   error?: string;
   success: boolean;
 }
@@ -64,8 +67,11 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
     setIsSubmitting(false);
 
     if (response.ok && result.success) {
+      const verificationStatus =
+        result.data?.verificationRequired === false ? "skipped" : "sent";
+
       router.push(
-        "/sign-in?registered=1&verification=sent&callbackUrl=" +
+        `/sign-in?registered=1&verification=${verificationStatus}&callbackUrl=` +
           encodeURIComponent(callbackUrl),
       );
       return;

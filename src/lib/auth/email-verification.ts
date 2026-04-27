@@ -4,6 +4,13 @@ const VERIFICATION_TOKEN_BYTES = 32;
 const VERIFICATION_TOKEN_EXPIRES_IN_MS = 24 * 60 * 60 * 1000;
 const RESEND_EMAILS_API_URL = "https://api.resend.com/emails";
 const DEFAULT_RESEND_FROM_EMAIL = "DevStash <onboarding@resend.dev>";
+const EMAIL_VERIFICATION_DISABLED_VALUES = new Set([
+  "0",
+  "disabled",
+  "false",
+  "no",
+  "off",
+]);
 
 interface VerificationTokenRecord {
   expires: Date;
@@ -103,6 +110,16 @@ function getVerificationTokenDataStore(
   }
 
   return dataStore.verificationToken;
+}
+
+export function isEmailVerificationEnabled(
+  value = process.env.EMAIL_VERIFICATION_ENABLED,
+) {
+  if (!value) {
+    return true;
+  }
+
+  return !EMAIL_VERIFICATION_DISABLED_VALUES.has(value.trim().toLowerCase());
 }
 
 export function hashVerificationToken(token: string) {

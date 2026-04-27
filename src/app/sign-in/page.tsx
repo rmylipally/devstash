@@ -37,10 +37,19 @@ function getVerificationMessage(
     };
   }
 
-  if (verification === "sent" || getSearchParam(params, "registered") === "1") {
+  if (verification === "sent") {
     return {
       initialMessage:
         "Account created. Check your email to verify your account before logging in.",
+    };
+  }
+
+  if (
+    verification === "skipped" ||
+    getSearchParam(params, "registered") === "1"
+  ) {
+    return {
+      initialMessage: "Account created. You can now log in.",
     };
   }
 
