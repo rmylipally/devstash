@@ -5,11 +5,11 @@ import { describe, it } from "node:test";
 process.env.DATABASE_URL ??= "postgresql://devstash:devstash@localhost:5432/devstash";
 
 describe("auth setup", () => {
-  it("defines an edge-compatible GitHub auth config without the Prisma adapter", async () => {
+  it("defines an edge-compatible shared auth config without the Prisma adapter", async () => {
     const { default: authConfig } = await import("../src/auth.config");
 
     assert.equal(Array.isArray(authConfig.providers), true);
-    assert.equal(authConfig.providers.length, 1);
+    assert.equal(authConfig.providers.length, 2);
     assert.equal("adapter" in authConfig, false);
     assert.equal("session" in authConfig, false);
   });
@@ -38,6 +38,14 @@ describe("auth setup", () => {
       redirectUrl.searchParams.get("callbackUrl"),
       "https://devstash.test/dashboard/items",
     );
+  });
+
+  it("keeps the dashboard proxy on the edge-safe shared auth config", async () => {
+    const proxySource = await readFile("src/proxy.ts", "utf8");
+
+    assert.match(proxySource, /from "next-auth"/);
+    assert.match(proxySource, /from "@\/auth\.config"/);
+    assert.doesNotMatch(proxySource, /from "@\/auth"/);
   });
 
   it("documents auth environment variables and augments sessions with user ids", async () => {
