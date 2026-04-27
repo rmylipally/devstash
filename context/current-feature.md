@@ -1,34 +1,20 @@
-# Current Feature: Toggle Email Verification
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add a simple flag that can enable or disable the email verification requirement.
-- Prefer an environment variable, such as `EMAIL_VERIFICATION_ENABLED`, so the behavior can be changed without code edits.
-- Keep email verification enabled by default to preserve the safer production behavior.
-- When verification is disabled, registration should not create verification tokens or send Resend emails.
-- When verification is disabled, newly registered credentials users should be able to log in immediately.
-- When verification is enabled, preserve the current Resend email verification flow.
-- Update register and sign-in messaging so users see the right post-register message for enabled versus disabled verification.
-- Document the flag in `.env.example`.
-- Add focused tests for both enabled and disabled verification modes.
 
 ## Notes
 
 <!-- Any extra notes -->
 
-- Inline feature request: "Add a flag that can easily toggle the email verification system."
-- Current constraint: there is no domain linked to Resend yet, so email delivery is limited during development/testing.
-- Proposed approach: env variable toggle first; a database/admin setting can be considered later if runtime control is needed.
-- Avoid hard-coding Resend values or exposing secrets.
-- Keep GitHub OAuth behavior unchanged.
 
 ## History
 
@@ -78,3 +64,4 @@ In Progress
 - 2026-04-27: Completed Email Verification on Register with hashed expiring verification tokens, Resend verification emails, `/verify-email` handling, credentials sign-in blocking until verification, updated auth messaging, a guarded non-demo user cleanup script, and passing lint, tests, type-check, and build.
 - 2026-04-27: Loaded Toggle Email Verification from inline description and set the feature status to Not Started.
 - 2026-04-27: Started Toggle Email Verification implementation on `feature/toggle-email-verification`.
+- 2026-04-27: Completed Toggle Email Verification with an `EMAIL_VERIFICATION_ENABLED` env flag, disabled-mode registration and sign-in behavior, enabled-mode verification preservation, updated auth messaging, env docs, and focused tests.
