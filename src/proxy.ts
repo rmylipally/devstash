@@ -6,7 +6,7 @@ import authConfig from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 export function getSignInRedirectUrl(requestUrl: URL) {
-  const signInUrl = new URL("/api/auth/signin", requestUrl.origin);
+  const signInUrl = new URL("/sign-in", requestUrl.origin);
   signInUrl.searchParams.set("callbackUrl", requestUrl.toString());
 
   return signInUrl;
@@ -21,5 +21,5 @@ export const proxy = auth((request) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/profile"],
 };

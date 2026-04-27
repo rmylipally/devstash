@@ -32,8 +32,8 @@ describe("auth setup", () => {
     );
 
     assert.equal(typeof proxy, "function");
-    assert.deepEqual(config, { matcher: ["/dashboard/:path*"] });
-    assert.equal(redirectUrl.pathname, "/api/auth/signin");
+    assert.deepEqual(config, { matcher: ["/dashboard/:path*", "/profile"] });
+    assert.equal(redirectUrl.pathname, "/sign-in");
     assert.equal(
       redirectUrl.searchParams.get("callbackUrl"),
       "https://devstash.test/dashboard/items",

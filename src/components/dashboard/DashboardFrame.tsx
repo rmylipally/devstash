@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChevronUp,
   Code2,
   File,
   Folder,
@@ -11,17 +12,19 @@ import {
   PanelLeftOpen,
   Plus,
   Search,
-  Settings,
   Sparkles,
   Star,
   StickyNote,
   Terminal,
+  User,
   X,
   type LucideIcon,
 } from "lucide-react";
 import NextLink from "next/link";
 import { useState, type ReactNode } from "react";
 
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -30,7 +33,7 @@ import type {
   DashboardItemKind,
   DashboardItemType,
 } from "@/lib/db/items";
-import type { MockUser } from "@/lib/mock-data";
+import type { PlanTier } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
@@ -57,10 +60,18 @@ const proItemKinds = new Set<DashboardItemKind>(["file", "image"]);
 
 interface DashboardFrameProps {
   children: ReactNode;
-  currentUser: MockUser;
+  currentUser: DashboardUser;
   favoriteCollections: DashboardCollection[];
   itemTypes: DashboardItemType[];
   recentCollections: DashboardCollection[];
+}
+
+export interface DashboardUser {
+  email: string;
+  id: string;
+  image?: string | null;
+  name: string;
+  plan: PlanTier;
 }
 
 export function DashboardFrame({
@@ -170,7 +181,7 @@ export function DashboardFrame({
 
 interface SidebarContentProps {
   collapsed: boolean;
-  currentUser: MockUser;
+  currentUser: DashboardUser;
   favoriteCollections: DashboardCollection[];
   itemTypes: DashboardItemType[];
   mobile?: boolean;
@@ -427,30 +438,32 @@ function ViewAllCollectionsLink({
 
 interface UserFooterProps {
   collapsed: boolean;
-  currentUser: MockUser;
+  currentUser: DashboardUser;
 }
 
 function UserFooter({ collapsed, currentUser }: UserFooterProps) {
-  const initials = currentUser.name
-    .split(" ")
-    .map((namePart) => namePart[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <div className="border-t border-sidebar-border p-3">
-      <div
-        className={cn(
-          "flex min-w-0 items-center rounded-lg px-2 py-2",
-          collapsed ? "justify-center" : "gap-3",
-        )}
-      >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
-          {initials}
-        </span>
-        {!collapsed ? (
-          <>
+      {collapsed ? (
+        <NextLink
+          aria-label="Open profile"
+          className="flex justify-center rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent"
+          href="/profile"
+        >
+          <UserAvatar
+            email={currentUser.email}
+            image={currentUser.image}
+            name={currentUser.name}
+          />
+        </NextLink>
+      ) : (
+        <details className="group relative">
+          <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent [&::-webkit-details-marker]:hidden">
+            <UserAvatar
+              email={currentUser.email}
+              image={currentUser.image}
+              name={currentUser.name}
+            />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">
                 {currentUser.name}
@@ -459,17 +472,20 @@ function UserFooter({ collapsed, currentUser }: UserFooterProps) {
                 {currentUser.email}
               </span>
             </span>
-            <Button
-              aria-label="User settings"
-              size="icon-sm"
-              type="button"
-              variant="ghost"
+            <ChevronUp className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="absolute bottom-full left-0 right-0 z-20 mb-2 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl">
+            <NextLink
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              href="/profile"
             >
-              <Settings className="size-4" />
-            </Button>
-          </>
-        ) : null}
-      </div>
+              <User className="size-4" />
+              Profile
+            </NextLink>
+            <SignOutButton />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

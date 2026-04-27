@@ -10,7 +10,7 @@ import type { DashboardItemType } from "../src/lib/db/items";
 const currentUser = {
   email: "demo@devstash.io",
   id: "user-demo",
-  imageUrl: "/avatars/demo.png",
+  image: null,
   name: "Demo User",
   plan: "free" as const,
 };
@@ -102,5 +102,15 @@ describe("dashboard frame sidebar", () => {
       html,
       /href="\/collections\/ai-prompts"[\s\S]*bg-violet-500\/10 text-violet-400[\s\S]*AI Prompts/,
     );
+  });
+
+  it("renders the signed-in user details, profile link, and sign-out control", () => {
+    const html = renderDashboardFrame();
+
+    assert.match(html, /Demo User/);
+    assert.match(html, /demo@devstash\.io/);
+    assert.match(html, /href="\/profile"/);
+    assert.match(html, />DU</);
+    assert.match(html, /Sign out/);
   });
 });
