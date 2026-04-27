@@ -15,9 +15,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import NextLink from "next/link";
+import type { Session } from "next-auth";
 import type { ReactNode } from "react";
 
+import { auth } from "@/auth";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
+import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import {
   getDashboardCollectionStats,
   getDashboardCollections,
@@ -103,7 +106,22 @@ function getDashboardStats(
   ];
 }
 
+function getDashboardUser(sessionUser?: Session["user"]): DashboardUser {
+  const email = sessionUser?.email ?? currentUser.email;
+  const name = sessionUser?.name ?? email.split("@")[0] ?? currentUser.name;
+
+  return {
+    email,
+    id: sessionUser?.id ?? currentUser.id,
+    image: sessionUser?.image ?? null,
+    name,
+    plan: currentUser.plan,
+  };
+}
+
 export async function DashboardShell() {
+  const session = await auth();
+  const dashboardUser = getDashboardUser(session?.user);
   const [
     recentDashboardCollections,
     collectionStats,
@@ -112,12 +130,12 @@ export async function DashboardShell() {
     pinnedDashboardItems,
     recentDashboardItems,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 6, userEmail: currentUser.email }),
-    getDashboardCollectionStats({ userEmail: currentUser.email }),
-    getDashboardItemStats({ userEmail: currentUser.email }),
-    getDashboardItemTypes({ userEmail: currentUser.email }),
-    getDashboardPinnedItems({ userEmail: currentUser.email }),
-    getDashboardRecentItems({ limit: 10, userEmail: currentUser.email }),
+    getDashboardCollections({ limit: 6, userEmail: dashboardUser.email }),
+    getDashboardCollectionStats({ userEmail: dashboardUser.email }),
+    getDashboardItemStats({ userEmail: dashboardUser.email }),
+    getDashboardItemTypes({ userEmail: dashboardUser.email }),
+    getDashboardPinnedItems({ userEmail: dashboardUser.email }),
+    getDashboardRecentItems({ limit: 10, userEmail: dashboardUser.email }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
   const favoriteCollections = recentDashboardCollections
@@ -127,7 +145,7 @@ export async function DashboardShell() {
 
   return (
     <DashboardFrame
-      currentUser={currentUser}
+      currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
       recentCollections={recentSidebarCollections}
