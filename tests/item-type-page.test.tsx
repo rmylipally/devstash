@@ -43,5 +43,7 @@ describe("item type page", () => {
     assert.match(html, /border-l-4/);
     assert.match(html, /border-l-blue-500/);
     assert.match(html, /useDebounce Hook/);
+    assert.match(html, /type="button"/);
+    assert.doesNotMatch(html, /href="\/items\/snippets\/item-use-debounce-hook"/);
   });
 });

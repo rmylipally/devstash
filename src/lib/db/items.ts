@@ -1,4 +1,7 @@
-import type { ItemKind as PrismaItemKind } from "@/generated/prisma/enums";
+import type {
+  ContentKind as PrismaContentKind,
+  ItemKind as PrismaItemKind,
+} from "@/generated/prisma/enums";
 
 export type DashboardItemKind =
   | "snippet"
@@ -34,6 +37,34 @@ export interface DashboardItemType {
 export interface DashboardItemStats {
   favorite: number;
   total: number;
+}
+
+export type ItemDetailContentKind = "text" | "file" | "url";
+
+export interface ItemDetail {
+  aiSummary: string | null;
+  collections: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  content: string | null;
+  contentKind: ItemDetailContentKind;
+  createdAt: string;
+  description: string | null;
+  fileSizeBytes: number | null;
+  id: string;
+  isFavorite: boolean;
+  isPinned: boolean;
+  kind: DashboardItemKind;
+  language: string | null;
+  mimeType: string | null;
+  originalFileName: string | null;
+  sourceUrl: string | null;
+  storageKey: string | null;
+  tags: string[];
+  title: string;
+  updatedAt: string;
 }
 
 export interface DashboardItemRow {
@@ -141,6 +172,84 @@ export interface DashboardItemTypeFindManyArgs {
   };
 }
 
+export interface ItemDetailRow {
+  aiSummary: string | null;
+  collections: Array<{
+    collection: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+  }>;
+  content: string | null;
+  contentKind: PrismaContentKind;
+  createdAt: Date;
+  description: string | null;
+  fileSizeBytes: number | null;
+  id: string;
+  isFavorite: boolean;
+  isPinned: boolean;
+  kind: PrismaItemKind;
+  language: string | null;
+  mimeType: string | null;
+  originalFileName: string | null;
+  sourceUrl: string | null;
+  storageKey: string | null;
+  tags: Array<{
+    tag: {
+      name: string;
+    };
+  }>;
+  title: string;
+  updatedAt: Date;
+}
+
+export interface ItemDetailFindFirstArgs {
+  select: {
+    aiSummary: true;
+    collections: {
+      select: {
+        collection: {
+          select: {
+            id: true;
+            name: true;
+            slug: true;
+          };
+        };
+      };
+    };
+    content: true;
+    contentKind: true;
+    createdAt: true;
+    description: true;
+    fileSizeBytes: true;
+    id: true;
+    isFavorite: true;
+    isPinned: true;
+    kind: true;
+    language: true;
+    mimeType: true;
+    originalFileName: true;
+    sourceUrl: true;
+    storageKey: true;
+    tags: {
+      select: {
+        tag: {
+          select: {
+            name: true;
+          };
+        };
+      };
+    };
+    title: true;
+    updatedAt: true;
+  };
+  where: {
+    id: string;
+    userId: string;
+  };
+}
+
 export interface DashboardItemClient {
   item: {
     count(args: DashboardItemCountArgs): Promise<number>;
@@ -156,6 +265,12 @@ export interface DashboardItemClient {
   };
 }
 
+export interface ItemDetailClient {
+  item: {
+    findFirst(args: ItemDetailFindFirstArgs): Promise<ItemDetailRow | null>;
+  };
+}
+
 interface GetDashboardItemsOptions {
   limit?: number;
   userEmail?: string;
@@ -164,6 +279,11 @@ interface GetDashboardItemsOptions {
 
 interface GetDashboardItemsByTypeOptions extends GetDashboardItemsOptions {
   kind: DashboardItemKind;
+}
+
+interface GetItemDetailOptions {
+  itemId: string;
+  userId: string;
 }
 
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
@@ -189,6 +309,15 @@ const prismaItemKindByDashboardKind: Record<DashboardItemKind, PrismaItemKind> =
     prompt: "PROMPT",
     snippet: "SNIPPET",
   };
+
+const itemDetailContentKindByPrismaContentKind: Record<
+  PrismaContentKind,
+  ItemDetailContentKind
+> = {
+  FILE: "file",
+  TEXT: "text",
+  URL: "url",
+};
 
 const dashboardItemTypeSelect: DashboardItemTypeFindManyArgs["select"] = {
   color: true,
@@ -221,10 +350,56 @@ const dashboardItemSelect: DashboardItemFindManyArgs["select"] = {
   updatedAt: true,
 };
 
+const itemDetailSelect: ItemDetailFindFirstArgs["select"] = {
+  aiSummary: true,
+  collections: {
+    select: {
+      collection: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  },
+  content: true,
+  contentKind: true,
+  createdAt: true,
+  description: true,
+  fileSizeBytes: true,
+  id: true,
+  isFavorite: true,
+  isPinned: true,
+  kind: true,
+  language: true,
+  mimeType: true,
+  originalFileName: true,
+  sourceUrl: true,
+  storageKey: true,
+  tags: {
+    select: {
+      tag: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
+  title: true,
+  updatedAt: true,
+};
+
 async function getDefaultItemClient() {
   const { prisma } = await import("@/lib/prisma");
 
   return prisma as unknown as DashboardItemClient;
+}
+
+async function getDefaultItemDetailClient() {
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma as unknown as ItemDetailClient;
 }
 
 function getUserWhere({
@@ -261,6 +436,50 @@ export function toDashboardItem(item: DashboardItemRow): DashboardItem {
     tags: item.tags.map(({ tag }) => tag.name),
     title: item.title,
   };
+}
+
+export function toItemDetail(item: ItemDetailRow): ItemDetail {
+  return {
+    aiSummary: item.aiSummary,
+    collections: item.collections.map(({ collection }) => ({
+      id: collection.id,
+      name: collection.name,
+      slug: collection.slug,
+    })),
+    content: item.content,
+    contentKind: itemDetailContentKindByPrismaContentKind[item.contentKind],
+    createdAt: item.createdAt.toISOString(),
+    description: item.description,
+    fileSizeBytes: item.fileSizeBytes,
+    id: item.id,
+    isFavorite: item.isFavorite,
+    isPinned: item.isPinned,
+    kind: dashboardItemKindByPrismaKind[item.kind],
+    language: item.language,
+    mimeType: item.mimeType,
+    originalFileName: item.originalFileName,
+    sourceUrl: item.sourceUrl,
+    storageKey: item.storageKey,
+    tags: item.tags.map(({ tag }) => tag.name),
+    title: item.title,
+    updatedAt: item.updatedAt.toISOString(),
+  };
+}
+
+export async function getItemDetail(
+  options: GetItemDetailOptions,
+  client?: ItemDetailClient,
+): Promise<ItemDetail | null> {
+  const itemClient = client ?? (await getDefaultItemDetailClient());
+  const item = await itemClient.item.findFirst({
+    select: itemDetailSelect,
+    where: {
+      id: options.itemId,
+      userId: options.userId,
+    },
+  });
+
+  return item ? toItemDetail(item) : null;
 }
 
 export async function getDashboardPinnedItems(

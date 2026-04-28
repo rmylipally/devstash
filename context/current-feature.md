@@ -1,18 +1,31 @@
-# Current Feature
+# Current Feature: Item Drawer
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Add a right-side item detail drawer using the shadcn Sheet component
+- Open the drawer when clicking item cards without navigating to a separate item page
+- Support item drawer behavior from both the dashboard and item list pages
+- Fetch full item detail on click through `/api/items/[id]` with an auth-checked query helper in `src/lib/db/items.ts`
+- Show a skeleton/loading state while item detail data is loading
+- Render drawer detail display and an action bar with Favorite, Pin, Copy, Edit, and Delete controls
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Loaded from `context/features/item-drawer-spec.md` on 2026-04-28
+- The drawer is the item detail view; no separate item detail page is planned for this feature
+- Keep scope to detail display for now; code editor and item-specific extras come later
+- Use a client wrapper component for drawer state because pages are server components
+- Reference visual: `context/screenshots/dashboard-ui-drawer.png`
 
 ## History
 
@@ -78,3 +91,5 @@ Completed
 - 2026-04-28: Loaded Item Listing Three-Column Layout from inline description and set the feature status to Not Started.
 - 2026-04-28: Started Item Listing Three-Column Layout implementation on `feature/item-listing-three-column-layout`.
 - 2026-04-28: Completed Item Listing Three-Column Layout with a responsive item list grid that keeps one column by default, two columns at medium widths, and three columns at extra-large widths, plus focused rendering coverage, lint, unit tests, and successful production build verification.
+- 2026-04-28: Loaded Item Drawer from `context/features/item-drawer-spec.md` and set the feature status to Not Started.
+- 2026-04-28: Started Item Drawer implementation on `feature/item-drawer`.

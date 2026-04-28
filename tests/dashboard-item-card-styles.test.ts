@@ -4,9 +4,12 @@ import { describe, it } from "node:test";
 
 describe("dashboard item card styles", () => {
   it("uses item-kind left border accents on recent item rows", async () => {
-    const source = await readFile("src/components/dashboard/DashboardShell.tsx", "utf8");
+    const source = await readFile(
+      "src/components/items/ItemDrawerProvider.tsx",
+      "utf8",
+    );
     const recentItemRowSource = source.match(
-      /function RecentItemRow\(\{ item \}: RecentItemRowProps\) \{[\s\S]*?function TagList/,
+      /export function RecentItemRow\(\{ item \}: \{ item: DashboardItem \}\) \{[\s\S]*?interface ItemDrawerContentProps/,
     )?.[0];
 
     assert.ok(recentItemRowSource, "RecentItemRow source should be present");

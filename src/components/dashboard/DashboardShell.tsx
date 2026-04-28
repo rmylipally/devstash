@@ -22,6 +22,11 @@ import { auth } from "@/auth";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import {
+  ItemCard,
+  ItemDrawerProvider,
+  RecentItemRow,
+} from "@/components/items/ItemDrawerProvider";
+import {
   getDashboardCollectionStats,
   getDashboardCollections,
   type DashboardCollection,
@@ -174,78 +179,86 @@ function DashboardMain({
   stats,
 }: DashboardMainProps) {
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-lg text-muted-foreground">
-            Your developer knowledge hub
-          </p>
-        </div>
-
-        <section
-          aria-label="Dashboard stats"
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-        >
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-
-            return (
-              <div
-                className="rounded-lg border border-border bg-card p-5 text-card-foreground"
-                key={stat.label}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="mt-2 text-3xl font-semibold tracking-tight">
-                      {stat.value}
-                    </p>
-                    <p className="mt-1 truncate text-sm text-muted-foreground">
-                      {stat.description}
-                    </p>
-                  </div>
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Icon className="size-5" />
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-
-        <DashboardSection
-          actionHref="/collections"
-          actionLabel="View all"
-          title="Recent Collections"
-          titleIcon={Folder}
-        >
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {recentDashboardCollections.map((collection) => (
-              <CollectionCard collection={collection} key={collection.id} />
-            ))}
+    <ItemDrawerProvider>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+            <p className="text-lg text-muted-foreground">
+              Your developer knowledge hub
+            </p>
           </div>
-        </DashboardSection>
 
-        {pinnedDashboardItems.length > 0 ? (
-          <DashboardSection title="Pinned Items" titleIcon={Pin}>
-            <div className="grid gap-4 xl:grid-cols-2">
-              {pinnedDashboardItems.map((item) => (
-                <ItemCard item={item} key={item.id} />
+          <section
+            aria-label="Dashboard stats"
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            {stats.map((stat) => {
+              const Icon = stat.icon;
+
+              return (
+                <div
+                  className="rounded-lg border border-border bg-card p-5 text-card-foreground"
+                  key={stat.label}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">
+                        {stat.label}
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight">
+                        {stat.value}
+                      </p>
+                      <p className="mt-1 truncate text-sm text-muted-foreground">
+                        {stat.description}
+                      </p>
+                    </div>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <Icon className="size-5" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+
+          <DashboardSection
+            actionHref="/collections"
+            actionLabel="View all"
+            title="Recent Collections"
+            titleIcon={Folder}
+          >
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {recentDashboardCollections.map((collection) => (
+                <CollectionCard collection={collection} key={collection.id} />
               ))}
             </div>
           </DashboardSection>
-        ) : null}
 
-        <DashboardSection title="Recent Items" titleIcon={ChartNoAxesColumn}>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            {recentDashboardItems.map((item) => (
-              <RecentItemRow item={item} key={item.id} />
-            ))}
-          </div>
-        </DashboardSection>
+          {pinnedDashboardItems.length > 0 ? (
+            <DashboardSection title="Pinned Items" titleIcon={Pin}>
+              <div className="grid gap-4 xl:grid-cols-2">
+                {pinnedDashboardItems.map((item) => (
+                  <ItemCard
+                    item={item}
+                    key={item.id}
+                    minHeightClassName="min-h-32"
+                  />
+                ))}
+              </div>
+            </DashboardSection>
+          ) : null}
+
+          <DashboardSection title="Recent Items" titleIcon={ChartNoAxesColumn}>
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
+              {recentDashboardItems.map((item) => (
+                <RecentItemRow item={item} key={item.id} />
+              ))}
+            </div>
+          </DashboardSection>
+        </div>
       </div>
-    </div>
+    </ItemDrawerProvider>
   );
 }
 
@@ -345,119 +358,4 @@ function CollectionCard({ collection }: CollectionCardProps) {
       </div>
     </NextLink>
   );
-}
-
-interface ItemCardProps {
-  item: DashboardItem;
-}
-
-function ItemCard({ item }: ItemCardProps) {
-  const Icon = itemKindIcons[item.kind];
-
-  return (
-    <NextLink
-      className={cn(
-        "flex min-h-32 gap-4 rounded-lg border border-l-4 border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50",
-        itemKindAccentStyles[item.kind],
-      )}
-      href={`/items/${item.kind}s/${item.id}`}
-    >
-      <span
-        className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-lg",
-          itemKindStyles[item.kind],
-        )}
-      >
-        <Icon className="size-5" />
-      </span>
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-lg font-semibold">{item.title}</h3>
-          <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
-          {item.isFavorite ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : null}
-        </div>
-        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {item.description}
-        </p>
-        <TagList tags={item.tags} />
-      </div>
-    </NextLink>
-  );
-}
-
-interface RecentItemRowProps {
-  item: DashboardItem;
-}
-
-function RecentItemRow({ item }: RecentItemRowProps) {
-  const Icon = itemKindIcons[item.kind];
-
-  return (
-    <NextLink
-      className={cn(
-        "flex min-w-0 items-center gap-4 border-b border-l-4 border-border px-4 py-4 text-card-foreground transition-colors last:border-b-0 hover:bg-muted/40 sm:px-5",
-        itemKindAccentStyles[item.kind],
-      )}
-      href={`/items/${item.kind}s/${item.id}`}
-    >
-      <span
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-lg",
-          itemKindStyles[item.kind],
-        )}
-      >
-        <Icon className="size-5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate font-medium">{item.title}</h3>
-          {item.isPinned ? (
-            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
-          ) : null}
-          {item.isFavorite ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : null}
-        </div>
-        <p className="mt-1 truncate text-sm text-muted-foreground">
-          {item.description}
-        </p>
-      </div>
-      <div className="hidden shrink-0 items-center gap-3 sm:flex">
-        <span className="rounded-md bg-muted px-2 py-1 text-xs capitalize text-muted-foreground">
-          {item.kind}
-        </span>
-        <span className="w-16 text-right text-sm text-muted-foreground">
-          {formatShortDate(item.lastViewedAt)}
-        </span>
-      </div>
-    </NextLink>
-  );
-}
-
-interface TagListProps {
-  tags: string[];
-}
-
-function TagList({ tags }: TagListProps) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {tags.slice(0, 3).map((tag) => (
-        <span
-          className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
-          key={tag}
-        >
-          {tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
 }
