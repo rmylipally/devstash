@@ -1,30 +1,18 @@
-# Current Feature: Profile Page
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Create a protected `/profile` route.
-- Display user info including email, name, avatar, and account creation date.
-- Show usage stats including total items, total collections, and item type counts.
-- Add account actions for changing password and deleting account with confirmation.
-- Show the change password action only for email/password users, not GitHub OAuth-only users.
-- Follow existing codebase patterns for data fetching, auth protection, and components.
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Loaded from `context/features/profile-spec.md` on 2026-04-28.
-- Avatar should use a GitHub/OAuth image when available, otherwise fall back to initials from name or email.
-- Delete account must use a confirmation dialog to prevent accidental deletion.
-- Item type breakdown should include snippets, prompts, notes, commands, links, files, and images.
 
 ## History
 
@@ -80,3 +68,4 @@ In Progress
 - 2026-04-28: Completed Forgot Password with secure hashed reset tokens stored in the existing `VerificationToken` model, forgot/reset password pages and API routes, Resend reset emails, token expiry and consumption, sign-in recovery messaging, focused tests, lint, and successful production build verification.
 - 2026-04-28: Loaded Profile Page from `context/features/profile-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Profile Page implementation on `feature/profile-page`.
+- 2026-04-28: Completed Profile Page with a protected dashboard-framed `/profile` route, profile identity and account creation details, usage stats, item type breakdown, email-user password change action, guarded delete-account API and confirmation UI, tracked spec, focused tests, lint, and successful production build verification.
