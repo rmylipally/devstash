@@ -396,7 +396,10 @@ function RecentItemRow({ item }: RecentItemRowProps) {
 
   return (
     <NextLink
-      className="flex min-w-0 items-center gap-4 border-b border-border px-4 py-4 text-card-foreground transition-colors last:border-b-0 hover:bg-muted/40 sm:px-5"
+      className={cn(
+        "flex min-w-0 items-center gap-4 border-b border-l-4 border-border px-4 py-4 text-card-foreground transition-colors last:border-b-0 hover:bg-muted/40 sm:px-5",
+        itemKindAccentStyles[item.kind],
+      )}
       href={`/items/${item.kind}s/${item.id}`}
     >
       <span

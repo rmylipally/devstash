@@ -162,6 +162,10 @@ interface GetDashboardItemsOptions {
   userId?: string;
 }
 
+interface GetDashboardItemsByTypeOptions extends GetDashboardItemsOptions {
+  kind: DashboardItemKind;
+}
+
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
 
 const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
@@ -173,6 +177,17 @@ const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
     NOTE: "note",
     PROMPT: "prompt",
     SNIPPET: "snippet",
+  };
+
+const prismaItemKindByDashboardKind: Record<DashboardItemKind, PrismaItemKind> =
+  {
+    command: "COMMAND",
+    file: "FILE",
+    image: "IMAGE",
+    link: "LINK",
+    note: "NOTE",
+    prompt: "PROMPT",
+    snippet: "SNIPPET",
   };
 
 const dashboardItemTypeSelect: DashboardItemTypeFindManyArgs["select"] = {
@@ -279,6 +294,21 @@ export async function getDashboardRecentItems(
         ...getUserWhere(options),
       },
     ),
+  );
+
+  return items.map(toDashboardItem);
+}
+
+export async function getDashboardItemsByType(
+  options: GetDashboardItemsByTypeOptions,
+  client?: DashboardItemClient,
+) {
+  const itemClient = client ?? (await getDefaultItemClient());
+  const items = await itemClient.item.findMany(
+    getFindManyArgs(options, {
+      kind: prismaItemKindByDashboardKind[options.kind],
+      ...getUserWhere(options),
+    }),
   );
 
   return items.map(toDashboardItem);
