@@ -22,6 +22,7 @@ export default defineConfig({
       "tests/cleanup-script.test.ts",
       "tests/dashboard-collections.test.ts",
       "tests/dashboard-items.test.ts",
+      "tests/item-actions.test.ts",
       "tests/rate-limit.test.ts",
       "tests/seed-data.test.ts",
     ],

@@ -8,6 +8,7 @@ import {
   getDashboardPinnedItems,
   getDashboardRecentItems,
   getItemDetail,
+  updateItem,
   toDashboardItem,
   toItemDetail,
   type DashboardItemClient,
@@ -16,6 +17,8 @@ import {
   type ItemDetailClient,
   type ItemDetailFindFirstArgs,
   type ItemDetailRow,
+  type ItemDetailUpdateArgs,
+  type ItemUpdateClient,
 } from "../src/lib/db/items";
 
 const viewedAt = new Date("2026-04-25T15:30:00.000Z");
@@ -162,6 +165,101 @@ describe("dashboard item data", () => {
         slug: "react-patterns",
       },
     ]);
+  });
+
+  it("updates item fields and replaces tags with user-owned tags", async () => {
+    const updateArgs: ItemDetailUpdateArgs[] = [];
+    const client: ItemUpdateClient = {
+      item: {
+        update: async (args) => {
+          updateArgs.push(args);
+
+          return itemDetailRow({
+            content: args.data.content ?? null,
+            description: args.data.description ?? null,
+            language: args.data.language ?? null,
+            sourceUrl: args.data.sourceUrl ?? null,
+            tags: args.data.tags.create.map(({ tag }) => ({
+              tag: { name: tag.connectOrCreate.create.name },
+            })),
+            title: args.data.title,
+          });
+        },
+      },
+    };
+
+    const item = await updateItem(
+      {
+        data: {
+          content: "npm run build",
+          description: null,
+          language: "bash",
+          tags: ["cli", "build tools"],
+          title: "Run production build",
+          url: null,
+        },
+        itemId: "item-build-command",
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(updateArgs[0], {
+      data: {
+        content: "npm run build",
+        description: null,
+        language: "bash",
+        sourceUrl: null,
+        tags: {
+          create: [
+            {
+              tag: {
+                connectOrCreate: {
+                  create: {
+                    name: "cli",
+                    slug: "cli",
+                    userId: "user-123",
+                  },
+                  where: {
+                    userId_slug: {
+                      slug: "cli",
+                      userId: "user-123",
+                    },
+                  },
+                },
+              },
+            },
+            {
+              tag: {
+                connectOrCreate: {
+                  create: {
+                    name: "build tools",
+                    slug: "build-tools",
+                    userId: "user-123",
+                  },
+                  where: {
+                    userId_slug: {
+                      slug: "build-tools",
+                      userId: "user-123",
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          deleteMany: {},
+        },
+        title: "Run production build",
+      },
+      select: updateArgs[0]?.select,
+      where: {
+        id: "item-build-command",
+        userId: "user-123",
+      },
+    });
+    assert.equal(updateArgs[0]?.select.content, true);
+    assert.equal(item.title, "Run production build");
+    assert.deepEqual(item.tags, ["cli", "build tools"]);
   });
 
   it("fetches pinned dashboard items with user scoping", async () => {

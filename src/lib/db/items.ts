@@ -67,6 +67,15 @@ export interface ItemDetail {
   updatedAt: string;
 }
 
+export interface ItemUpdateInput {
+  content?: string | null;
+  description?: string | null;
+  language?: string | null;
+  tags: string[];
+  title: string;
+  url?: string | null;
+}
+
 export interface DashboardItemRow {
   id: string;
   title: string;
@@ -250,6 +259,43 @@ export interface ItemDetailFindFirstArgs {
   };
 }
 
+export interface ItemTagCreateInput {
+  tag: {
+    connectOrCreate: {
+      create: {
+        name: string;
+        slug: string;
+        userId: string;
+      };
+      where: {
+        userId_slug: {
+          slug: string;
+          userId: string;
+        };
+      };
+    };
+  };
+}
+
+export interface ItemDetailUpdateArgs {
+  data: {
+    content?: string | null;
+    description?: string | null;
+    language?: string | null;
+    sourceUrl?: string | null;
+    tags: {
+      create: ItemTagCreateInput[];
+      deleteMany: Record<string, never>;
+    };
+    title: string;
+  };
+  select: ItemDetailFindFirstArgs["select"];
+  where: {
+    id: string;
+    userId: string;
+  };
+}
+
 export interface DashboardItemClient {
   item: {
     count(args: DashboardItemCountArgs): Promise<number>;
@@ -271,6 +317,12 @@ export interface ItemDetailClient {
   };
 }
 
+export interface ItemUpdateClient {
+  item: {
+    update(args: ItemDetailUpdateArgs): Promise<ItemDetailRow>;
+  };
+}
+
 interface GetDashboardItemsOptions {
   limit?: number;
   userEmail?: string;
@@ -284,6 +336,10 @@ interface GetDashboardItemsByTypeOptions extends GetDashboardItemsOptions {
 interface GetItemDetailOptions {
   itemId: string;
   userId: string;
+}
+
+interface UpdateItemOptions extends GetItemDetailOptions {
+  data: ItemUpdateInput;
 }
 
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
@@ -402,6 +458,12 @@ async function getDefaultItemDetailClient() {
   return prisma as unknown as ItemDetailClient;
 }
 
+async function getDefaultItemUpdateClient() {
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma as unknown as ItemUpdateClient;
+}
+
 function getUserWhere({
   userEmail,
   userId,
@@ -423,6 +485,92 @@ function getFindManyArgs(
     ...(options.limit ? { take: options.limit } : {}),
     where,
   };
+}
+
+function slugifyTagName(name: string) {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "tag"
+  );
+}
+
+function getUniqueTags(tags: string[]) {
+  const seen = new Set<string>();
+  const uniqueTags: string[] = [];
+
+  for (const tag of tags) {
+    const name = tag.trim();
+    const key = name.toLowerCase();
+
+    if (!name || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    uniqueTags.push(name);
+  }
+
+  return uniqueTags;
+}
+
+function toTagCreateInput(userId: string, name: string): ItemTagCreateInput {
+  const slug = slugifyTagName(name);
+
+  return {
+    tag: {
+      connectOrCreate: {
+        create: {
+          name,
+          slug,
+          userId,
+        },
+        where: {
+          userId_slug: {
+            slug,
+            userId,
+          },
+        },
+      },
+    },
+  };
+}
+
+function getItemUpdateData(
+  data: ItemUpdateInput,
+  userId: string,
+): ItemDetailUpdateArgs["data"] {
+  const updateData: ItemDetailUpdateArgs["data"] = {
+    tags: {
+      create: getUniqueTags(data.tags).map((tag) =>
+        toTagCreateInput(userId, tag),
+      ),
+      deleteMany: {},
+    },
+    title: data.title,
+  };
+
+  if (data.description !== undefined) {
+    updateData.description = data.description;
+  }
+
+  if (data.content !== undefined) {
+    updateData.content = data.content;
+  }
+
+  if (data.language !== undefined) {
+    updateData.language = data.language;
+  }
+
+  if (data.url !== undefined) {
+    updateData.sourceUrl = data.url;
+  }
+
+  return updateData;
 }
 
 export function toDashboardItem(item: DashboardItemRow): DashboardItem {
@@ -480,6 +628,23 @@ export async function getItemDetail(
   });
 
   return item ? toItemDetail(item) : null;
+}
+
+export async function updateItem(
+  options: UpdateItemOptions,
+  client?: ItemUpdateClient,
+): Promise<ItemDetail> {
+  const itemClient = client ?? (await getDefaultItemUpdateClient());
+  const item = await itemClient.item.update({
+    data: getItemUpdateData(options.data, options.userId),
+    select: itemDetailSelect,
+    where: {
+      id: options.itemId,
+      userId: options.userId,
+    },
+  });
+
+  return toItemDetail(item);
 }
 
 export async function getDashboardPinnedItems(

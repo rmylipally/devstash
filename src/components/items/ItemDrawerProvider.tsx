@@ -9,16 +9,20 @@ import {
   Folder,
   Image,
   Link as LinkIcon,
+  Loader2,
   Pin,
+  Save,
   Sparkles,
   Star,
   StickyNote,
   Tag,
   Terminal,
   Trash2,
+  Undo2,
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -26,10 +30,13 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ComponentProps,
   type ReactNode,
 } from "react";
 
+import { updateItem } from "@/actions/items";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetClose,
@@ -94,6 +101,24 @@ type ItemDetailResponse =
       success: false;
     };
 
+type DrawerMode = "edit" | "view";
+
+type DrawerToast =
+  | {
+      message: string;
+      variant: "error" | "success";
+    }
+  | null;
+
+interface ItemDraft {
+  content: string;
+  description: string;
+  language: string;
+  tags: string;
+  title: string;
+  url: string;
+}
+
 interface ItemDrawerContextValue {
   openItemDrawer(itemId: string): void;
 }
@@ -118,6 +143,8 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const openItemDrawer = useCallback((itemId: string) => {
+    setError(null);
+    setItemDetail(null);
     setSelectedItemId(itemId);
     setIsOpen(true);
   }, []);
@@ -198,6 +225,8 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
             error={error}
             isLoading={isLoading}
             item={itemDetail}
+            key={selectedItemId ?? "idle"}
+            onItemUpdated={setItemDetail}
           />
         </SheetContent>
       </Sheet>
@@ -308,9 +337,100 @@ interface ItemDrawerContentProps {
   error: string | null;
   isLoading: boolean;
   item: ItemDetail | null;
+  onItemUpdated(item: ItemDetail): void;
 }
 
-function ItemDrawerContent({ error, isLoading, item }: ItemDrawerContentProps) {
+function ItemDrawerContent({
+  error,
+  isLoading,
+  item,
+  onItemUpdated,
+}: ItemDrawerContentProps) {
+  const router = useRouter();
+  const [draft, setDraft] = useState<ItemDraft | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [mode, setMode] = useState<DrawerMode>("view");
+  const [toast, setToast] = useState<DrawerToast>(null);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setToast(null), 3500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
+
+  function handleDraftChange(key: keyof ItemDraft, value: string) {
+    setDraft((currentDraft) =>
+      currentDraft ? { ...currentDraft, [key]: value } : currentDraft,
+    );
+  }
+
+  function handleEdit() {
+    if (!item) {
+      return;
+    }
+
+    setDraft(createItemDraft(item));
+    setFormError(null);
+    setMode("edit");
+  }
+
+  function handleCancel() {
+    setDraft(item ? createItemDraft(item) : null);
+    setFormError(null);
+    setMode("view");
+  }
+
+  async function handleSave() {
+    if (!item || !draft || !draft.title.trim()) {
+      return;
+    }
+
+    setFormError(null);
+    setIsSaving(true);
+
+    let result: Awaited<ReturnType<typeof updateItem>>;
+
+    try {
+      result = await updateItem(item.id, getItemUpdatePayload(item, draft));
+    } catch {
+      const message = "Could not update item. Try again.";
+
+      setIsSaving(false);
+      setFormError(message);
+      setToast({
+        message,
+        variant: "error",
+      });
+      return;
+    }
+
+    setIsSaving(false);
+    if (!result.success) {
+      setFormError(result.error);
+      setToast({
+        message: result.error,
+        variant: "error",
+      });
+      return;
+    }
+
+    onItemUpdated(result.data);
+    setDraft(createItemDraft(result.data));
+    setMode("view");
+    setToast({
+      message: "Item saved.",
+      variant: "success",
+    });
+    router.refresh();
+  }
+
+  const isSaveDisabled = !draft?.title.trim() || isSaving;
+
   return (
     <>
       <div className="flex items-start gap-4 border-b border-border px-6 py-6">
@@ -318,11 +438,14 @@ function ItemDrawerContent({ error, isLoading, item }: ItemDrawerContentProps) {
         <div className="min-w-0 flex-1">
           {item ? (
             <>
-              <SheetTitle className="truncate text-2xl font-semibold tracking-tight">
-                {item.title}
-              </SheetTitle>
+              <ItemDrawerHeaderTitle
+                draft={draft}
+                item={item}
+                mode={mode}
+                onDraftChange={handleDraftChange}
+              />
               <SheetDescription className="sr-only">
-                Item details for {item.title}
+                Item details for {getDrawerDescriptionTitle(item, draft, mode)}
               </SheetDescription>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Chip>{itemKindLabels[item.kind]}</Chip>
@@ -344,7 +467,17 @@ function ItemDrawerContent({ error, isLoading, item }: ItemDrawerContentProps) {
         </SheetClose>
       </div>
 
-      <ItemActionBar item={item} />
+      <ItemActionBar
+        isSaveDisabled={isSaveDisabled}
+        isSaving={isSaving}
+        item={item}
+        mode={mode}
+        onCancel={handleCancel}
+        onEdit={handleEdit}
+        onSave={() => void handleSave()}
+      />
+
+      <DrawerToastMessage toast={toast} />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-7">
         {isLoading ? <ItemDrawerSkeleton /> : null}
@@ -353,13 +486,79 @@ function ItemDrawerContent({ error, isLoading, item }: ItemDrawerContentProps) {
             {error}
           </div>
         ) : null}
-        {!isLoading && !error && item ? <ItemDrawerDetails item={item} /> : null}
+        {!isLoading && !error && item ? (
+          mode === "edit" && draft ? (
+            <ItemEditForm
+              draft={draft}
+              error={formError}
+              item={item}
+              onDraftChange={handleDraftChange}
+            />
+          ) : (
+            <ItemDrawerDetails item={item} />
+          )
+        ) : null}
       </div>
     </>
   );
 }
 
-function ItemActionBar({ item }: { item: ItemDetail | null }) {
+interface ItemDrawerHeaderTitleProps {
+  draft: ItemDraft | null;
+  item: ItemDetail;
+  mode: DrawerMode;
+  onDraftChange(key: keyof ItemDraft, value: string): void;
+}
+
+function ItemDrawerHeaderTitle({
+  draft,
+  item,
+  mode,
+  onDraftChange,
+}: ItemDrawerHeaderTitleProps) {
+  if (mode === "edit" && draft) {
+    return (
+      <div className="space-y-2">
+        <SheetTitle className="sr-only">Edit item title</SheetTitle>
+        <Input
+          aria-invalid={!draft.title.trim()}
+          aria-label="Item title"
+          className="h-12 px-3 text-2xl font-semibold md:text-2xl"
+          onChange={(event) => onDraftChange("title", event.target.value)}
+          placeholder="Untitled item"
+          required
+          value={draft.title}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <SheetTitle className="truncate text-2xl font-semibold">
+      {item.title}
+    </SheetTitle>
+  );
+}
+
+interface ItemActionBarProps {
+  isSaveDisabled: boolean;
+  isSaving: boolean;
+  item: ItemDetail | null;
+  mode: DrawerMode;
+  onCancel(): void;
+  onEdit(): void;
+  onSave(): void;
+}
+
+function ItemActionBar({
+  isSaveDisabled,
+  isSaving,
+  item,
+  mode,
+  onCancel,
+  onEdit,
+  onSave,
+}: ItemActionBarProps) {
   async function handleCopy() {
     if (!item) {
       return;
@@ -368,6 +567,36 @@ function ItemActionBar({ item }: { item: ItemDetail | null }) {
     const copyValue = item.content ?? item.sourceUrl ?? item.title;
 
     await navigator.clipboard.writeText(copyValue);
+  }
+
+  if (mode === "edit") {
+    return (
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-4">
+        <Button
+          className="h-10 gap-2 px-3"
+          disabled={isSaveDisabled}
+          onClick={onSave}
+          type="button"
+        >
+          {isSaving ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Save className="size-5" />
+          )}
+          Save
+        </Button>
+        <Button
+          className="h-10 gap-2 px-3"
+          disabled={isSaving}
+          onClick={onCancel}
+          type="button"
+          variant="ghost"
+        >
+          <Undo2 className="size-5" />
+          Cancel
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -418,6 +647,7 @@ function ItemActionBar({ item }: { item: ItemDetail | null }) {
       <Button
         className="h-10 gap-2 px-3"
         disabled={!item}
+        onClick={onEdit}
         type="button"
         variant="ghost"
       >
@@ -434,6 +664,28 @@ function ItemActionBar({ item }: { item: ItemDetail | null }) {
       >
         <Trash2 className="size-5" />
       </Button>
+    </div>
+  );
+}
+
+function DrawerToastMessage({ toast }: { toast: DrawerToast }) {
+  if (!toast) {
+    return null;
+  }
+
+  return (
+    <div className="border-b border-border px-6 py-3">
+      <div
+        className={cn(
+          "rounded-lg border px-4 py-3 text-sm",
+          toast.variant === "success"
+            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+            : "border-destructive/30 bg-destructive/10 text-destructive",
+        )}
+        role={toast.variant === "success" ? "status" : "alert"}
+      >
+        {toast.message}
+      </div>
     </div>
   );
 }
@@ -473,6 +725,99 @@ function ItemDrawerDetails({ item }: { item: ItemDetail }) {
         </dl>
       </IconSection>
     </div>
+  );
+}
+
+interface ItemEditFormProps {
+  draft: ItemDraft;
+  error: string | null;
+  item: ItemDetail;
+  onDraftChange(key: keyof ItemDraft, value: string): void;
+}
+
+function ItemEditForm({
+  draft,
+  error,
+  item,
+  onDraftChange,
+}: ItemEditFormProps) {
+  return (
+    <form className="space-y-8" onSubmit={(event) => event.preventDefault()}>
+      {error ? (
+        <div
+          className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <DetailSection title="Description">
+        <DrawerTextarea
+          onChange={(event) => onDraftChange("description", event.target.value)}
+          placeholder="No description yet."
+          value={draft.description}
+        />
+      </DetailSection>
+
+      {shouldShowContentField(item.kind) ? (
+        <DetailSection title={getContentTitle(item)}>
+          <DrawerTextarea
+            className="min-h-48 font-mono text-sm"
+            onChange={(event) => onDraftChange("content", event.target.value)}
+            placeholder="No content saved."
+            value={draft.content}
+          />
+        </DetailSection>
+      ) : null}
+
+      {shouldShowLanguageField(item.kind) ? (
+        <DetailSection title="Language">
+          <Input
+            className="h-11"
+            onChange={(event) => onDraftChange("language", event.target.value)}
+            placeholder="typescript"
+            value={draft.language}
+          />
+        </DetailSection>
+      ) : null}
+
+      {item.kind === "link" ? (
+        <DetailSection title="URL">
+          <Input
+            className="h-11"
+            onChange={(event) => onDraftChange("url", event.target.value)}
+            placeholder="https://example.com"
+            type="url"
+            value={draft.url}
+          />
+        </DetailSection>
+      ) : null}
+
+      <IconSection icon={Tag} title="Tags">
+        <Input
+          className="h-11"
+          onChange={(event) => onDraftChange("tags", event.target.value)}
+          placeholder="react, hooks, performance"
+          value={draft.tags}
+        />
+      </IconSection>
+
+      <IconSection icon={Folder} title="Collections">
+        <ChipList
+          emptyLabel="Not added to a collection yet."
+          items={item.collections.map((collection) => collection.name)}
+        />
+      </IconSection>
+
+      <IconSection icon={CalendarDays} title="Details">
+        <dl className="space-y-3 text-sm">
+          <DetailRow label="Item type" value={itemKindLabels[item.kind]} />
+          <DetailRow label="Created" value={formatLongDate(item.createdAt)} />
+          <DetailRow label="Updated" value={formatLongDate(item.updatedAt)} />
+        </dl>
+      </IconSection>
+    </form>
   );
 }
 
@@ -549,6 +894,18 @@ function DetailSection({
       <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
       {children}
     </section>
+  );
+}
+
+function DrawerTextarea({ className, ...props }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      className={cn(
+        "min-h-32 w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-base leading-6 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-sm dark:bg-input/30",
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
@@ -649,6 +1006,72 @@ function TagList({ tags }: { tags: string[] }) {
       ))}
     </div>
   );
+}
+
+function createItemDraft(item: ItemDetail): ItemDraft {
+  return {
+    content: item.content ?? "",
+    description: item.description ?? "",
+    language: item.language ?? "",
+    tags: item.tags.join(", "),
+    title: item.title,
+    url: item.sourceUrl ?? "",
+  };
+}
+
+function getNullableDraftValue(value: string) {
+  const trimmedValue = value.trim();
+
+  return trimmedValue ? trimmedValue : null;
+}
+
+function getDraftTags(value: string) {
+  const tags = value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(tags));
+}
+
+function getItemUpdatePayload(item: ItemDetail, draft: ItemDraft) {
+  return {
+    ...(shouldShowContentField(item.kind)
+      ? { content: getNullableDraftValue(draft.content) }
+      : {}),
+    description: getNullableDraftValue(draft.description),
+    ...(shouldShowLanguageField(item.kind)
+      ? { language: getNullableDraftValue(draft.language) }
+      : {}),
+    tags: getDraftTags(draft.tags),
+    title: draft.title,
+    ...(item.kind === "link" ? { url: getNullableDraftValue(draft.url) } : {}),
+  };
+}
+
+function getDrawerDescriptionTitle(
+  item: ItemDetail,
+  draft: ItemDraft | null,
+  mode: DrawerMode,
+) {
+  if (mode !== "edit" || !draft) {
+    return item.title;
+  }
+
+  return draft.title.trim() || "untitled item";
+}
+
+function shouldShowContentField(kind: DashboardItemKind) {
+  return (
+    kind === "command" ||
+    kind === "note" ||
+    kind === "prompt" ||
+    kind === "snippet"
+  );
+}
+
+function shouldShowLanguageField(kind: DashboardItemKind) {
+  return kind === "command" || kind === "snippet";
 }
 
 function getContentTitle(item: ItemDetail) {
