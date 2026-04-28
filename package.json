@@ -14,8 +14,11 @@
     "db:migrate:status": "prisma migrate status",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:db": "node --import tsx scripts/test-db.ts",
-    "test:seed": "node --import tsx --test tests/seed-data.test.ts",
+    "test:seed": "vitest run tests/seed-data.test.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -49,6 +52,7 @@
     "prisma": "^7.7.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

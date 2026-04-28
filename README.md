@@ -68,13 +68,16 @@ Open `http://localhost:3000`.
 - `npm run dev` - Start the Next.js dev server.
 - `npm run build` - Build the production app.
 - `npm run lint` - Run ESLint.
+- `npm run test` - Run Vitest unit tests for server actions and utilities.
+- `npm run test:unit` - Run the same non-component Vitest unit suite.
+- `npm run test:unit:watch` - Run the non-component Vitest unit suite in watch mode.
 - `npm run db:generate` - Generate the Prisma client.
 - `npm run db:migrate` - Run Prisma migrations locally.
 - `npm run db:migrate:status` - Check migration status.
 - `npm run db:deploy` - Deploy migrations.
 - `npm run db:seed` - Seed demo data.
 - `npm run test:db` - Run the database smoke test.
-- `npm run test:seed` - Run seed data tests.
+- `npm run test:seed` - Run the seed data unit test with Vitest.
 
 ## Project Context
 
