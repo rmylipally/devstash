@@ -1,31 +1,18 @@
-# Current Feature: Forgot Password
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add a forgot password link to the sign-in experience.
-- Add a forgot password request flow where a user can submit their email.
-- Use the existing `VerificationToken` model for password reset tokens.
-- Create secure, expiring password reset tokens without revealing whether an email exists.
-- Send users a password reset link using the existing email delivery pattern.
-- Add a reset password flow that validates the token, updates the user's password hash, and consumes the token.
-- Show clear success and error states for request, expired token, invalid token, and successful password update.
-- Cover the password reset flow with focused tests and verify the app builds.
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Loaded from inline description on 2026-04-28.
-- Token implementation should follow the existing email verification style where practical, but use distinct token identifiers/purpose so verification and password reset flows do not collide.
-- Do not add a new password reset token model unless the existing Auth.js `VerificationToken` model cannot safely support the flow.
 
 ## History
 
@@ -78,3 +65,4 @@ In Progress
 - 2026-04-27: Completed Toggle Email Verification with an `EMAIL_VERIFICATION_ENABLED` env flag, disabled-mode registration and sign-in behavior, enabled-mode verification preservation, updated auth messaging, env docs, and focused tests.
 - 2026-04-28: Loaded Forgot Password from inline description and set the feature status to Not Started.
 - 2026-04-28: Started Forgot Password implementation on `feature/forgot-password`.
+- 2026-04-28: Completed Forgot Password with secure hashed reset tokens stored in the existing `VerificationToken` model, forgot/reset password pages and API routes, Resend reset emails, token expiry and consumption, sign-in recovery messaging, focused tests, lint, and successful production build verification.
