@@ -39,6 +39,7 @@ describe("item type page", () => {
     assert.match(html, /Snippets/);
     assert.match(html, /1 saved item/);
     assert.match(html, /md:grid-cols-2/);
+    assert.match(html, /xl:grid-cols-3/);
     assert.match(html, /border-l-4/);
     assert.match(html, /border-l-blue-500/);
     assert.match(html, /useDebounce Hook/);
