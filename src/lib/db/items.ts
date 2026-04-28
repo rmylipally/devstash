@@ -12,6 +12,8 @@ export type DashboardItemKind =
   | "image"
   | "link";
 
+export type ItemCreateKind = Exclude<DashboardItemKind, "file" | "image">;
+
 export interface DashboardItem {
   id: string;
   title: string;
@@ -70,6 +72,16 @@ export interface ItemDetail {
 export interface ItemUpdateInput {
   content?: string | null;
   description?: string | null;
+  language?: string | null;
+  tags: string[];
+  title: string;
+  url?: string | null;
+}
+
+export interface ItemCreateInput {
+  content?: string | null;
+  description?: string | null;
+  kind: ItemCreateKind;
   language?: string | null;
   tags: string[];
   title: string;
@@ -296,6 +308,23 @@ export interface ItemDetailUpdateArgs {
   };
 }
 
+export interface ItemDetailCreateArgs {
+  data: {
+    content: string | null;
+    contentKind: PrismaContentKind;
+    description: string | null;
+    kind: PrismaItemKind;
+    language: string | null;
+    sourceUrl: string | null;
+    tags: {
+      create: ItemTagCreateInput[];
+    };
+    title: string;
+    userId: string;
+  };
+  select: ItemDetailFindFirstArgs["select"];
+}
+
 export interface ItemDeleteManyArgs {
   where: {
     id: string;
@@ -334,6 +363,12 @@ export interface ItemUpdateClient {
   };
 }
 
+export interface ItemCreateClient {
+  item: {
+    create(args: ItemDetailCreateArgs): Promise<ItemDetailRow>;
+  };
+}
+
 export interface ItemDeleteClient {
   item: {
     deleteMany(args: ItemDeleteManyArgs): Promise<ItemDeleteManyResult>;
@@ -357,6 +392,11 @@ interface GetItemDetailOptions {
 
 interface UpdateItemOptions extends GetItemDetailOptions {
   data: ItemUpdateInput;
+}
+
+interface CreateItemOptions {
+  data: ItemCreateInput;
+  userId: string;
 }
 
 type DeleteItemOptions = GetItemDetailOptions;
@@ -483,6 +523,12 @@ async function getDefaultItemUpdateClient() {
   return prisma as unknown as ItemUpdateClient;
 }
 
+async function getDefaultItemCreateClient() {
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma as unknown as ItemCreateClient;
+}
+
 async function getDefaultItemDeleteClient() {
   const { prisma } = await import("@/lib/prisma");
 
@@ -598,6 +644,30 @@ function getItemUpdateData(
   return updateData;
 }
 
+function getItemCreateData(
+  data: ItemCreateInput,
+  userId: string,
+): ItemDetailCreateArgs["data"] {
+  const isLink = data.kind === "link";
+  const supportsLanguage = data.kind === "command" || data.kind === "snippet";
+
+  return {
+    content: isLink ? null : (data.content ?? null),
+    contentKind: isLink ? "URL" : "TEXT",
+    description: data.description ?? null,
+    kind: prismaItemKindByDashboardKind[data.kind],
+    language: supportsLanguage ? (data.language ?? null) : null,
+    sourceUrl: isLink ? (data.url ?? null) : null,
+    tags: {
+      create: getUniqueTags(data.tags).map((tag) =>
+        toTagCreateInput(userId, tag),
+      ),
+    },
+    title: data.title,
+    userId,
+  };
+}
+
 export function toDashboardItem(item: DashboardItemRow): DashboardItem {
   return {
     description: item.description ?? "No description yet.",
@@ -667,6 +737,19 @@ export async function updateItem(
       id: options.itemId,
       userId: options.userId,
     },
+  });
+
+  return toItemDetail(item);
+}
+
+export async function createItem(
+  options: CreateItemOptions,
+  client?: ItemCreateClient,
+): Promise<ItemDetail> {
+  const itemClient = client ?? (await getDefaultItemCreateClient());
+  const item = await itemClient.item.create({
+    data: getItemCreateData(options.data, options.userId),
+    select: itemDetailSelect,
   });
 
   return toItemDetail(item);

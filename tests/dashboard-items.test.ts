@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import {
+  createItem,
   deleteItem,
   getDashboardItemTypes,
   getDashboardItemsByType,
@@ -15,6 +16,8 @@ import {
   type DashboardItemClient,
   type DashboardItemFindManyArgs,
   type DashboardItemRow,
+  type ItemCreateClient,
+  type ItemDetailCreateArgs,
   type ItemDeleteClient,
   type ItemDeleteManyArgs,
   type ItemDetailClient,
@@ -263,6 +266,152 @@ describe("dashboard item data", () => {
     assert.equal(updateArgs[0]?.select.content, true);
     assert.equal(item.title, "Run production build");
     assert.deepEqual(item.tags, ["cli", "build tools"]);
+  });
+
+  it("creates text items with user-owned tags", async () => {
+    const createArgs: ItemDetailCreateArgs[] = [];
+    const client: ItemCreateClient = {
+      item: {
+        create: async (args) => {
+          createArgs.push(args);
+
+          return itemDetailRow({
+            content: args.data.content ?? null,
+            contentKind: args.data.contentKind,
+            description: args.data.description ?? null,
+            kind: args.data.kind,
+            language: args.data.language ?? null,
+            sourceUrl: args.data.sourceUrl ?? null,
+            tags: args.data.tags.create.map(({ tag }) => ({
+              tag: { name: tag.connectOrCreate.create.name },
+            })),
+            title: args.data.title,
+          });
+        },
+      },
+    };
+
+    const item = await createItem(
+      {
+        data: {
+          content: "npm run build",
+          description: "Build the app",
+          kind: "command",
+          language: "bash",
+          tags: ["cli", "build tools"],
+          title: "Run production build",
+        },
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(createArgs[0], {
+      data: {
+        content: "npm run build",
+        contentKind: "TEXT",
+        description: "Build the app",
+        kind: "COMMAND",
+        language: "bash",
+        sourceUrl: null,
+        tags: {
+          create: [
+            {
+              tag: {
+                connectOrCreate: {
+                  create: {
+                    name: "cli",
+                    slug: "cli",
+                    userId: "user-123",
+                  },
+                  where: {
+                    userId_slug: {
+                      slug: "cli",
+                      userId: "user-123",
+                    },
+                  },
+                },
+              },
+            },
+            {
+              tag: {
+                connectOrCreate: {
+                  create: {
+                    name: "build tools",
+                    slug: "build-tools",
+                    userId: "user-123",
+                  },
+                  where: {
+                    userId_slug: {
+                      slug: "build-tools",
+                      userId: "user-123",
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+        title: "Run production build",
+        userId: "user-123",
+      },
+      select: createArgs[0]?.select,
+    });
+    assert.equal(createArgs[0]?.select.content, true);
+    assert.equal(item.kind, "command");
+    assert.equal(item.title, "Run production build");
+    assert.deepEqual(item.tags, ["cli", "build tools"]);
+  });
+
+  it("creates link items with URL content shape", async () => {
+    const createArgs: ItemDetailCreateArgs[] = [];
+    const client: ItemCreateClient = {
+      item: {
+        create: async (args) => {
+          createArgs.push(args);
+
+          return itemDetailRow({
+            content: args.data.content ?? null,
+            contentKind: args.data.contentKind,
+            kind: args.data.kind,
+            language: args.data.language ?? null,
+            sourceUrl: args.data.sourceUrl ?? null,
+            title: args.data.title,
+          });
+        },
+      },
+    };
+
+    const item = await createItem(
+      {
+        data: {
+          description: null,
+          kind: "link",
+          tags: [],
+          title: "Base UI Dialog Docs",
+          url: "https://base-ui.com/react/components/dialog",
+        },
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(createArgs[0]?.data, {
+      content: null,
+      contentKind: "URL",
+      description: null,
+      kind: "LINK",
+      language: null,
+      sourceUrl: "https://base-ui.com/react/components/dialog",
+      tags: {
+        create: [],
+      },
+      title: "Base UI Dialog Docs",
+      userId: "user-123",
+    });
+    assert.equal(item.contentKind, "url");
+    assert.equal(item.kind, "link");
+    assert.equal(item.sourceUrl, "https://base-ui.com/react/components/dialog");
   });
 
   it("deletes items scoped by item id and user id", async () => {

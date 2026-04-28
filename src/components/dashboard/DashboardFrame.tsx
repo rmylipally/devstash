@@ -63,6 +63,7 @@ interface DashboardFrameProps {
   currentUser: DashboardUser;
   favoriteCollections: DashboardCollection[];
   itemTypes: DashboardItemType[];
+  newItemAction?: ReactNode;
   recentCollections: DashboardCollection[];
 }
 
@@ -79,6 +80,7 @@ export function DashboardFrame({
   currentUser,
   favoriteCollections,
   itemTypes,
+  newItemAction,
   recentCollections,
 }: DashboardFrameProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -166,10 +168,12 @@ export function DashboardFrame({
               </div>
             </div>
 
-            <Button className="h-11 gap-2 px-4" type="button">
-              <Plus className="size-5" />
-              <span className="hidden sm:inline">New Item</span>
-            </Button>
+            {newItemAction ?? (
+              <Button className="h-11 gap-2 px-4" type="button">
+                <Plus className="size-5" />
+                <span className="hidden sm:inline">New Item</span>
+              </Button>
+            )}
           </header>
 
           {children}
