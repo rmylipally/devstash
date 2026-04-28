@@ -1,33 +1,22 @@
-# Current Feature: Item Create
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add a modal dialog for creating new items from the top-bar New Item button
-- Use a shadcn-style Dialog component for the create item modal
-- Add a type selector for snippet, prompt, command, note, and link items
-- Show type-specific fields: title, description, and tags for all types; content and language for snippet/command; content for prompt/note; required URL for link
-- Add a validated `createItem` server action using Zod
-- Add a `createItem` query function in `lib/db/items.ts`
-- Show a toast on successful create, close the modal, and refresh the page data
+
 
 ## Notes
 
 <!-- Any extra notes -->
 
-- Loaded from `context/features/item-create-spec.md` on 2026-04-28
-- The top-bar New Item button is the entry point
-- Supported create types are limited to snippet, prompt, command, note, and link
-- File and image create flows are out of scope for this feature
-- Server-side Zod validation should be the source of truth
-- Follow the existing `{ success, data, error }` server action return pattern
+
 
 ## History
 
@@ -104,3 +93,4 @@ In Progress
 - 2026-04-28: Completed Item Delete Functionality with an owner-scoped `deleteItem` server action and database helper, shadcn-style confirmation dialog, pending destructive state, drawer close and router refresh after success, success/error toast feedback, focused tests, lint, static UI checks, and successful production build verification.
 - 2026-04-28: Loaded Item Create from `context/features/item-create-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Item Create implementation on `feature/item-create`.
+- 2026-04-28: Completed Item Create with a shadcn-style create dialog from the top-bar New Item button, type-specific fields for snippet, prompt, command, note, and link items, a validated `createItem` server action, a Prisma create helper with tag connect-or-create, success toast with page refresh, corrected type selector layout, focused tests, lint, static UI checks, and successful production build verification.
