@@ -1,4 +1,4 @@
-# Current Feature
+# Current Feature: Rate Limiting for Auth
 
 ## Status
 
@@ -10,9 +10,26 @@ Completed
 
 <!-- Goals & requirements -->
 
+- Add rate limiting to auth-related API routes.
+- Use Upstash Redis with `@upstash/ratelimit` for serverless-compatible limiting.
+- Create a reusable `src/lib/rate-limit.ts` utility.
+- Return `429 Too Many Requests` JSON responses with a `Retry-After` header.
+- Display user-friendly rate-limit errors in auth UI flows.
+- Protect credentials login, registration, forgot-password, reset-password, and resend-verification flows with endpoint-specific limits.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Source spec: `context/features/rate-limiting-spec.md`
+- Login limit: 5 attempts per 15 minutes, keyed by IP + email.
+- Register limit: 3 attempts per 1 hour, keyed by IP.
+- Forgot password limit: 3 attempts per 1 hour, keyed by IP.
+- Reset password limit: 5 attempts per 15 minutes, keyed by IP.
+- Resend verification limit: 3 attempts per 15 minutes, keyed by IP + email.
+- Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables.
+- Rate limiting should fail open if Upstash is unavailable.
+- NextAuth credentials callback limiting may require a careful custom integration path.
 
 ## History
 
@@ -69,3 +86,6 @@ Completed
 - 2026-04-28: Loaded Profile Page from `context/features/profile-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Profile Page implementation on `feature/profile-page`.
 - 2026-04-28: Completed Profile Page with a protected dashboard-framed `/profile` route, profile identity and account creation details, usage stats, item type breakdown, email-user password change action, guarded delete-account API and confirmation UI, tracked spec, focused tests, lint, and successful production build verification.
+- 2026-04-28: Loaded Rate Limiting for Auth from `context/features/rate-limiting-spec.md` and set the feature status to Not Started.
+- 2026-04-28: Started Rate Limiting for Auth implementation on `feature/rate-limiting-for-auth`.
+- 2026-04-28: Completed Rate Limiting for Auth with Upstash-backed auth endpoint limits, local fallback limiting, NextAuth-compatible credentials throttling, resend-verification support, focused tests, lint, and successful production build verification.

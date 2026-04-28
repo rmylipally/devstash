@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { registerUser } from "@/lib/auth/credentials";
+import { authRateLimiters, enforceAuthRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const rateLimitResponse = await enforceAuthRateLimit({
+    rateLimiter: authRateLimiters.register,
+    request,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   let input: unknown;
 
   try {

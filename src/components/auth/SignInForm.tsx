@@ -63,6 +63,11 @@ export function SignInForm({
       return;
     }
 
+    if (response?.status === 429) {
+      setFormError("Too many attempts. Please try again later.");
+      return;
+    }
+
     setFormError(
       response?.code === "email_not_verified"
         ? "Check your email to verify your account before signing in."

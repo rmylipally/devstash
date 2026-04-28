@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { requestPasswordReset } from "@/lib/auth/password-reset";
+import { requestEmailVerification } from "@/lib/auth/email-verification";
 import { authRateLimiters, enforceAuthRateLimit } from "@/lib/rate-limit";
 
-export async function POST(request: Request): Promise<NextResponse> {
-  const rateLimitResponse = await enforceAuthRateLimit({
-    rateLimiter: authRateLimiters.forgotPassword,
-    request,
-  });
-
-  if (rateLimitResponse) {
-    return rateLimitResponse;
+function getEmailIdentifier(input: unknown): string {
+  if (typeof input !== "object" || input === null) {
+    return "";
   }
 
+  const email = (input as Record<string, unknown>).email;
+
+  return typeof email === "string" ? email : "";
+}
+
+export async function POST(request: Request): Promise<NextResponse> {
   let input: unknown;
 
   try {
@@ -27,7 +28,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  const result = await requestPasswordReset(input, undefined, {
+  const rateLimitResponse = await enforceAuthRateLimit({
+    identifiers: [getEmailIdentifier(input)],
+    rateLimiter: authRateLimiters.resendVerification,
+    request,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const result = await requestEmailVerification(input, undefined, {
     appUrl: new URL(request.url).origin,
   });
 
