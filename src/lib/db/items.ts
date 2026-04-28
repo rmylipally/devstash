@@ -296,6 +296,17 @@ export interface ItemDetailUpdateArgs {
   };
 }
 
+export interface ItemDeleteManyArgs {
+  where: {
+    id: string;
+    userId: string;
+  };
+}
+
+export interface ItemDeleteManyResult {
+  count: number;
+}
+
 export interface DashboardItemClient {
   item: {
     count(args: DashboardItemCountArgs): Promise<number>;
@@ -323,6 +334,12 @@ export interface ItemUpdateClient {
   };
 }
 
+export interface ItemDeleteClient {
+  item: {
+    deleteMany(args: ItemDeleteManyArgs): Promise<ItemDeleteManyResult>;
+  };
+}
+
 interface GetDashboardItemsOptions {
   limit?: number;
   userEmail?: string;
@@ -341,6 +358,8 @@ interface GetItemDetailOptions {
 interface UpdateItemOptions extends GetItemDetailOptions {
   data: ItemUpdateInput;
 }
+
+type DeleteItemOptions = GetItemDetailOptions;
 
 const DEFAULT_RECENT_ITEM_LIMIT = 10;
 
@@ -462,6 +481,12 @@ async function getDefaultItemUpdateClient() {
   const { prisma } = await import("@/lib/prisma");
 
   return prisma as unknown as ItemUpdateClient;
+}
+
+async function getDefaultItemDeleteClient() {
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma as unknown as ItemDeleteClient;
 }
 
 function getUserWhere({
@@ -645,6 +670,21 @@ export async function updateItem(
   });
 
   return toItemDetail(item);
+}
+
+export async function deleteItem(
+  options: DeleteItemOptions,
+  client?: ItemDeleteClient,
+): Promise<boolean> {
+  const itemClient = client ?? (await getDefaultItemDeleteClient());
+  const result = await itemClient.item.deleteMany({
+    where: {
+      id: options.itemId,
+      userId: options.userId,
+    },
+  });
+
+  return result.count > 0;
 }
 
 export async function getDashboardPinnedItems(

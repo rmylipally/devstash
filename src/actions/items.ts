@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import {
+  deleteItem as deleteItemRecord,
   getItemDetail,
   updateItem as updateItemRecord,
   type ItemDetail,
@@ -13,6 +14,15 @@ import {
 type UpdateItemActionResult =
   | {
       data: ItemDetail;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+type DeleteItemActionResult =
+  | {
       success: true;
     }
   | {
@@ -116,6 +126,40 @@ export async function updateItem(
     return {
       success: false,
       error: "Could not update item. Try again.",
+    };
+  }
+}
+
+export async function deleteItem(
+  itemId: string,
+): Promise<DeleteItemActionResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to delete items.",
+    };
+  }
+
+  try {
+    const wasDeleted = await deleteItemRecord({ itemId, userId });
+
+    if (!wasDeleted) {
+      return {
+        success: false,
+        error: "Item not found.",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Could not delete item. Try again.",
     };
   }
 }

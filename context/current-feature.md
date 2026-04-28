@@ -1,18 +1,32 @@
-# Current Feature
+# Current Feature: Item Delete Functionality
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Add delete functionality for items from the existing item drawer Delete action
+- Show a shadcn-style confirmation UI before deleting an item
+- Delete items through an authenticated, owner-scoped server action and database helper
+- Close the drawer and refresh item lists after a successful delete
+- Show a toast notification on delete success and a friendly error message on failure
+- Disable destructive controls while the delete request is pending
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Loaded from inline description on 2026-04-28
+- User wrote "shaden UI"; treat this as shadcn-style confirmation UI
+- Use the existing item drawer Delete button as the entry point
+- Do not delete tag or collection records themselves; only delete the selected item and related join rows
+- Keep the mutation scoped to the signed-in user and validate ownership before deletion
+- Add or update focused unit tests for server action and database helper behavior
 
 ## History
 
@@ -84,3 +98,5 @@ Completed
 - 2026-04-28: Loaded Item Drawer Edit Mode from `context/features/item-drawer-edit-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Item Drawer Edit Mode implementation on `feature/item-drawer-edit-mode`.
 - 2026-04-28: Completed Item Drawer Edit Mode with inline drawer editing, header title editing, Save/Cancel mode controls, a validated `updateItem` server action, owner-scoped item updates, tag replacement with connect-or-create, success/error feedback, router refresh, focused tests, lint, static UI checks, and successful production build verification.
+- 2026-04-28: Loaded Item Delete Functionality from inline description and set the feature status to Not Started.
+- 2026-04-28: Started Item Delete Functionality implementation on `feature/item-delete-functionality`.

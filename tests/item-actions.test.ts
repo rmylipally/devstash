@@ -3,6 +3,7 @@ import { beforeEach, describe, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  deleteItemRecord: vi.fn(),
   getItemDetail: vi.fn(),
   updateItemRecord: vi.fn(),
 }));
@@ -12,11 +13,12 @@ vi.mock("@/auth", () => ({
 }));
 
 vi.mock("@/lib/db/items", () => ({
+  deleteItem: mocks.deleteItemRecord,
   getItemDetail: mocks.getItemDetail,
   updateItem: mocks.updateItemRecord,
 }));
 
-const { updateItem } = await import("../src/actions/items");
+const { deleteItem, updateItem } = await import("../src/actions/items");
 
 const itemDetail = {
   aiSummary: null,
@@ -43,6 +45,7 @@ const itemDetail = {
 describe("item actions", () => {
   beforeEach(() => {
     mocks.auth.mockReset();
+    mocks.deleteItemRecord.mockReset();
     mocks.getItemDetail.mockReset();
     mocks.updateItemRecord.mockReset();
   });
@@ -128,5 +131,44 @@ describe("item actions", () => {
       error: "Item not found.",
     });
     assert.equal(mocks.updateItemRecord.mock.calls.length, 0);
+  });
+
+  it("deletes an item for the signed-in owner", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.deleteItemRecord.mockResolvedValue(true);
+
+    const result = await deleteItem("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: true,
+    });
+    assert.deepEqual(mocks.deleteItemRecord.mock.calls[0]?.[0], {
+      itemId: "item-use-debounce-hook",
+      userId: "user-123",
+    });
+  });
+
+  it("rejects unauthenticated item deletes", async () => {
+    mocks.auth.mockResolvedValue(null);
+
+    const result = await deleteItem("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "You must be signed in to delete items.",
+    });
+    assert.equal(mocks.deleteItemRecord.mock.calls.length, 0);
+  });
+
+  it("does not delete items the user does not own", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.deleteItemRecord.mockResolvedValue(false);
+
+    const result = await deleteItem("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "Item not found.",
+    });
   });
 });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import {
+  deleteItem,
   getDashboardItemTypes,
   getDashboardItemsByType,
   getDashboardItemStats,
@@ -14,6 +15,8 @@ import {
   type DashboardItemClient,
   type DashboardItemFindManyArgs,
   type DashboardItemRow,
+  type ItemDeleteClient,
+  type ItemDeleteManyArgs,
   type ItemDetailClient,
   type ItemDetailFindFirstArgs,
   type ItemDetailRow,
@@ -260,6 +263,49 @@ describe("dashboard item data", () => {
     assert.equal(updateArgs[0]?.select.content, true);
     assert.equal(item.title, "Run production build");
     assert.deepEqual(item.tags, ["cli", "build tools"]);
+  });
+
+  it("deletes items scoped by item id and user id", async () => {
+    const deleteManyArgs: ItemDeleteManyArgs[] = [];
+    const client: ItemDeleteClient = {
+      item: {
+        deleteMany: async (args) => {
+          deleteManyArgs.push(args);
+
+          return { count: 1 };
+        },
+      },
+    };
+
+    const wasDeleted = await deleteItem(
+      { itemId: "item-use-debounce-hook", userId: "user-123" },
+      client,
+    );
+
+    assert.equal(wasDeleted, true);
+    assert.deepEqual(deleteManyArgs, [
+      {
+        where: {
+          id: "item-use-debounce-hook",
+          userId: "user-123",
+        },
+      },
+    ]);
+  });
+
+  it("returns false when deleting an item outside the user scope", async () => {
+    const client: ItemDeleteClient = {
+      item: {
+        deleteMany: async () => ({ count: 0 }),
+      },
+    };
+
+    const wasDeleted = await deleteItem(
+      { itemId: "item-use-debounce-hook", userId: "user-123" },
+      client,
+    );
+
+    assert.equal(wasDeleted, false);
   });
 
   it("fetches pinned dashboard items with user scoping", async () => {
