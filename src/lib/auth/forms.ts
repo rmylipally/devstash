@@ -3,9 +3,18 @@ interface SignInFormData {
   password: string;
 }
 
+interface ForgotPasswordFormData {
+  email: string;
+}
+
 interface RegisterFormData extends SignInFormData {
   confirmPassword: string;
   name: string;
+}
+
+interface ResetPasswordFormData extends SignInFormData {
+  confirmPassword: string;
+  token: string;
 }
 
 type FormValidationResult<TData, TErrors> =
@@ -23,9 +32,18 @@ interface SignInFormErrors {
   password?: string;
 }
 
+interface ForgotPasswordFormErrors {
+  email?: string;
+}
+
 interface RegisterFormErrors extends SignInFormErrors {
   confirmPassword?: string;
   name?: string;
+}
+
+interface ResetPasswordFormErrors extends SignInFormErrors {
+  confirmPassword?: string;
+  token?: string;
 }
 
 function readTrimmedString(input: Record<string, unknown>, key: string) {
@@ -117,6 +135,68 @@ export function validateRegisterForm(
       email,
       name,
       password,
+    },
+  };
+}
+
+export function validateForgotPasswordForm(
+  input: Record<string, unknown>,
+): FormValidationResult<ForgotPasswordFormData, ForgotPasswordFormErrors> {
+  const email = normalizeEmail(readTrimmedString(input, "email"));
+  const errors: ForgotPasswordFormErrors = {};
+
+  if (!isValidEmail(email)) {
+    errors.email = "Enter a valid email address.";
+  }
+
+  if (hasErrors(errors)) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: { email },
+  };
+}
+
+export function validateResetPasswordForm(
+  input: Record<string, unknown>,
+): FormValidationResult<ResetPasswordFormData, ResetPasswordFormErrors> {
+  const email = normalizeEmail(readTrimmedString(input, "email"));
+  const token = readTrimmedString(input, "token");
+  const password = readTrimmedString(input, "password");
+  const confirmPassword = readTrimmedString(input, "confirmPassword");
+  const errors: ResetPasswordFormErrors = {};
+
+  if (!isValidEmail(email)) {
+    errors.email = "Password reset link is invalid.";
+  }
+
+  if (!token) {
+    errors.token = "Password reset link is invalid.";
+  }
+
+  if (password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = "Confirm your password.";
+  } else if (password !== confirmPassword) {
+    errors.confirmPassword = "Passwords do not match.";
+  }
+
+  if (hasErrors(errors)) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      confirmPassword,
+      email,
+      password,
+      token,
     },
   };
 }

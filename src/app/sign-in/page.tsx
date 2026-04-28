@@ -65,6 +65,12 @@ function getVerificationMessage(
     };
   }
 
+  if (getSearchParam(params, "passwordReset") === "1") {
+    return {
+      initialMessage: "Password updated. You can now log in.",
+    };
+  }
+
   return {};
 }
 

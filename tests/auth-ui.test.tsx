@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   getSafeAuthRedirect,
   validateRegisterForm,
+  validateResetPasswordForm,
   validateSignInForm,
 } from "../src/lib/auth/forms";
 import {
@@ -92,6 +93,43 @@ describe("auth ui", () => {
     );
   });
 
+  it("validates reset password form input and matching passwords", () => {
+    assert.deepEqual(
+      validateResetPasswordForm({
+        confirmPassword: "different",
+        email: "bad-email",
+        password: "password123",
+        token: "",
+      }),
+      {
+        success: false,
+        errors: {
+          email: "Password reset link is invalid.",
+          confirmPassword: "Passwords do not match.",
+          token: "Password reset link is invalid.",
+        },
+      },
+    );
+
+    assert.deepEqual(
+      validateResetPasswordForm({
+        confirmPassword: "new-password",
+        email: " TEST@example.com ",
+        password: "new-password",
+        token: " reset-token ",
+      }),
+      {
+        success: true,
+        data: {
+          confirmPassword: "new-password",
+          email: "test@example.com",
+          password: "new-password",
+          token: "reset-token",
+        },
+      },
+    );
+  });
+
   it("keeps auth redirects local to the app", () => {
     assert.equal(getSafeAuthRedirect("/dashboard/items"), "/dashboard/items");
     assert.equal(getSafeAuthRedirect("https://evil.test"), "/dashboard");
@@ -120,7 +158,11 @@ describe("auth ui", () => {
       registerPage,
       signInForm,
       registerForm,
+      forgotPasswordForm,
+      resetPasswordForm,
       authToast,
+      forgotPasswordPage,
+      resetPasswordPage,
       verifyEmailRoute,
       envExample,
     ] =
@@ -129,13 +171,18 @@ describe("auth ui", () => {
         readFile("src/app/register/page.tsx", "utf8"),
         readFile("src/components/auth/SignInForm.tsx", "utf8"),
         readFile("src/components/auth/RegisterForm.tsx", "utf8"),
+        readFile("src/components/auth/ForgotPasswordForm.tsx", "utf8"),
+        readFile("src/components/auth/ResetPasswordForm.tsx", "utf8"),
         readFile("src/components/auth/AuthToast.tsx", "utf8"),
+        readFile("src/app/forgot-password/page.tsx", "utf8"),
+        readFile("src/app/reset-password/page.tsx", "utf8"),
         readFile("src/app/verify-email/route.ts", "utf8"),
         readFile(".env.example", "utf8"),
       ]);
 
     assert.match(signInPage, /SignInForm/);
     assert.match(registerPage, /RegisterForm/);
+    assert.match(signInPage, /Password updated\. You can now log in\./);
     assert.match(
       signInPage,
       /Account created\. Check your email to verify your account before logging in\./,
@@ -146,12 +193,19 @@ describe("auth ui", () => {
     assert.match(signInForm, /AuthToast/);
     assert.match(signInForm, /signIn\("credentials"/);
     assert.match(signInForm, /signIn\("github"/);
+    assert.match(signInForm, /\/forgot-password/);
     assert.match(signInForm, /email_not_verified/);
     assert.doesNotMatch(signInForm, /initialMessage \? \(/);
     assert.match(registerForm, /\/api\/auth\/register/);
     assert.match(registerForm, /verificationStatus/);
     assert.match(registerForm, /"sent"/);
     assert.match(registerForm, /"skipped"/);
+    assert.match(forgotPasswordForm, /\/api\/auth\/forgot-password/);
+    assert.match(forgotPasswordForm, /validateForgotPasswordForm/);
+    assert.match(resetPasswordForm, /\/api\/auth\/reset-password/);
+    assert.match(resetPasswordForm, /validateResetPasswordForm/);
+    assert.match(forgotPasswordPage, /ForgotPasswordForm/);
+    assert.match(resetPasswordPage, /ResetPasswordForm/);
     assert.match(authToast, /role="status"/);
     assert.match(authToast, /aria-live="polite"/);
     assert.match(verifyEmailRoute, /verifyEmailToken/);

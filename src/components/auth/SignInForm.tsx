@@ -97,7 +97,15 @@ export function SignInForm({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">Password</span>
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium">Password</span>
+            <Link
+              className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              href="/forgot-password"
+            >
+              Forgot password?
+            </Link>
+          </span>
           <Input
             aria-invalid={Boolean(errors.password)}
             autoComplete="current-password"
