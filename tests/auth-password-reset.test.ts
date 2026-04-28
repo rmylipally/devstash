@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { compare } from "bcryptjs";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 process.env.DATABASE_URL ??=
   "postgresql://devstash:devstash@localhost:5432/devstash";

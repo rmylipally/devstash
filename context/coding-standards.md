@@ -90,6 +90,13 @@ Example v4 configuration:
 - Return `{ success, data, error }` pattern from actions
 - Display user-friendly error messages via toast
 
+## Testing
+
+- Use Vitest for unit tests
+- Unit tests should cover server actions, database helpers, auth/rate-limit utilities, scripts, and other non-component logic
+- Do not add component tests to the default unit test suite unless explicitly requested
+- Run `npm run test:unit` for unit verification and `npm run build` before completing feature work
+
 ## Code Quality
 
 - No commented-out code unless specified

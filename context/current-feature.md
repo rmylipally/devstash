@@ -1,18 +1,26 @@
-# Current Feature
+# Current Feature: Item Listing Three-Column Layout
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Change the item listing view from a two-column row to a three-column row on larger screens
+- Keep the item listing layout responsive across mobile, tablet, and desktop widths
+- Preserve existing item card styling, data loading, filtering, and dashboard layout behavior
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Inline feature request loaded on 2026-04-28
+- Scope is layout-only for the item listing view; no data model or route changes expected
+- Existing item list feature currently documents a responsive two-column item card grid
 
 ## History
 
@@ -75,3 +83,5 @@ Completed
 - 2026-04-28: Loaded Items List View from `context/features/item-list-view-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Items List View implementation on `feature/items-list-view`.
 - 2026-04-28: Completed Items List View with a protected dynamic `/items/[type]` route, type-filtered item fetching, responsive two-column item card grid, item-kind left border accents, focused tests, lint, and successful production build verification.
+- 2026-04-28: Loaded Item Listing Three-Column Layout from inline description and set the feature status to Not Started.
+- 2026-04-28: Started Item Listing Three-Column Layout implementation on `feature/item-listing-three-column-layout`.
