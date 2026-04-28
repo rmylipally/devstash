@@ -34,7 +34,13 @@ import {
   type ReactNode,
 } from "react";
 
-import { updateItem } from "@/actions/items";
+import { deleteItem, updateItem } from "@/actions/items";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -141,6 +147,7 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<DrawerToast>(null);
 
   const openItemDrawer = useCallback((itemId: string) => {
     setError(null);
@@ -155,6 +162,16 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
     }),
     [openItemDrawer],
   );
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setToast(null), 3500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   useEffect(() => {
     if (!isOpen || !selectedItemId) {
@@ -216,6 +233,18 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function handleItemDeleted() {
+    setIsOpen(false);
+    setError(null);
+    setIsLoading(false);
+    setItemDetail(null);
+    setSelectedItemId(null);
+    setToast({
+      message: "Item deleted.",
+      variant: "success",
+    });
+  }
+
   return (
     <ItemDrawerContext.Provider value={contextValue}>
       {children}
@@ -226,10 +255,12 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
             isLoading={isLoading}
             item={itemDetail}
             key={selectedItemId ?? "idle"}
+            onItemDeleted={handleItemDeleted}
             onItemUpdated={setItemDetail}
           />
         </SheetContent>
       </Sheet>
+      <GlobalToastMessage toast={toast} />
     </ItemDrawerContext.Provider>
   );
 }
@@ -337,6 +368,7 @@ interface ItemDrawerContentProps {
   error: string | null;
   isLoading: boolean;
   item: ItemDetail | null;
+  onItemDeleted(): void;
   onItemUpdated(item: ItemDetail): void;
 }
 
@@ -344,11 +376,15 @@ function ItemDrawerContent({
   error,
   isLoading,
   item,
+  onItemDeleted,
   onItemUpdated,
 }: ItemDrawerContentProps) {
   const router = useRouter();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [draft, setDraft] = useState<ItemDraft | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<DrawerMode>("view");
   const [toast, setToast] = useState<DrawerToast>(null);
@@ -383,6 +419,49 @@ function ItemDrawerContent({
     setDraft(item ? createItemDraft(item) : null);
     setFormError(null);
     setMode("view");
+  }
+
+  function handleDeleteDialogOpenChange(open: boolean) {
+    if (isDeleting && !open) {
+      return;
+    }
+
+    if (open) {
+      setDeleteError(null);
+    }
+
+    setIsDeleteDialogOpen(open);
+  }
+
+  async function handleDelete() {
+    if (!item) {
+      return;
+    }
+
+    setDeleteError(null);
+    setIsDeleting(true);
+
+    let result: Awaited<ReturnType<typeof deleteItem>>;
+
+    try {
+      result = await deleteItem(item.id);
+    } catch {
+      result = {
+        success: false,
+        error: "Could not delete item. Try again.",
+      };
+    }
+
+    setIsDeleting(false);
+
+    if (!result.success) {
+      setDeleteError(result.error);
+      return;
+    }
+
+    setIsDeleteDialogOpen(false);
+    onItemDeleted();
+    router.refresh();
   }
 
   async function handleSave() {
@@ -473,8 +552,19 @@ function ItemDrawerContent({
         item={item}
         mode={mode}
         onCancel={handleCancel}
+        onDelete={() => handleDeleteDialogOpenChange(true)}
         onEdit={handleEdit}
+        isDeleting={isDeleting}
         onSave={() => void handleSave()}
+      />
+
+      <DeleteItemDialog
+        error={deleteError}
+        isDeleting={isDeleting}
+        item={item}
+        onConfirm={() => void handleDelete()}
+        onOpenChange={handleDeleteDialogOpenChange}
+        open={isDeleteDialogOpen}
       />
 
       <DrawerToastMessage toast={toast} />
@@ -541,21 +631,25 @@ function ItemDrawerHeaderTitle({
 }
 
 interface ItemActionBarProps {
+  isDeleting: boolean;
   isSaveDisabled: boolean;
   isSaving: boolean;
   item: ItemDetail | null;
   mode: DrawerMode;
   onCancel(): void;
+  onDelete(): void;
   onEdit(): void;
   onSave(): void;
 }
 
 function ItemActionBar({
+  isDeleting,
   isSaveDisabled,
   isSaving,
   item,
   mode,
   onCancel,
+  onDelete,
   onEdit,
   onSave,
 }: ItemActionBarProps) {
@@ -657,13 +751,105 @@ function ItemActionBar({
       <Button
         aria-label="Delete item"
         className="ml-auto"
-        disabled={!item}
+        disabled={!item || isDeleting}
+        onClick={onDelete}
         size="icon"
         type="button"
         variant="destructive"
       >
-        <Trash2 className="size-5" />
+        {isDeleting ? (
+          <Loader2 className="size-5 animate-spin" />
+        ) : (
+          <Trash2 className="size-5" />
+        )}
       </Button>
+    </div>
+  );
+}
+
+interface DeleteItemDialogProps {
+  error: string | null;
+  isDeleting: boolean;
+  item: ItemDetail | null;
+  onConfirm(): void;
+  onOpenChange(open: boolean): void;
+  open: boolean;
+}
+
+function DeleteItemDialog({
+  error,
+  isDeleting,
+  item,
+  onConfirm,
+  onOpenChange,
+  open,
+}: DeleteItemDialogProps) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent>
+        <div className="space-y-3">
+          <AlertDialogTitle className="text-lg font-semibold">
+            Delete item?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm leading-6 text-muted-foreground">
+            This will permanently delete
+            {item ? ` "${item.title}"` : " this item"} from your stash. Tags and
+            collections remain available for other items.
+          </AlertDialogDescription>
+        </div>
+
+        {error ? (
+          <div
+            className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            disabled={isDeleting}
+            onClick={() => onOpenChange(false)}
+            type="button"
+            variant="outline"
+          >
+            Cancel
+          </Button>
+          <Button
+            className="gap-2"
+            disabled={!item || isDeleting}
+            onClick={onConfirm}
+            type="button"
+            variant="destructive"
+          >
+            {isDeleting ? <Loader2 className="size-4 animate-spin" /> : null}
+            Delete item
+          </Button>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function GlobalToastMessage({ toast }: { toast: DrawerToast }) {
+  if (!toast) {
+    return null;
+  }
+
+  return (
+    <div className="fixed bottom-5 right-5 z-[70] w-[min(24rem,calc(100vw-2.5rem))]">
+      <div
+        className={cn(
+          "rounded-lg border px-4 py-3 text-sm shadow-xl",
+          toast.variant === "success"
+            ? "border-emerald-500/30 bg-background text-emerald-300"
+            : "border-destructive/30 bg-background text-destructive",
+        )}
+        role={toast.variant === "success" ? "status" : "alert"}
+      >
+        {toast.message}
+      </div>
     </div>
   );
 }
