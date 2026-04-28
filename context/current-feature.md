@@ -1,32 +1,18 @@
-# Current Feature: Item Drawer Edit Mode
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add inline edit mode to the item detail drawer when the Edit action is clicked
-- Replace the drawer action bar with Save and Cancel controls while editing
-- Save edited item data through a validated `updateItem(itemId, data)` server action
-- Support editable title, description, tags, and type-specific content, language, and URL fields
-- Keep item type, collection membership, and created/updated dates display-only
-- Show save success/error toast feedback and refresh drawer/list data after save
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Loaded from `context/features/item-drawer-edit-spec.md` on 2026-04-28
-- Keep the same drawer open for view/edit; do not add a separate edit page
-- Use controlled inputs without a form library
-- Server-side Zod validation is the source of truth
-- Tag updates should replace existing tags using disconnect plus connect-or-create values
-- A code editor and collection-management editing are out of scope for this feature
 
 ## History
 
@@ -97,3 +83,4 @@ In Progress
 - 2026-04-28: Completed Item Drawer with a shared shadcn-style Sheet drawer, auth-scoped `/api/items/[id]` detail fetching, item detail query helpers, dashboard and item-list drawer triggers, loading/error/detail states, action bar controls, focused tests, lint, and successful production build verification.
 - 2026-04-28: Loaded Item Drawer Edit Mode from `context/features/item-drawer-edit-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Item Drawer Edit Mode implementation on `feature/item-drawer-edit-mode`.
+- 2026-04-28: Completed Item Drawer Edit Mode with inline drawer editing, header title editing, Save/Cancel mode controls, a validated `updateItem` server action, owner-scoped item updates, tag replacement with connect-or-create, success/error feedback, router refresh, focused tests, lint, static UI checks, and successful production build verification.
