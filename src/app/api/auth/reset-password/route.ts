@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { resetPassword } from "@/lib/auth/password-reset";
+import { authRateLimiters, enforceAuthRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const rateLimitResponse = await enforceAuthRateLimit({
+    rateLimiter: authRateLimiters.resetPassword,
+    request,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   let input: unknown;
 
   try {

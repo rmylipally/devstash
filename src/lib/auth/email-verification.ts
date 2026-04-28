@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
+import { prisma } from "@/lib/prisma";
+
 const VERIFICATION_TOKEN_BYTES = 32;
 const VERIFICATION_TOKEN_EXPIRES_IN_MS = 24 * 60 * 60 * 1000;
 const RESEND_EMAILS_API_URL = "https://api.resend.com/emails";
@@ -11,6 +13,9 @@ const EMAIL_VERIFICATION_DISABLED_VALUES = new Set([
   "no",
   "off",
 ]);
+
+export const EMAIL_VERIFICATION_REQUEST_MESSAGE =
+  "If an account needs verification, we sent a new verification link.";
 
 interface VerificationTokenRecord {
   expires: Date;
@@ -51,6 +56,22 @@ export interface EmailVerificationDataStore {
   };
 }
 
+interface EmailVerificationRequestUserRecord {
+  email: string;
+  emailVerified: Date | null;
+  name: string | null;
+}
+
+export interface EmailVerificationRequestDataStore
+  extends VerificationTokenRegistrationDataStore {
+  user: {
+    findUnique(args: {
+      select: { email: true; emailVerified: true; name: true };
+      where: { email: string };
+    }): Promise<EmailVerificationRequestUserRecord | null>;
+  };
+}
+
 export interface VerificationEmailInput {
   name: string | null;
   to: string;
@@ -81,12 +102,44 @@ export type VerifyEmailTokenResult =
       success: false;
     };
 
+export type EmailVerificationRequestResult =
+  | {
+      data: {
+        message: typeof EMAIL_VERIFICATION_REQUEST_MESSAGE;
+      };
+      status: 200;
+      success: true;
+    }
+  | {
+      error: string;
+      status: 400 | 500;
+      success: false;
+    };
+
+interface RequestEmailVerificationOptions extends CreateEmailVerificationOptions {
+  sendVerificationEmail?: (input: VerificationEmailInput) => Promise<void>;
+}
+
+function getEmailVerificationRequestDataStore(): EmailVerificationRequestDataStore {
+  return prisma as unknown as EmailVerificationRequestDataStore;
+}
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readTrimmedString(input: Record<string, unknown>, key: string) {
+  const value = input[key];
+
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function escapeHtml(value: string) {
@@ -110,6 +163,16 @@ function getVerificationTokenDataStore(
   }
 
   return dataStore.verificationToken;
+}
+
+function getGenericEmailVerificationSuccess(): EmailVerificationRequestResult {
+  return {
+    success: true,
+    status: 200,
+    data: {
+      message: EMAIL_VERIFICATION_REQUEST_MESSAGE,
+    },
+  };
 }
 
 export function isEmailVerificationEnabled(
@@ -247,6 +310,74 @@ export async function verifyEmailToken(
     status: "verified",
     success: true,
   };
+}
+
+export async function requestEmailVerification(
+  input: unknown,
+  dataStore: EmailVerificationRequestDataStore = getEmailVerificationRequestDataStore(),
+  options: RequestEmailVerificationOptions = {},
+): Promise<EmailVerificationRequestResult> {
+  if (!isRecord(input)) {
+    return {
+      success: false,
+      status: 400,
+      error: "Invalid verification request.",
+    };
+  }
+
+  const email = normalizeEmail(readTrimmedString(input, "email"));
+
+  if (!isValidEmail(email)) {
+    return {
+      success: false,
+      status: 400,
+      error: "Enter a valid email address.",
+    };
+  }
+
+  if (!isEmailVerificationEnabled()) {
+    return getGenericEmailVerificationSuccess();
+  }
+
+  const user = await dataStore.user.findUnique({
+    where: { email },
+    select: { email: true, emailVerified: true, name: true },
+  });
+
+  if (!user || user.emailVerified) {
+    return getGenericEmailVerificationSuccess();
+  }
+
+  try {
+    const verificationRequest = await createEmailVerificationRequest(
+      {
+        appUrl: options.appUrl,
+        email: user.email,
+      },
+      dataStore,
+      {
+        appUrl: options.appUrl,
+        expiresInMs: options.expiresInMs,
+        now: options.now,
+        tokenGenerator: options.tokenGenerator,
+      },
+    );
+    const sendEmail = options.sendVerificationEmail ?? sendVerificationEmail;
+
+    await sendEmail({
+      name: user.name,
+      to: user.email,
+      verificationUrl: verificationRequest.verificationUrl,
+    });
+  } catch {
+    return {
+      success: false,
+      status: 500,
+      error: "Could not send verification email. Try again.",
+    };
+  }
+
+  return getGenericEmailVerificationSuccess();
 }
 
 export async function sendVerificationEmail(

@@ -395,6 +395,63 @@ describe("auth credentials", () => {
     assert.equal(deletedToken, tokenHash);
   });
 
+  it("resends verification emails for unverified users without revealing account state", async () => {
+    const { requestEmailVerification } = await import(
+      "../src/lib/auth/email-verification"
+    );
+    const now = new Date("2026-04-28T12:00:00.000Z");
+    let savedToken = "";
+    let sentVerificationUrl = "";
+
+    const result = await requestEmailVerification(
+      { email: " TEST@example.com " },
+      {
+        user: {
+          findUnique: async ({ where }) =>
+            where.email === "test@example.com"
+              ? {
+                  email: "test@example.com",
+                  emailVerified: null,
+                  name: "Test User",
+                }
+              : null,
+        },
+        verificationToken: {
+          deleteMany: async () => ({ count: 1 }),
+          create: async ({ data }) => {
+            savedToken = data.token;
+            return data;
+          },
+        },
+      },
+      {
+        appUrl: "https://devstash.test",
+        now: () => now,
+        sendVerificationEmail: async ({ verificationUrl }) => {
+          sentVerificationUrl = verificationUrl;
+        },
+        tokenGenerator: () => "new-raw-token",
+      },
+    );
+
+    assert.deepEqual(result, {
+      success: true,
+      status: 200,
+      data: {
+        message:
+          "If an account needs verification, we sent a new verification link.",
+      },
+    });
+    assert.equal(
+      savedToken,
+      createHash("sha256").update("new-raw-token").digest("hex"),
+    );
+    assert.equal(
+      sentVerificationUrl,
+      "https://devstash.test/verify-email?email=test%40example.com&token=new-raw-token",
+    );
+  });
+
   it("exposes a registration POST route", async () => {
     const routeModule = await import("../src/app/api/auth/register/route");
 
