@@ -4,12 +4,24 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import {
+  createItem as createItemRecord,
   deleteItem as deleteItemRecord,
   getItemDetail,
   updateItem as updateItemRecord,
   type ItemDetail,
+  type ItemCreateInput,
   type ItemUpdateInput,
 } from "@/lib/db/items";
+
+type CreateItemActionResult =
+  | {
+      data: ItemDetail;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
 
 type UpdateItemActionResult =
   | {
@@ -64,6 +76,29 @@ const optionalNullableUrlSchema = optionalNullableStringSchema.refine(
   { message: "Enter a valid URL." },
 );
 
+const createItemInputSchema = z
+  .object({
+    content: optionalNullableStringSchema,
+    description: optionalNullableStringSchema,
+    kind: z.enum(["snippet", "prompt", "command", "note", "link"]),
+    language: optionalNullableStringSchema,
+    tags: z
+      .array(z.string().trim().min(1, "Tags cannot contain empty values."))
+      .default([])
+      .transform((tags) => Array.from(new Set(tags))),
+    title: z.string().trim().min(1, "Title is required."),
+    url: optionalNullableUrlSchema,
+  })
+  .superRefine((data, context) => {
+    if (data.kind === "link" && !data.url) {
+      context.addIssue({
+        code: "custom",
+        message: "URL is required for links.",
+        path: ["url"],
+      });
+    }
+  });
+
 const updateItemInputSchema = z.object({
   content: optionalNullableStringSchema,
   description: optionalNullableStringSchema,
@@ -77,6 +112,72 @@ const updateItemInputSchema = z.object({
 
 function getValidationError(error: z.ZodError) {
   return error.issues.map((issue) => issue.message).join(" ");
+}
+
+function getItemCreatePayload(data: z.infer<typeof createItemInputSchema>) {
+  const payload: ItemCreateInput = {
+    kind: data.kind,
+    tags: data.tags,
+    title: data.title,
+  };
+
+  if (data.description !== undefined) {
+    payload.description = data.description;
+  }
+
+  if (data.content !== undefined) {
+    payload.content = data.content;
+  }
+
+  if (data.language !== undefined) {
+    payload.language = data.language;
+  }
+
+  if (data.url !== undefined) {
+    payload.url = data.url;
+  }
+
+  return payload;
+}
+
+export async function createItem(
+  data: unknown,
+): Promise<CreateItemActionResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to create items.",
+    };
+  }
+
+  const parsedData = createItemInputSchema.safeParse(data);
+
+  if (!parsedData.success) {
+    return {
+      success: false,
+      error: getValidationError(parsedData.error),
+    };
+  }
+
+  try {
+    const createdItem = await createItemRecord({
+      data: getItemCreatePayload(parsedData.data),
+      userId,
+    });
+
+    return {
+      success: true,
+      data: createdItem,
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Could not create item. Try again.",
+    };
+  }
 }
 
 export async function updateItem(

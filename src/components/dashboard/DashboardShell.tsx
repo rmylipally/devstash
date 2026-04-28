@@ -26,6 +26,7 @@ import {
   ItemDrawerProvider,
   RecentItemRow,
 } from "@/components/items/ItemDrawerProvider";
+import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import {
   getDashboardCollectionStats,
   getDashboardCollections,
@@ -153,6 +154,7 @@ export async function DashboardShell() {
       currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
+      newItemAction={<ItemCreateButton />}
       recentCollections={recentSidebarCollections}
     >
       <DashboardMain

@@ -1,18 +1,33 @@
-# Current Feature
+# Current Feature: Item Create
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Add a modal dialog for creating new items from the top-bar New Item button
+- Use a shadcn-style Dialog component for the create item modal
+- Add a type selector for snippet, prompt, command, note, and link items
+- Show type-specific fields: title, description, and tags for all types; content and language for snippet/command; content for prompt/note; required URL for link
+- Add a validated `createItem` server action using Zod
+- Add a `createItem` query function in `lib/db/items.ts`
+- Show a toast on successful create, close the modal, and refresh the page data
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Loaded from `context/features/item-create-spec.md` on 2026-04-28
+- The top-bar New Item button is the entry point
+- Supported create types are limited to snippet, prompt, command, note, and link
+- File and image create flows are out of scope for this feature
+- Server-side Zod validation should be the source of truth
+- Follow the existing `{ success, data, error }` server action return pattern
 
 ## History
 
@@ -87,3 +102,5 @@ Completed
 - 2026-04-28: Loaded Item Delete Functionality from inline description and set the feature status to Not Started.
 - 2026-04-28: Started Item Delete Functionality implementation on `feature/item-delete-functionality`.
 - 2026-04-28: Completed Item Delete Functionality with an owner-scoped `deleteItem` server action and database helper, shadcn-style confirmation dialog, pending destructive state, drawer close and router refresh after success, success/error toast feedback, focused tests, lint, static UI checks, and successful production build verification.
+- 2026-04-28: Loaded Item Create from `context/features/item-create-spec.md` and set the feature status to Not Started.
+- 2026-04-28: Started Item Create implementation on `feature/item-create`.

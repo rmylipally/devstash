@@ -4,6 +4,7 @@ import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
+import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { ItemTypePage } from "@/components/items/ItemTypePage";
 import { getDashboardCollections } from "@/lib/db/collections";
 import {
@@ -68,6 +69,7 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
       currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
+      newItemAction={<ItemCreateButton />}
       recentCollections={recentSidebarCollections}
     >
       <ItemTypePage itemType={itemType} items={items} />

@@ -3,6 +3,7 @@ import { beforeEach, describe, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  createItemRecord: vi.fn(),
   deleteItemRecord: vi.fn(),
   getItemDetail: vi.fn(),
   updateItemRecord: vi.fn(),
@@ -13,12 +14,13 @@ vi.mock("@/auth", () => ({
 }));
 
 vi.mock("@/lib/db/items", () => ({
+  createItem: mocks.createItemRecord,
   deleteItem: mocks.deleteItemRecord,
   getItemDetail: mocks.getItemDetail,
   updateItem: mocks.updateItemRecord,
 }));
 
-const { deleteItem, updateItem } = await import("../src/actions/items");
+const { createItem, deleteItem, updateItem } = await import("../src/actions/items");
 
 const itemDetail = {
   aiSummary: null,
@@ -45,9 +47,79 @@ const itemDetail = {
 describe("item actions", () => {
   beforeEach(() => {
     mocks.auth.mockReset();
+    mocks.createItemRecord.mockReset();
     mocks.deleteItemRecord.mockReset();
     mocks.getItemDetail.mockReset();
     mocks.updateItemRecord.mockReset();
+  });
+
+  it("creates an item for the signed-in user with normalized fields", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.createItemRecord.mockResolvedValue({
+      ...itemDetail,
+      id: "item-new-snippet",
+      title: "Fetch helper",
+    });
+
+    const result = await createItem({
+      content: " export async function getJson() {} ",
+      description: " Shared fetch helper ",
+      kind: "snippet",
+      language: " typescript ",
+      tags: [" helpers ", "api", "helpers"],
+      title: " Fetch helper ",
+    });
+
+    assert.deepEqual(result, {
+      success: true,
+      data: {
+        ...itemDetail,
+        id: "item-new-snippet",
+        title: "Fetch helper",
+      },
+    });
+    assert.deepEqual(mocks.createItemRecord.mock.calls[0]?.[0], {
+      data: {
+        content: "export async function getJson() {}",
+        description: "Shared fetch helper",
+        kind: "snippet",
+        language: "typescript",
+        tags: ["helpers", "api"],
+        title: "Fetch helper",
+      },
+      userId: "user-123",
+    });
+  });
+
+  it("requires an absolute URL when creating link items", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+
+    const result = await createItem({
+      kind: "link",
+      tags: [],
+      title: "Docs",
+      url: "not-a-url",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Enter a valid URL/);
+    assert.equal(mocks.createItemRecord.mock.calls.length, 0);
+  });
+
+  it("rejects unauthenticated item creates", async () => {
+    mocks.auth.mockResolvedValue(null);
+
+    const result = await createItem({
+      kind: "note",
+      tags: [],
+      title: "Release notes",
+    });
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "You must be signed in to create items.",
+    });
+    assert.equal(mocks.createItemRecord.mock.calls.length, 0);
   });
 
   it("validates ownership and updates item data with normalized fields", async () => {

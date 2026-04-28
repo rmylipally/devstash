@@ -18,6 +18,7 @@ import { auth } from "@/auth";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
+import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { ProfileAccountActions } from "@/components/profile/ProfileAccountActions";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardCollections } from "@/lib/db/collections";
@@ -118,6 +119,7 @@ export default async function ProfilePage() {
       currentUser={getProfileDashboardUser(profile)}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
+      newItemAction={<ItemCreateButton />}
       recentCollections={recentSidebarCollections}
     >
       <ProfileMain profile={profile} />
