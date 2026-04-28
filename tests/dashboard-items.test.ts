@@ -174,8 +174,9 @@ describe("dashboard item data", () => {
   });
 
   it("updates item fields and replaces tags with user-owned tags", async () => {
+    const deleteManyArgs: unknown[] = [];
     const updateArgs: ItemDetailUpdateArgs[] = [];
-    const client: ItemUpdateClient = {
+    const client = {
       item: {
         update: async (args) => {
           updateArgs.push(args);
@@ -192,7 +193,14 @@ describe("dashboard item data", () => {
           });
         },
       },
-    };
+      itemTag: {
+        deleteMany: async (args: unknown) => {
+          deleteManyArgs.push(args);
+
+          return { count: 2 };
+        },
+      },
+    } as unknown as ItemUpdateClient;
 
     const item = await updateItem(
       {
@@ -253,7 +261,6 @@ describe("dashboard item data", () => {
               },
             },
           ],
-          deleteMany: {},
         },
         title: "Run production build",
       },
@@ -263,6 +270,16 @@ describe("dashboard item data", () => {
         userId: "user-123",
       },
     });
+    assert.deepEqual(deleteManyArgs, [
+      {
+        where: {
+          item: {
+            userId: "user-123",
+          },
+          itemId: "item-build-command",
+        },
+      },
+    ]);
     assert.equal(updateArgs[0]?.select.content, true);
     assert.equal(item.title, "Run production build");
     assert.deepEqual(item.tags, ["cli", "build tools"]);

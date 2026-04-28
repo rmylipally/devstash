@@ -297,7 +297,6 @@ export interface ItemDetailUpdateArgs {
     sourceUrl?: string | null;
     tags: {
       create: ItemTagCreateInput[];
-      deleteMany: Record<string, never>;
     };
     title: string;
   };
@@ -305,6 +304,15 @@ export interface ItemDetailUpdateArgs {
   where: {
     id: string;
     userId: string;
+  };
+}
+
+export interface ItemTagDeleteManyArgs {
+  where: {
+    item: {
+      userId: string;
+    };
+    itemId: string;
   };
 }
 
@@ -357,10 +365,19 @@ export interface ItemDetailClient {
   };
 }
 
-export interface ItemUpdateClient {
+export interface ItemUpdateTransactionClient {
   item: {
     update(args: ItemDetailUpdateArgs): Promise<ItemDetailRow>;
   };
+  itemTag: {
+    deleteMany(args: ItemTagDeleteManyArgs): Promise<ItemDeleteManyResult>;
+  };
+}
+
+export interface ItemUpdateClient extends ItemUpdateTransactionClient {
+  $transaction?<T>(
+    fn: (client: ItemUpdateTransactionClient) => Promise<T>,
+  ): Promise<T>;
 }
 
 export interface ItemCreateClient {
@@ -620,7 +637,6 @@ function getItemUpdateData(
       create: getUniqueTags(data.tags).map((tag) =>
         toTagCreateInput(userId, tag),
       ),
-      deleteMany: {},
     },
     title: data.title,
   };
@@ -730,14 +746,28 @@ export async function updateItem(
   client?: ItemUpdateClient,
 ): Promise<ItemDetail> {
   const itemClient = client ?? (await getDefaultItemUpdateClient());
-  const item = await itemClient.item.update({
-    data: getItemUpdateData(options.data, options.userId),
-    select: itemDetailSelect,
-    where: {
-      id: options.itemId,
-      userId: options.userId,
-    },
-  });
+  const updateItemWithTags = async (tx: ItemUpdateTransactionClient) => {
+    await tx.itemTag.deleteMany({
+      where: {
+        item: {
+          userId: options.userId,
+        },
+        itemId: options.itemId,
+      },
+    });
+
+    return tx.item.update({
+      data: getItemUpdateData(options.data, options.userId),
+      select: itemDetailSelect,
+      where: {
+        id: options.itemId,
+        userId: options.userId,
+      },
+    });
+  };
+  const item = itemClient.$transaction
+    ? await itemClient.$transaction(updateItemWithTags)
+    : await updateItemWithTags(itemClient);
 
   return toItemDetail(item);
 }
