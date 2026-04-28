@@ -540,7 +540,7 @@ model AiJob {
 
 ## 📍 Current Repo State
 
-As of **April 27, 2026**, this repo already includes:
+As of **April 28, 2026**, this repo already includes:
 
 - `next@16.2.4`
 - `react@19.2.4`
@@ -549,10 +549,11 @@ As of **April 27, 2026**, this repo already includes:
 - Database-backed `ItemType` rows for the seven built-in item types
 - Neon/Postgres database wiring through `DATABASE_URL`
 - shadcn/Base UI component setup with reusable `Button`, `Input`, and `Badge` components
+- Auth.js v5 runtime integration with Prisma adapter, GitHub OAuth, credentials sign-in, protected dashboard/profile routes, session typing, and custom auth UI
+- Email verification, password reset using the existing `VerificationToken` model, and a dashboard-framed profile page with account actions
 
 Still to be added for the full product foundation:
 
-- Auth.js runtime integration
 - Cloudflare R2 integration
 - Stripe billing setup
 - OpenAI integration
