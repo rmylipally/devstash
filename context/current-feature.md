@@ -1,18 +1,29 @@
-# Current Feature
+# Current Feature: Items List View
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Create a dynamic `/items/[type]` route for item type pages such as `/items/snippets` and `/items/notes`.
+- Fetch and display items filtered by the requested item type.
+- Render items in a responsive grid of item cards.
+- Use two grid columns on medium viewports and larger.
+- Give each item card a left border colored by item type.
+- Follow existing dashboard, data fetching, and styling patterns.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Loaded from `context/features/item-list-view-spec.md`.
+- The feature should build on the existing dashboard item data helpers and item kind styling.
+- Spec overview: dynamic items listing page at `/items/[type]`.
 
 ## History
 
@@ -72,3 +83,5 @@ Completed
 - 2026-04-28: Loaded Rate Limiting for Auth from `context/features/rate-limiting-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Rate Limiting for Auth implementation on `feature/rate-limiting-for-auth`.
 - 2026-04-28: Completed Rate Limiting for Auth with Upstash-backed auth endpoint limits, local fallback limiting, NextAuth-compatible credentials throttling, resend-verification support, focused tests, lint, and successful production build verification.
+- 2026-04-28: Loaded Items List View from `context/features/item-list-view-spec.md` and set the feature status to Not Started.
+- 2026-04-28: Started Items List View implementation on `feature/items-list-view`.

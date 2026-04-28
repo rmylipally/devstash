@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   getDashboardItemTypes,
+  getDashboardItemsByType,
   getDashboardItemStats,
   getDashboardPinnedItems,
   getDashboardRecentItems,
@@ -132,6 +133,31 @@ describe("dashboard item data", () => {
     assert.equal(findManyArgs[0]?.take, 10);
     assert.deepEqual(findManyArgs[0]?.orderBy, { lastViewedAt: "desc" });
     assert.equal(items[0]?.kind, "command");
+  });
+
+  it("fetches dashboard items filtered by item type with user scoping", async () => {
+    const findManyArgs: DashboardItemFindManyArgs[] = [];
+    const client: DashboardItemClient = {
+      item: {
+        count: async () => 0,
+        findMany: async (args) => {
+          findManyArgs.push(args);
+          return [itemRow({ kind: "NOTE" })];
+        },
+      },
+    };
+
+    const items = await getDashboardItemsByType(
+      { kind: "note", userId: "user-123" },
+      client,
+    );
+
+    assert.deepEqual(findManyArgs[0]?.where, {
+      kind: "NOTE",
+      userId: "user-123",
+    });
+    assert.deepEqual(findManyArgs[0]?.orderBy, { lastViewedAt: "desc" });
+    assert.equal(items[0]?.kind, "note");
   });
 
   it("counts total and favorite dashboard items with the same user scope", async () => {

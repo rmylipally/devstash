@@ -32,7 +32,9 @@ describe("auth setup", () => {
     );
 
     assert.equal(typeof proxy, "function");
-    assert.deepEqual(config, { matcher: ["/dashboard/:path*", "/profile"] });
+    assert.deepEqual(config, {
+      matcher: ["/dashboard/:path*", "/profile", "/items/:path*"],
+    });
     assert.equal(redirectUrl.pathname, "/sign-in");
     assert.equal(
       redirectUrl.searchParams.get("callbackUrl"),
