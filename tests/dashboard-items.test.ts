@@ -7,10 +7,15 @@ import {
   getDashboardItemStats,
   getDashboardPinnedItems,
   getDashboardRecentItems,
+  getItemDetail,
   toDashboardItem,
+  toItemDetail,
   type DashboardItemClient,
   type DashboardItemFindManyArgs,
   type DashboardItemRow,
+  type ItemDetailClient,
+  type ItemDetailFindFirstArgs,
+  type ItemDetailRow,
 } from "../src/lib/db/items";
 
 const viewedAt = new Date("2026-04-25T15:30:00.000Z");
@@ -37,6 +42,39 @@ function itemRow(
   };
 }
 
+function itemDetailRow(overrides: Partial<ItemDetailRow> = {}): ItemDetailRow {
+  return {
+    aiSummary: "Use this hook to debounce expensive effects.",
+    collections: [
+      {
+        collection: {
+          id: "collection-react-patterns",
+          name: "React Patterns",
+          slug: "react-patterns",
+        },
+      },
+    ],
+    content: "export function useDebounce() {}",
+    contentKind: "TEXT",
+    createdAt: new Date("2026-04-25T13:00:00.000Z"),
+    description: "Delay fast-changing values before expensive effects.",
+    fileSizeBytes: null,
+    id: "item-use-debounce-hook",
+    isFavorite: true,
+    isPinned: true,
+    kind: "SNIPPET",
+    language: "typescript",
+    mimeType: null,
+    originalFileName: null,
+    sourceUrl: null,
+    storageKey: null,
+    tags: [{ tag: { name: "react" } }, { tag: { name: "hooks" } }],
+    title: "useDebounce Hook",
+    updatedAt,
+    ...overrides,
+  };
+}
+
 describe("dashboard item data", () => {
   it("maps database rows into dashboard item data", () => {
     const item = toDashboardItem(itemRow());
@@ -57,6 +95,73 @@ describe("dashboard item data", () => {
     const item = toDashboardItem(itemRow({ lastViewedAt: null }));
 
     assert.equal(item.lastViewedAt, "2026-04-25T16:00:00.000Z");
+  });
+
+  it("maps item detail rows into drawer item detail data", () => {
+    const item = toItemDetail(itemDetailRow());
+
+    assert.deepEqual(item, {
+      aiSummary: "Use this hook to debounce expensive effects.",
+      collections: [
+        {
+          id: "collection-react-patterns",
+          name: "React Patterns",
+          slug: "react-patterns",
+        },
+      ],
+      content: "export function useDebounce() {}",
+      contentKind: "text",
+      createdAt: "2026-04-25T13:00:00.000Z",
+      description: "Delay fast-changing values before expensive effects.",
+      fileSizeBytes: null,
+      id: "item-use-debounce-hook",
+      isFavorite: true,
+      isPinned: true,
+      kind: "snippet",
+      language: "typescript",
+      mimeType: null,
+      originalFileName: null,
+      sourceUrl: null,
+      storageKey: null,
+      tags: ["react", "hooks"],
+      title: "useDebounce Hook",
+      updatedAt: "2026-04-25T16:00:00.000Z",
+    });
+  });
+
+  it("fetches item detail scoped by item id and user id", async () => {
+    const findFirstArgs: ItemDetailFindFirstArgs[] = [];
+    const client: ItemDetailClient = {
+      item: {
+        findFirst: async (args) => {
+          findFirstArgs.push(args);
+          return itemDetailRow({ kind: "PROMPT" });
+        },
+      },
+    };
+
+    const item = await getItemDetail(
+      { itemId: "item-prompt", userId: "user-123" },
+      client,
+    );
+
+    assert.deepEqual(findFirstArgs[0]?.where, {
+      id: "item-prompt",
+      userId: "user-123",
+    });
+    assert.equal(findFirstArgs[0]?.select.content, true);
+    assert.equal(
+      findFirstArgs[0]?.select.collections.select.collection.select.name,
+      true,
+    );
+    assert.equal(item?.kind, "prompt");
+    assert.deepEqual(item?.collections, [
+      {
+        id: "collection-react-patterns",
+        name: "React Patterns",
+        slug: "react-patterns",
+      },
+    ]);
   });
 
   it("fetches pinned dashboard items with user scoping", async () => {
