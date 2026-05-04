@@ -1,20 +1,33 @@
-# Current Feature
+# Current Feature: Markdown Editor
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
+In Progress
 
 
 
 ## Goals
 
-<!-- Goals & requirements -->
+- Create a `MarkdownEditor` component with Write and Preview tabs.
+- Use the Markdown editor for notes and prompts only.
+- Keep the existing `CodeEditor` behavior unchanged for snippets and commands.
+- Use `react-markdown` with `remark-gfm` for GitHub Flavored Markdown support.
+- Match the existing dark editor styling with a dark container and header.
+- Add a header copy button matching the `CodeEditor` interaction style.
+- Support both readonly display mode and edit mode.
+- Show only Preview in readonly mode.
+- Default to Write in edit mode while keeping Preview available.
+- Style Markdown preview content for headings, code blocks, inline code, lists, blockquotes, links, and tables.
+- Use a custom preview class for reliable dark mode styling.
+- Keep editor height fluid with a 400px max height, matching `CodeEditor`.
 
 
 
 ## Notes
 
-<!-- Any extra notes -->
+- Loaded from `context/features/markdown-editor-spec.md`.
+- Original request referenced `marketdown-editor-spec.md`; no exact matching file exists, so this loads the available Markdown Editor spec.
+- Integration points: create dialog content field, item drawer edit mode, and item drawer readonly view for note and prompt items.
 
 
 
@@ -97,3 +110,5 @@
 - 2026-05-04: Loaded Code Editor from `context/features/code-editor-spec.md` and set the feature status to Not Started.
 - 2026-05-04: Started Code Editor implementation on `feature/code-editor`.
 - 2026-05-04: Completed Code Editor with a Monaco-based dark editor for snippet and command create/edit/detail flows, editor copy and language controls, fluid 400px max height, type-specific add buttons on supported item type pages, preselected create-dialog types, focused UI checks, lint, unit tests, and successful production build verification.
+- 2026-05-04: Loaded Markdown Editor from `context/features/markdown-editor-spec.md` and set the feature status to Not Started.
+- 2026-05-04: Started Markdown Editor implementation on `feature/markdown-editor`.

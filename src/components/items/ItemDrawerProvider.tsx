@@ -36,6 +36,7 @@ import {
 
 import { deleteItem, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
+import { MarkdownEditor } from "@/components/items/MarkdownEditor";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -957,6 +958,13 @@ function ItemEditForm({
               placeholder="No content saved."
               value={draft.content}
             />
+          ) : isMarkdownItemKind(item.kind) ? (
+            <MarkdownEditor
+              ariaLabel={`${itemKindLabels[item.kind]} content`}
+              onChange={(value) => onDraftChange("content", value)}
+              placeholder="No content saved."
+              value={draft.content}
+            />
           ) : (
             <DrawerTextarea
               className="min-h-48 font-mono text-sm"
@@ -1052,6 +1060,19 @@ function ItemContent({ item }: { item: ItemDetail }) {
       <CodeEditor
         ariaLabel={`${itemKindLabels[item.kind]} content`}
         language={getCodeEditorLanguage(item.kind, item.language ?? "")}
+        readOnly
+        value={item.content}
+      />
+    ) : (
+      <EmptyText>No content saved.</EmptyText>
+    );
+  }
+
+  if (isMarkdownItemKind(item.kind)) {
+    return item.content ? (
+      <MarkdownEditor
+        ariaLabel={`${itemKindLabels[item.kind]} content`}
+        placeholder="No content saved."
         readOnly
         value={item.content}
       />
@@ -1286,6 +1307,10 @@ function shouldShowLanguageField(kind: DashboardItemKind) {
 
 function isCodeItemKind(kind: DashboardItemKind) {
   return kind === "command" || kind === "snippet";
+}
+
+function isMarkdownItemKind(kind: DashboardItemKind) {
+  return kind === "note" || kind === "prompt";
 }
 
 function getCodeEditorLanguage(kind: DashboardItemKind, language: string) {

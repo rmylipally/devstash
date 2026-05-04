@@ -21,6 +21,7 @@ import {
 
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
+import { MarkdownEditor } from "@/components/items/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -364,6 +365,13 @@ function ItemCreateDialog({
                       placeholder="Paste the reusable content"
                       value={draft.content}
                     />
+                  ) : isMarkdownItemKind(draft.kind) ? (
+                    <MarkdownEditor
+                      ariaLabel={`${itemKindLabels[draft.kind]} content`}
+                      onChange={(value) => handleDraftChange("content", value)}
+                      placeholder="Paste the reusable content"
+                      value={draft.content}
+                    />
                   ) : (
                     <CreateItemTextarea
                       className="min-h-44 font-mono text-sm"
@@ -533,6 +541,10 @@ function shouldShowLanguageField(kind: ItemCreateKind) {
 
 function isCodeItemKind(kind: ItemCreateKind) {
   return kind === "command" || kind === "snippet";
+}
+
+function isMarkdownItemKind(kind: ItemCreateKind) {
+  return kind === "note" || kind === "prompt";
 }
 
 function getCodeEditorLanguage(kind: ItemCreateKind, language: string) {
