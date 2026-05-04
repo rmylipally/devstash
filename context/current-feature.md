@@ -1,20 +1,29 @@
-# Current Feature
+# Current Feature: Code Editor
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
+In Progress
 
 
 
 ## Goals
 
-<!-- Goals & requirements -->
+- Create a dark-themed Monaco-based `CodeEditor` component.
+- Use the code editor for snippets and commands only.
+- Keep the existing textarea experience for notes, prompts, and other non-code item types.
+- Add macOS-style red, yellow, and green window controls to the editor header.
+- Add a quick copy button in the editor header.
+- Show the current language in the editor header next to the copy control.
+- Support both readonly display mode and edit mode.
+- Make editor height fluid with a 400px max height and a theme-matched scrollbar.
 
 
 
 ## Notes
 
-<!-- Any extra notes -->
+- Loaded from `context/features/code-editor-spec.md`.
+- The editor should replace textareas only where the item kind is `snippet` or `command`.
+- The component should fit the existing dark dashboard and drawer styling.
 
 
 
@@ -94,3 +103,5 @@
 - 2026-04-28: Loaded Item Create from `context/features/item-create-spec.md` and set the feature status to Not Started.
 - 2026-04-28: Started Item Create implementation on `feature/item-create`.
 - 2026-04-28: Completed Item Create with a shadcn-style create dialog from the top-bar New Item button, type-specific fields for snippet, prompt, command, note, and link items, a validated `createItem` server action, a Prisma create helper with tag connect-or-create, success toast with page refresh, corrected type selector layout, focused tests, lint, static UI checks, and successful production build verification.
+- 2026-05-04: Loaded Code Editor from `context/features/code-editor-spec.md` and set the feature status to Not Started.
+- 2026-05-04: Started Code Editor implementation on `feature/code-editor`.

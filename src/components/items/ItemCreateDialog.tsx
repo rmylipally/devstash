@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import { createItem } from "@/actions/items";
+import { CodeEditor } from "@/components/items/CodeEditor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,13 +82,22 @@ interface ItemCreateDraft {
 }
 
 interface ItemCreateDialogProps {
+  initialKind: ItemCreateKind;
   onCreated(): void;
   onOpenChange(open: boolean): void;
   open: boolean;
 }
 
-export function ItemCreateButton() {
+interface ItemCreateButtonProps {
+  initialKind?: ItemCreateKind;
+}
+
+export function ItemCreateButton({ initialKind }: ItemCreateButtonProps) {
   const router = useRouter();
+  const selectedInitialKind = initialKind ?? "snippet";
+  const buttonLabel = initialKind
+    ? `New ${itemKindLabels[initialKind]}`
+    : "New Item";
   const [isOpen, setIsOpen] = useState(false);
   const [toast, setToast] = useState<CreateItemToast>(null);
 
@@ -111,11 +121,17 @@ export function ItemCreateButton() {
 
   return (
     <>
-      <Button className="h-11 gap-2 px-4" onClick={() => setIsOpen(true)} type="button">
+      <Button
+        aria-label={buttonLabel}
+        className="h-11 gap-2 px-4"
+        onClick={() => setIsOpen(true)}
+        type="button"
+      >
         <Plus className="size-5" />
-        <span className="hidden sm:inline">New Item</span>
+        <span className="hidden sm:inline">{buttonLabel}</span>
       </Button>
       <ItemCreateDialog
+        initialKind={selectedInitialKind}
         onCreated={handleCreated}
         onOpenChange={setIsOpen}
         open={isOpen}
@@ -126,11 +142,14 @@ export function ItemCreateButton() {
 }
 
 function ItemCreateDialog({
+  initialKind,
   onCreated,
   onOpenChange,
   open,
 }: ItemCreateDialogProps) {
-  const [draft, setDraft] = useState<ItemCreateDraft>(() => createDefaultDraft());
+  const [draft, setDraft] = useState<ItemCreateDraft>(() =>
+    createDefaultDraft(initialKind),
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -157,7 +176,7 @@ function ItemCreateDialog({
     }
 
     if (!nextOpen) {
-      setDraft(createDefaultDraft());
+      setDraft(createDefaultDraft(initialKind));
       setError(null);
     }
 
@@ -197,7 +216,7 @@ function ItemCreateDialog({
       return;
     }
 
-    setDraft(createDefaultDraft());
+    setDraft(createDefaultDraft(initialKind));
     onOpenChange(false);
     onCreated();
   }
@@ -333,19 +352,29 @@ function ItemCreateDialog({
               </label>
 
               {shouldShowContentField(draft.kind) ? (
-                <label className="space-y-2">
+                <div className="space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">
                     Content
                   </span>
-                  <CreateItemTextarea
-                    className="min-h-44 font-mono text-sm"
-                    onChange={(event) =>
-                      handleDraftChange("content", event.target.value)
-                    }
-                    placeholder="Paste the reusable content"
-                    value={draft.content}
-                  />
-                </label>
+                  {isCodeItemKind(draft.kind) ? (
+                    <CodeEditor
+                      ariaLabel={`${itemKindLabels[draft.kind]} content`}
+                      language={getCodeEditorLanguage(draft.kind, draft.language)}
+                      onChange={(value) => handleDraftChange("content", value)}
+                      placeholder="Paste the reusable content"
+                      value={draft.content}
+                    />
+                  ) : (
+                    <CreateItemTextarea
+                      className="min-h-44 font-mono text-sm"
+                      onChange={(event) =>
+                        handleDraftChange("content", event.target.value)
+                      }
+                      placeholder="Paste the reusable content"
+                      value={draft.content}
+                    />
+                  )}
+                </div>
               ) : null}
 
               {shouldShowLanguageField(draft.kind) ? (
@@ -500,4 +529,18 @@ function shouldShowContentField(kind: ItemCreateKind) {
 
 function shouldShowLanguageField(kind: ItemCreateKind) {
   return kind === "command" || kind === "snippet";
+}
+
+function isCodeItemKind(kind: ItemCreateKind) {
+  return kind === "command" || kind === "snippet";
+}
+
+function getCodeEditorLanguage(kind: ItemCreateKind, language: string) {
+  const trimmedLanguage = language.trim();
+
+  if (trimmedLanguage) {
+    return trimmedLanguage;
+  }
+
+  return kind === "command" ? "shell" : "typescript";
 }

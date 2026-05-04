@@ -21,6 +21,9 @@ describe("item create UI", () => {
     assert.match(dashboardFrameSource, /newItemAction/);
     assert.match(dashboardShellSource, /<ItemCreateButton \/>/);
     assert.match(createDialogSource, /function ItemCreateButton/);
+    assert.match(createDialogSource, /initialKind\?: ItemCreateKind/);
+    assert.match(createDialogSource, /createDefaultDraft\(initialKind\)/);
+    assert.match(createDialogSource, /New \$\{itemKindLabels\[initialKind\]\}/);
     assert.match(createDialogSource, /max-w-3xl/);
     assert.match(createDialogSource, /createItem\(/);
     assert.match(createDialogSource, /router\.refresh\(\)/);

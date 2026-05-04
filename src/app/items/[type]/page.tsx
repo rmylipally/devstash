@@ -10,6 +10,8 @@ import { getDashboardCollections } from "@/lib/db/collections";
 import {
   getDashboardItemsByType,
   getDashboardItemTypes,
+  type DashboardItemKind,
+  type ItemCreateKind,
 } from "@/lib/db/items";
 import { currentUser } from "@/lib/mock-data";
 
@@ -32,6 +34,14 @@ function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
     name,
     plan: currentUser.plan,
   };
+}
+
+function getCreatableItemKind(kind: DashboardItemKind): ItemCreateKind | null {
+  if (kind === "file" || kind === "image") {
+    return null;
+  }
+
+  return kind;
 }
 
 export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) {
@@ -63,6 +73,10 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
   const favoriteCollections = recentDashboardCollections
     .filter((collection) => collection.isFavorite)
     .slice(0, 4);
+  const createInitialKind = getCreatableItemKind(itemType.id);
+  const typeCreateAction = createInitialKind ? (
+    <ItemCreateButton initialKind={createInitialKind} />
+  ) : undefined;
 
   return (
     <DashboardFrame
@@ -72,7 +86,11 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
       newItemAction={<ItemCreateButton />}
       recentCollections={recentSidebarCollections}
     >
-      <ItemTypePage itemType={itemType} items={items} />
+      <ItemTypePage
+        action={typeCreateAction}
+        itemType={itemType}
+        items={items}
+      />
     </DashboardFrame>
   );
 }

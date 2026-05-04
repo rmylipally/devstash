@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
 import { renderToStaticMarkup } from "react-dom/server";
@@ -33,11 +34,16 @@ const items: DashboardItem[] = [
 describe("item type page", () => {
   it("renders a responsive item grid with type-colored card borders", () => {
     const html = renderToStaticMarkup(
-      <ItemTypePage itemType={itemType} items={items} />,
+      <ItemTypePage
+        action={<button type="button">New Snippet</button>}
+        itemType={itemType}
+        items={items}
+      />,
     );
 
     assert.match(html, /Snippets/);
     assert.match(html, /1 saved item/);
+    assert.match(html, /New Snippet/);
     assert.match(html, /md:grid-cols-2/);
     assert.match(html, /xl:grid-cols-3/);
     assert.match(html, /border-l-4/);
@@ -45,5 +51,20 @@ describe("item type page", () => {
     assert.match(html, /useDebounce Hook/);
     assert.match(html, /type="button"/);
     assert.doesNotMatch(html, /href="\/items\/snippets\/item-use-debounce-hook"/);
+  });
+
+  it("wires creatable type pages to a preselected create dialog and skips file/image pages", async () => {
+    const itemsByTypePageSource = await readFile(
+      "src/app/items/[type]/page.tsx",
+      "utf8",
+    );
+
+    assert.match(itemsByTypePageSource, /getCreatableItemKind/);
+    assert.match(
+      itemsByTypePageSource,
+      /<ItemCreateButton initialKind={createInitialKind} \/>/,
+    );
+    assert.match(itemsByTypePageSource, /kind === "file" \|\| kind === "image"/);
+    assert.match(itemsByTypePageSource, /action={typeCreateAction}/);
   });
 });

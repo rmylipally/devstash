@@ -35,6 +35,7 @@ import {
 } from "react";
 
 import { deleteItem, updateItem } from "@/actions/items";
+import { CodeEditor } from "@/components/items/CodeEditor";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -948,12 +949,22 @@ function ItemEditForm({
 
       {shouldShowContentField(item.kind) ? (
         <DetailSection title={getContentTitle(item)}>
-          <DrawerTextarea
-            className="min-h-48 font-mono text-sm"
-            onChange={(event) => onDraftChange("content", event.target.value)}
-            placeholder="No content saved."
-            value={draft.content}
-          />
+          {isCodeItemKind(item.kind) ? (
+            <CodeEditor
+              ariaLabel={`${itemKindLabels[item.kind]} content`}
+              language={getCodeEditorLanguage(item.kind, draft.language)}
+              onChange={(value) => onDraftChange("content", value)}
+              placeholder="No content saved."
+              value={draft.content}
+            />
+          ) : (
+            <DrawerTextarea
+              className="min-h-48 font-mono text-sm"
+              onChange={(event) => onDraftChange("content", event.target.value)}
+              placeholder="No content saved."
+              value={draft.content}
+            />
+          )}
         </DetailSection>
       ) : null}
 
@@ -1033,6 +1044,19 @@ function ItemContent({ item }: { item: ItemDetail }) {
           <p className="mt-2 break-all text-muted-foreground">{item.storageKey}</p>
         ) : null}
       </div>
+    );
+  }
+
+  if (isCodeItemKind(item.kind)) {
+    return item.content ? (
+      <CodeEditor
+        ariaLabel={`${itemKindLabels[item.kind]} content`}
+        language={getCodeEditorLanguage(item.kind, item.language ?? "")}
+        readOnly
+        value={item.content}
+      />
+    ) : (
+      <EmptyText>No content saved.</EmptyText>
     );
   }
 
@@ -1258,6 +1282,20 @@ function shouldShowContentField(kind: DashboardItemKind) {
 
 function shouldShowLanguageField(kind: DashboardItemKind) {
   return kind === "command" || kind === "snippet";
+}
+
+function isCodeItemKind(kind: DashboardItemKind) {
+  return kind === "command" || kind === "snippet";
+}
+
+function getCodeEditorLanguage(kind: DashboardItemKind, language: string) {
+  const trimmedLanguage = language.trim();
+
+  if (trimmedLanguage) {
+    return trimmedLanguage;
+  }
+
+  return kind === "command" ? "shell" : "typescript";
 }
 
 function getContentTitle(item: ItemDetail) {

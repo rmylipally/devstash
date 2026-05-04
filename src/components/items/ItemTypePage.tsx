@@ -3,8 +3,10 @@ import type {
   DashboardItem,
   DashboardItemType,
 } from "@/lib/db/items";
+import type { ReactNode } from "react";
 
 interface ItemTypePageProps {
+  action?: ReactNode;
   itemType: DashboardItemType;
   items: DashboardItem[];
 }
@@ -13,7 +15,7 @@ function formatItemCount(count: number) {
   return `${count} saved ${count === 1 ? "item" : "items"}`;
 }
 
-export function ItemTypePage({ itemType, items }: ItemTypePageProps) {
+export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
   return (
     <ItemDrawerProvider>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
@@ -27,6 +29,7 @@ export function ItemTypePage({ itemType, items }: ItemTypePageProps) {
                 {formatItemCount(items.length)}
               </p>
             </div>
+            {action ? <div className="shrink-0">{action}</div> : null}
           </div>
 
           {items.length > 0 ? (
