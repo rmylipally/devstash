@@ -35,7 +35,16 @@ AUTH_GITHUB_SECRET=
 EMAIL_VERIFICATION_ENABLED=true
 RESEND_API_KEY=
 RESEND_FROM_EMAIL="DevStash <onboarding@resend.dev>"
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_SESSION_TOKEN=
+AWS_REGION=us-east-1
+S3_AWS_PROFILE=
+AWS_SHARED_CREDENTIALS_FILE=
+S3_BUCKET_NAME=eapi-chc-dev-ets-attachments
 ```
+
+For SAML2AWS/local development, raw AWS key variables can be left empty. DevStash will read `~/.aws/credentials` using `S3_AWS_PROFILE`, then `AWS_PROFILE`, then `AWS_DEFAULT_PROFILE`, then `default`.
 
 Generate the Prisma client:
 

@@ -1,22 +1,32 @@
-# Current Feature
+# Current Feature: File Upload with Amazon S3
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
-
-
+In Progress
 
 ## Goals
 
-<!-- Goals & requirements -->
-
-
+- Create an upload API route for Amazon S3.
+- Keep Prisma/database helpers in `lib/db/items.ts`.
+- Create a `FileUpload` component with drag-and-drop.
+- Update the create item modal to use `FileUpload` for file and image types.
+- Delete files from S3 when items are deleted.
+- Create a download proxy API route to avoid CORS issues.
+- Add a download button in `ItemDrawer` for file types.
+- Show an upload progress indicator.
+- Display image previews for images and file info for files.
 
 ## Notes
 
-<!-- Any extra notes -->
-
-
+- Loaded from `context/features/file-image-spec.md`.
+- Overview: add file and image upload functionality using Amazon S3 storage.
+- Upload bucket: `eapi-chc-dev-ets-attachments`.
+- Upload path prefix: `devstash/api/uploads/`.
+- S3 credentials can come from AWS env vars or a shared AWS credentials profile such as one written by SAML2AWS.
+- Images: max 5 MB; allowed extensions `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`.
+- Files: max 10 MB; allowed extensions `.pdf`, `.txt`, `.md`, `.json`, `.yaml`, `.yml`, `.xml`, `.csv`, `.toml`, `.ini`.
+- Allowed image MIME types: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`.
+- Allowed file MIME types: `application/pdf`, `text/plain`, `text/markdown`, `application/json`, `application/x-yaml`, `text/yaml`, `application/xml`, `text/xml`, `text/csv`, `application/toml`.
 
 ## History
 
@@ -100,3 +110,7 @@
 - 2026-05-04: Loaded Markdown Editor from `context/features/markdown-editor-spec.md` and set the feature status to Not Started.
 - 2026-05-04: Started Markdown Editor implementation on `feature/markdown-editor`.
 - 2026-05-04: Completed Markdown Editor with a dark Write/Preview editor for note and prompt create/edit/detail flows, GitHub Flavored Markdown rendering, copy controls, readonly preview mode, custom dark preview styling, focused UI checks, lint, unit tests, and successful production build verification.
+- 2026-05-05: Loaded File Upload with Cloudflare R2 from `context/features/file-image-spec.md` and set the feature status to Not Started.
+- 2026-05-05: Started File Upload with Cloudflare R2 implementation on `feature/file-upload-cloudflare-r2`.
+- 2026-05-05: Switched the active file upload storage target from Cloudflare R2 to Amazon S3 bucket `eapi-chc-dev-ets-attachments` under `devstash/api/uploads/`.
+- 2026-05-05: Renamed the feature branch to `feature/file-upload-s3`.

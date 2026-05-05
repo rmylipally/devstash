@@ -12,6 +12,11 @@ import {
   type ItemCreateInput,
   type ItemUpdateInput,
 } from "@/lib/db/items";
+import { deleteS3Object } from "@/lib/storage/s3";
+import {
+  isUploadItemKind,
+  validateUploadMetadata,
+} from "@/lib/storage/uploads";
 
 type CreateItemActionResult =
   | {
@@ -80,8 +85,12 @@ const createItemInputSchema = z
   .object({
     content: optionalNullableStringSchema,
     description: optionalNullableStringSchema,
-    kind: z.enum(["snippet", "prompt", "command", "note", "link"]),
+    fileSizeBytes: z.number().int().positive().optional(),
+    kind: z.enum(["snippet", "prompt", "command", "note", "file", "image", "link"]),
     language: optionalNullableStringSchema,
+    mimeType: optionalNullableStringSchema,
+    originalFileName: optionalNullableStringSchema,
+    storageKey: optionalNullableStringSchema,
     tags: z
       .array(z.string().trim().min(1, "Tags cannot contain empty values."))
       .default([])
@@ -96,6 +105,37 @@ const createItemInputSchema = z
         message: "URL is required for links.",
         path: ["url"],
       });
+    }
+
+    if (isUploadItemKind(data.kind)) {
+      if (
+        !data.storageKey ||
+        !data.originalFileName ||
+        !data.mimeType ||
+        !data.fileSizeBytes
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Upload a file before creating this item.",
+          path: ["storageKey"],
+        });
+        return;
+      }
+
+      const validation = validateUploadMetadata({
+        fileName: data.originalFileName,
+        kind: data.kind,
+        mimeType: data.mimeType,
+        size: data.fileSizeBytes,
+      });
+
+      if (!validation.success) {
+        context.addIssue({
+          code: "custom",
+          message: validation.error,
+          path: ["storageKey"],
+        });
+      }
     }
   });
 
@@ -131,6 +171,13 @@ function getItemCreatePayload(data: z.infer<typeof createItemInputSchema>) {
 
   if (data.language !== undefined) {
     payload.language = data.language;
+  }
+
+  if (isUploadItemKind(data.kind)) {
+    payload.fileSizeBytes = data.fileSizeBytes;
+    payload.mimeType = data.mimeType;
+    payload.originalFileName = data.originalFileName;
+    payload.storageKey = data.storageKey;
   }
 
   if (data.url !== undefined) {
@@ -245,6 +292,15 @@ export async function deleteItem(
   }
 
   try {
+    const existingItem = await getItemDetail({ itemId, userId });
+
+    if (!existingItem) {
+      return {
+        success: false,
+        error: "Item not found.",
+      };
+    }
+
     const wasDeleted = await deleteItemRecord({ itemId, userId });
 
     if (!wasDeleted) {
@@ -252,6 +308,10 @@ export async function deleteItem(
         success: false,
         error: "Item not found.",
       };
+    }
+
+    if (existingItem.contentKind === "file" && existingItem.storageKey) {
+      await deleteS3Object(existingItem.storageKey);
     }
 
     return {

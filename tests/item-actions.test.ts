@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   createItemRecord: vi.fn(),
   deleteItemRecord: vi.fn(),
+  deleteS3Object: vi.fn(),
   getItemDetail: vi.fn(),
   updateItemRecord: vi.fn(),
 }));
@@ -18,6 +19,10 @@ vi.mock("@/lib/db/items", () => ({
   deleteItem: mocks.deleteItemRecord,
   getItemDetail: mocks.getItemDetail,
   updateItem: mocks.updateItemRecord,
+}));
+
+vi.mock("@/lib/storage/s3", () => ({
+  deleteS3Object: mocks.deleteS3Object,
 }));
 
 const { createItem, deleteItem, updateItem } = await import("../src/actions/items");
@@ -49,6 +54,7 @@ describe("item actions", () => {
     mocks.auth.mockReset();
     mocks.createItemRecord.mockReset();
     mocks.deleteItemRecord.mockReset();
+    mocks.deleteS3Object.mockReset();
     mocks.getItemDetail.mockReset();
     mocks.updateItemRecord.mockReset();
   });
@@ -103,6 +109,64 @@ describe("item actions", () => {
 
     assert.equal(result.success, false);
     assert.match(result.error, /Enter a valid URL/);
+    assert.equal(mocks.createItemRecord.mock.calls.length, 0);
+  });
+
+  it("creates image items with uploaded file metadata", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.createItemRecord.mockResolvedValue({
+      ...itemDetail,
+      contentKind: "file",
+      fileSizeBytes: 2048,
+      id: "item-architecture-diagram",
+      kind: "image",
+      mimeType: "image/png",
+      originalFileName: "architecture.png",
+      storageKey:
+        "devstash/api/uploads/user-123/image/upload-123-architecture.png",
+      title: "Architecture Diagram",
+    });
+
+    const result = await createItem({
+      description: " System diagram ",
+      fileSizeBytes: 2048,
+      kind: "image",
+      mimeType: "image/png",
+      originalFileName: "architecture.png",
+      storageKey:
+        "devstash/api/uploads/user-123/image/upload-123-architecture.png",
+      tags: [" docs "],
+      title: " Architecture Diagram ",
+    });
+
+    assert.equal(result.success, true);
+    assert.deepEqual(mocks.createItemRecord.mock.calls[0]?.[0], {
+      data: {
+        description: "System diagram",
+        fileSizeBytes: 2048,
+        kind: "image",
+        mimeType: "image/png",
+        originalFileName: "architecture.png",
+        storageKey:
+          "devstash/api/uploads/user-123/image/upload-123-architecture.png",
+        tags: ["docs"],
+        title: "Architecture Diagram",
+      },
+      userId: "user-123",
+    });
+  });
+
+  it("rejects file items without uploaded file metadata", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+
+    const result = await createItem({
+      kind: "file",
+      tags: [],
+      title: "Runbook",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Upload a file before creating this item/);
     assert.equal(mocks.createItemRecord.mock.calls.length, 0);
   });
 
@@ -207,6 +271,7 @@ describe("item actions", () => {
 
   it("deletes an item for the signed-in owner", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.getItemDetail.mockResolvedValue(itemDetail);
     mocks.deleteItemRecord.mockResolvedValue(true);
 
     const result = await deleteItem("item-use-debounce-hook");
@@ -218,6 +283,37 @@ describe("item actions", () => {
       itemId: "item-use-debounce-hook",
       userId: "user-123",
     });
+    assert.equal(mocks.deleteS3Object.mock.calls.length, 0);
+  });
+
+  it("deletes uploaded objects from S3 after deleting file-backed items", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.getItemDetail.mockResolvedValue({
+      ...itemDetail,
+      contentKind: "file",
+      kind: "file",
+      storageKey: "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+    });
+    mocks.deleteItemRecord.mockResolvedValue(true);
+    mocks.deleteS3Object.mockResolvedValue(undefined);
+
+    const result = await deleteItem("item-runbook");
+
+    assert.deepEqual(result, {
+      success: true,
+    });
+    assert.deepEqual(mocks.getItemDetail.mock.calls[0]?.[0], {
+      itemId: "item-runbook",
+      userId: "user-123",
+    });
+    assert.deepEqual(mocks.deleteItemRecord.mock.calls[0]?.[0], {
+      itemId: "item-runbook",
+      userId: "user-123",
+    });
+    assert.equal(
+      mocks.deleteS3Object.mock.calls[0]?.[0],
+      "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+    );
   });
 
   it("rejects unauthenticated item deletes", async () => {
@@ -234,7 +330,7 @@ describe("item actions", () => {
 
   it("does not delete items the user does not own", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
-    mocks.deleteItemRecord.mockResolvedValue(false);
+    mocks.getItemDetail.mockResolvedValue(null);
 
     const result = await deleteItem("item-use-debounce-hook");
 
@@ -242,5 +338,7 @@ describe("item actions", () => {
       success: false,
       error: "Item not found.",
     });
+    assert.equal(mocks.deleteItemRecord.mock.calls.length, 0);
+    assert.equal(mocks.deleteS3Object.mock.calls.length, 0);
   });
 });

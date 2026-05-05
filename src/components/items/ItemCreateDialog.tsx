@@ -2,6 +2,8 @@
 
 import {
   Code2,
+  File,
+  Image,
   Link as LinkIcon,
   Loader2,
   Plus,
@@ -21,6 +23,7 @@ import {
 
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
+import { FileUpload } from "@/components/items/FileUpload";
 import { MarkdownEditor } from "@/components/items/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +34,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { ItemCreateKind } from "@/lib/db/items";
+import {
+  isUploadItemKind,
+  type UploadedFileMetadata,
+} from "@/lib/storage/uploads";
 import { cn } from "@/lib/utils";
 
 const createItemKinds: ItemCreateKind[] = [
@@ -38,11 +45,15 @@ const createItemKinds: ItemCreateKind[] = [
   "prompt",
   "command",
   "note",
+  "file",
+  "image",
   "link",
 ];
 
 const itemKindIcons: Record<ItemCreateKind, LucideIcon> = {
   command: Terminal,
+  file: File,
+  image: Image,
   link: LinkIcon,
   note: StickyNote,
   prompt: Sparkles,
@@ -51,6 +62,8 @@ const itemKindIcons: Record<ItemCreateKind, LucideIcon> = {
 
 const itemKindLabels: Record<ItemCreateKind, string> = {
   command: "Command",
+  file: "File",
+  image: "Image",
   link: "Link",
   note: "Note",
   prompt: "Prompt",
@@ -59,6 +72,8 @@ const itemKindLabels: Record<ItemCreateKind, string> = {
 
 const itemKindStyles: Record<ItemCreateKind, string> = {
   command: "bg-orange-500/10 text-orange-400",
+  file: "bg-slate-500/10 text-slate-400",
+  image: "bg-pink-500/10 text-pink-400",
   link: "bg-emerald-500/10 text-emerald-400",
   note: "bg-yellow-500/10 text-yellow-300",
   prompt: "bg-violet-500/10 text-violet-400",
@@ -79,8 +94,11 @@ interface ItemCreateDraft {
   language: string;
   tags: string;
   title: string;
+  uploadedFile: UploadedFileMetadata | null;
   url: string;
 }
+
+type ItemCreateTextDraftField = Exclude<keyof ItemCreateDraft, "uploadedFile">;
 
 interface ItemCreateDialogProps {
   initialKind: ItemCreateKind;
@@ -154,10 +172,17 @@ function ItemCreateDialog({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleDraftChange(key: keyof ItemCreateDraft, value: string) {
+  function handleDraftChange(key: ItemCreateTextDraftField, value: string) {
     setDraft((currentDraft) => ({
       ...currentDraft,
       [key]: value,
+    }));
+  }
+
+  function handleUploadedFileChange(value: UploadedFileMetadata | null) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      uploadedFile: value,
     }));
   }
 
@@ -196,6 +221,11 @@ function ItemCreateDialog({
       return;
     }
 
+    if (isUploadItemKind(draft.kind) && !draft.uploadedFile) {
+      setError("Upload a file before creating this item.");
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
@@ -226,6 +256,7 @@ function ItemCreateDialog({
   const isSubmitDisabled =
     !draft.title.trim() ||
     (draft.kind === "link" && !draft.url.trim()) ||
+    (isUploadItemKind(draft.kind) && !draft.uploadedFile) ||
     isSubmitting;
 
   return (
@@ -419,6 +450,20 @@ function ItemCreateDialog({
                   />
                 </label>
               ) : null}
+
+              {isUploadItemKind(draft.kind) ? (
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Upload
+                  </span>
+                  <FileUpload
+                    disabled={isSubmitting}
+                    kind={draft.kind}
+                    onChange={handleUploadedFileChange}
+                    value={draft.uploadedFile}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -491,6 +536,7 @@ function createDefaultDraft(kind: ItemCreateKind = "snippet"): ItemCreateDraft {
     language: "",
     tags: "",
     title: "",
+    uploadedFile: null,
     url: "",
   };
 }
@@ -519,6 +565,14 @@ function getItemCreatePayload(draft: ItemCreateDraft) {
     kind: draft.kind,
     ...(shouldShowLanguageField(draft.kind)
       ? { language: getNullableDraftValue(draft.language) }
+      : {}),
+    ...(isUploadItemKind(draft.kind) && draft.uploadedFile
+      ? {
+          fileSizeBytes: draft.uploadedFile.fileSizeBytes,
+          mimeType: draft.uploadedFile.mimeType,
+          originalFileName: draft.uploadedFile.originalFileName,
+          storageKey: draft.uploadedFile.storageKey,
+        }
       : {}),
     tags: getDraftTags(draft.tags),
     title: draft.title,

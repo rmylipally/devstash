@@ -22,8 +22,11 @@ export default defineConfig({
       "tests/cleanup-script.test.ts",
       "tests/dashboard-collections.test.ts",
       "tests/dashboard-items.test.ts",
+      "tests/file-upload-ui.test.ts",
+      "tests/file-upload-validation.test.ts",
       "tests/item-actions.test.ts",
       "tests/rate-limit.test.ts",
+      "tests/s3-storage.test.ts",
       "tests/seed-data.test.ts",
     ],
     server: {

@@ -228,7 +228,7 @@ graph TD
   A --> AUTH[Auth.js]
   A --> DB[(Neon Postgres)]
   A --> ORM[Prisma ORM]
-  A --> R2[Cloudflare R2]
+  A --> S3[Amazon S3]
   A --> OAI[OpenAI API]
   A --> STRIPE[Stripe Billing]
   A -. optional .-> REDIS[(Redis Cache)]
@@ -238,7 +238,7 @@ graph TD
 ### Architecture Notes
 
 - Keep a **single Next.js codebase** for UI, server actions, API routes, and auth.
-- Store uploaded objects in **R2** and only keep metadata in Postgres.
+- Store uploaded objects in **Amazon S3** and only keep metadata in Postgres.
 - Start search with **Postgres full-text search + indexes**.
 - Add Redis only if a real bottleneck appears.
 - Keep AI calls behind server-side endpoints only.
@@ -527,13 +527,13 @@ model AiJob {
 - **`CustomType` is optional metadata.** It supports Pro differentiation without making the whole app dynamic.
 - **`CollectionItem` is explicit.** This preserves many-to-many membership and future ordering.
 - **`lastViewedAt` is enough for recent items in MVP.** No extra analytics table needed yet.
-- **R2 keys live in the DB, files do not.**
+- **S3 object keys live in the DB, files do not.**
 - **Plan enforcement belongs in application logic**, not as hard database constraints.
 
 ## 🛠️ Engineering Notes
 
 - Use **Prisma Migrate**, never `db push`, for schema changes.
-- Use signed upload / download patterns for private R2 assets.
+- Use signed upload / download patterns for private S3 assets.
 - Keep AI model names configurable through environment variables.
 - Store AI outputs only when they materially improve UX or reduce cost.
 - Prefer server actions for simple item mutations; use route handlers where uploads or external integrations need clearer boundaries.
@@ -554,7 +554,7 @@ As of **April 28, 2026**, this repo already includes:
 
 Still to be added for the full product foundation:
 
-- Cloudflare R2 integration
+- Amazon S3 integration
 - Stripe billing setup
 - OpenAI integration
 
@@ -607,7 +607,7 @@ Why:
 - [Prisma ORM v7 Upgrade Guide](https://docs.prisma.io/docs/guides/upgrade-prisma-orm/v7)
 - [Neon Docs](https://neon.com/docs/introduction)
 - [Auth.js](https://authjs.dev/)
-- [Cloudflare R2 Docs](https://developers.cloudflare.com/r2/)
+- [Amazon S3 Docs](https://docs.aws.amazon.com/s3/)
 - [Tailwind CSS Docs](https://tailwindcss.com/docs/installation/using-postcss)
 - [shadcn/ui Docs](https://ui.shadcn.com/docs)
 - [OpenAI GPT-5.4 nano](https://developers.openai.com/api/docs/models/gpt-5.4-nano/)

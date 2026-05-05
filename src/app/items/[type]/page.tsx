@@ -37,10 +37,6 @@ function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
 }
 
 function getCreatableItemKind(kind: DashboardItemKind): ItemCreateKind | null {
-  if (kind === "file" || kind === "image") {
-    return null;
-  }
-
   return kind;
 }
 

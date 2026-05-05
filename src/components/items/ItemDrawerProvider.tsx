@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Code2,
   Copy,
+  Download,
   Edit3,
   File,
   Folder,
@@ -23,6 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import NextImage from "next/image";
 import {
   createContext,
   useCallback,
@@ -740,6 +742,19 @@ function ItemActionBar({
         <Copy className="size-5" />
         Copy
       </Button>
+      {item?.contentKind === "file" && item.storageKey ? (
+        <Button
+          className="h-10 gap-2 px-3"
+          onClick={() => {
+            window.location.href = `/api/items/${item.id}/download?download=1`;
+          }}
+          type="button"
+          variant="ghost"
+        >
+          <Download className="size-5" />
+          Download
+        </Button>
+      ) : null}
       <Button
         className="h-10 gap-2 px-3"
         disabled={!item}
@@ -1043,14 +1058,27 @@ function ItemContent({ item }: { item: ItemDetail }) {
   }
 
   if (item.contentKind === "file") {
+    const downloadPath = `/api/items/${item.id}/download`;
+
+    if (item.kind === "image" && item.storageKey) {
+      return (
+        <div className="space-y-3">
+          <NextImage
+            alt={item.title}
+            className="max-h-[28rem] w-full rounded-lg border border-border bg-card object-contain"
+            height={720}
+            src={downloadPath}
+            unoptimized
+            width={1280}
+          />
+          <FileMetadata item={item} />
+        </div>
+      );
+    }
+
     return (
       <div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground">
-        <p className="font-medium">
-          {item.originalFileName ?? item.storageKey ?? "File metadata"}
-        </p>
-        {item.storageKey ? (
-          <p className="mt-2 break-all text-muted-foreground">{item.storageKey}</p>
-        ) : null}
+        <FileMetadata item={item} />
       </div>
     );
   }
@@ -1087,6 +1115,27 @@ function ItemContent({ item }: { item: ItemDetail }) {
     </pre>
   ) : (
     <EmptyText>No content saved.</EmptyText>
+  );
+}
+
+function FileMetadata({ item }: { item: ItemDetail }) {
+  return (
+    <div className="text-sm text-card-foreground">
+      <p className="font-medium">
+        {item.originalFileName ?? item.storageKey ?? "File metadata"}
+      </p>
+      {item.fileSizeBytes ? (
+        <p className="mt-2 text-muted-foreground">
+          {formatFileSize(item.fileSizeBytes)}
+          {item.mimeType ? ` · ${item.mimeType}` : ""}
+        </p>
+      ) : item.mimeType ? (
+        <p className="mt-2 text-muted-foreground">{item.mimeType}</p>
+      ) : null}
+      {item.storageKey ? (
+        <p className="mt-2 break-all text-muted-foreground">{item.storageKey}</p>
+      ) : null}
+    </div>
   );
 }
 

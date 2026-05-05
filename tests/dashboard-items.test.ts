@@ -431,6 +431,72 @@ describe("dashboard item data", () => {
     assert.equal(item.sourceUrl, "https://base-ui.com/react/components/dialog");
   });
 
+  it("creates file items with uploaded file metadata shape", async () => {
+    const createArgs: ItemDetailCreateArgs[] = [];
+    const client: ItemCreateClient = {
+      item: {
+        create: async (args) => {
+          createArgs.push(args);
+
+          return itemDetailRow({
+            content: args.data.content ?? null,
+            contentKind: args.data.contentKind,
+            fileSizeBytes: args.data.fileSizeBytes ?? null,
+            kind: args.data.kind,
+            language: args.data.language ?? null,
+            mimeType: args.data.mimeType ?? null,
+            originalFileName: args.data.originalFileName ?? null,
+            sourceUrl: args.data.sourceUrl ?? null,
+            storageKey: args.data.storageKey ?? null,
+            title: args.data.title,
+          });
+        },
+      },
+    };
+
+    const item = await createItem(
+      {
+        data: {
+          description: "Operational notes",
+          fileSizeBytes: 4096,
+          kind: "file",
+          mimeType: "text/markdown",
+          originalFileName: "runbook.md",
+          storageKey:
+            "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+          tags: [],
+          title: "Runbook",
+        },
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(createArgs[0]?.data, {
+      content: null,
+      contentKind: "FILE",
+      description: "Operational notes",
+      fileSizeBytes: 4096,
+      kind: "FILE",
+      language: null,
+      mimeType: "text/markdown",
+      originalFileName: "runbook.md",
+      sourceUrl: null,
+      storageKey: "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+      tags: {
+        create: [],
+      },
+      title: "Runbook",
+      userId: "user-123",
+    });
+    assert.equal(item.contentKind, "file");
+    assert.equal(item.kind, "file");
+    assert.equal(
+      item.storageKey,
+      "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+    );
+  });
+
   it("deletes items scoped by item id and user id", async () => {
     const deleteManyArgs: ItemDeleteManyArgs[] = [];
     const client: ItemDeleteClient = {

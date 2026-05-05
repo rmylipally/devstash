@@ -12,7 +12,7 @@ export type DashboardItemKind =
   | "image"
   | "link";
 
-export type ItemCreateKind = Exclude<DashboardItemKind, "file" | "image">;
+export type ItemCreateKind = DashboardItemKind;
 
 export interface DashboardItem {
   id: string;
@@ -81,8 +81,12 @@ export interface ItemUpdateInput {
 export interface ItemCreateInput {
   content?: string | null;
   description?: string | null;
+  fileSizeBytes?: number | null;
   kind: ItemCreateKind;
   language?: string | null;
+  mimeType?: string | null;
+  originalFileName?: string | null;
+  storageKey?: string | null;
   tags: string[];
   title: string;
   url?: string | null;
@@ -321,9 +325,13 @@ export interface ItemDetailCreateArgs {
     content: string | null;
     contentKind: PrismaContentKind;
     description: string | null;
+    fileSizeBytes?: number | null;
     kind: PrismaItemKind;
     language: string | null;
+    mimeType?: string | null;
+    originalFileName?: string | null;
     sourceUrl: string | null;
+    storageKey?: string | null;
     tags: {
       create: ItemTagCreateInput[];
     };
@@ -665,11 +673,11 @@ function getItemCreateData(
   userId: string,
 ): ItemDetailCreateArgs["data"] {
   const isLink = data.kind === "link";
+  const isUpload = data.kind === "file" || data.kind === "image";
   const supportsLanguage = data.kind === "command" || data.kind === "snippet";
-
-  return {
-    content: isLink ? null : (data.content ?? null),
-    contentKind: isLink ? "URL" : "TEXT",
+  const createData: ItemDetailCreateArgs["data"] = {
+    content: isLink || isUpload ? null : (data.content ?? null),
+    contentKind: isLink ? "URL" : isUpload ? "FILE" : "TEXT",
     description: data.description ?? null,
     kind: prismaItemKindByDashboardKind[data.kind],
     language: supportsLanguage ? (data.language ?? null) : null,
@@ -682,6 +690,15 @@ function getItemCreateData(
     title: data.title,
     userId,
   };
+
+  if (isUpload) {
+    createData.fileSizeBytes = data.fileSizeBytes ?? null;
+    createData.mimeType = data.mimeType ?? null;
+    createData.originalFileName = data.originalFileName ?? null;
+    createData.storageKey = data.storageKey ?? null;
+  }
+
+  return createData;
 }
 
 export function toDashboardItem(item: DashboardItemRow): DashboardItem {
