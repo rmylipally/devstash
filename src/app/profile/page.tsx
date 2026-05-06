@@ -21,7 +21,10 @@ import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { ProfileAccountActions } from "@/components/profile/ProfileAccountActions";
 import { Badge } from "@/components/ui/badge";
-import { getDashboardCollections } from "@/lib/db/collections";
+import {
+  getDashboardCollectionOptions,
+  getDashboardCollections,
+} from "@/lib/db/collections";
 import { getDashboardItemTypes } from "@/lib/db/items";
 import {
   getProfileData,
@@ -105,9 +108,14 @@ export default async function ProfilePage() {
     redirect("/sign-in?callbackUrl=/profile");
   }
 
-  const [recentDashboardCollections, sidebarItemTypes] = await Promise.all([
+  const [
+    recentDashboardCollections,
+    sidebarItemTypes,
+    collectionOptions,
+  ] = await Promise.all([
     getDashboardCollections({ limit: 6, userId: profile.id }),
     getDashboardItemTypes({ userId: profile.id }),
+    getDashboardCollectionOptions({ userId: profile.id }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
   const favoriteCollections = recentDashboardCollections
@@ -119,7 +127,9 @@ export default async function ProfilePage() {
       currentUser={getProfileDashboardUser(profile)}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
-      newItemAction={<ItemCreateButton />}
+      newItemAction={
+        <ItemCreateButton availableCollections={collectionOptions} />
+      }
       recentCollections={recentSidebarCollections}
     >
       <ProfileMain profile={profile} />

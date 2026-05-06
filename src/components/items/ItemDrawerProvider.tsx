@@ -46,6 +46,7 @@ import {
 
 import { deleteItem, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
+import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
 import { MarkdownEditor } from "@/components/items/MarkdownEditor";
 import {
   AlertDialog,
@@ -67,6 +68,7 @@ import type {
   DashboardItemKind,
   ItemDetail,
 } from "@/lib/db/items";
+import type { DashboardCollectionOption } from "@/lib/db/collections";
 import { cn } from "@/lib/utils";
 
 const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
@@ -129,6 +131,7 @@ type DrawerToast =
   | null;
 
 interface ItemDraft {
+  collectionIds: string[];
   content: string;
   description: string;
   language: string;
@@ -153,7 +156,13 @@ function useItemDrawer() {
   return context;
 }
 
-export function ItemDrawerProvider({ children }: { children: ReactNode }) {
+export function ItemDrawerProvider({
+  availableCollections = [],
+  children,
+}: {
+  availableCollections?: DashboardCollectionOption[];
+  children: ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
@@ -262,8 +271,9 @@ export function ItemDrawerProvider({ children }: { children: ReactNode }) {
       {children}
       <Sheet onOpenChange={handleOpenChange} open={isOpen} swipeDirection="right">
         <SheetContent className="sm:max-w-[44rem]">
-          <ItemDrawerContent
-            error={error}
+        <ItemDrawerContent
+          availableCollections={availableCollections}
+          error={error}
             isLoading={isLoading}
             item={itemDetail}
             key={selectedItemId ?? "idle"}
@@ -553,6 +563,7 @@ export function RecentItemRow({ item }: { item: DashboardItem }) {
 }
 
 interface ItemDrawerContentProps {
+  availableCollections: DashboardCollectionOption[];
   error: string | null;
   isLoading: boolean;
   item: ItemDetail | null;
@@ -561,6 +572,7 @@ interface ItemDrawerContentProps {
 }
 
 function ItemDrawerContent({
+  availableCollections,
   error,
   isLoading,
   item,
@@ -587,9 +599,18 @@ function ItemDrawerContent({
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
-  function handleDraftChange(key: keyof ItemDraft, value: string) {
+  function handleDraftChange(
+    key: Exclude<keyof ItemDraft, "collectionIds">,
+    value: string,
+  ) {
     setDraft((currentDraft) =>
       currentDraft ? { ...currentDraft, [key]: value } : currentDraft,
+    );
+  }
+
+  function handleCollectionIdsChange(collectionIds: string[]) {
+    setDraft((currentDraft) =>
+      currentDraft ? { ...currentDraft, collectionIds } : currentDraft,
     );
   }
 
@@ -772,7 +793,9 @@ function ItemDrawerContent({
             <ItemEditForm
               draft={draft}
               error={formError}
+              availableCollections={availableCollections}
               item={item}
+              onCollectionIdsChange={handleCollectionIdsChange}
               onDraftChange={handleDraftChange}
             />
           ) : (
@@ -788,7 +811,7 @@ interface ItemDrawerHeaderTitleProps {
   draft: ItemDraft | null;
   item: ItemDetail;
   mode: DrawerMode;
-  onDraftChange(key: keyof ItemDraft, value: string): void;
+  onDraftChange(key: Exclude<keyof ItemDraft, "collectionIds">, value: string): void;
 }
 
 function ItemDrawerHeaderTitle({
@@ -1119,16 +1142,20 @@ function ItemDrawerDetails({ item }: { item: ItemDetail }) {
 }
 
 interface ItemEditFormProps {
+  availableCollections: DashboardCollectionOption[];
   draft: ItemDraft;
   error: string | null;
   item: ItemDetail;
-  onDraftChange(key: keyof ItemDraft, value: string): void;
+  onCollectionIdsChange(collectionIds: string[]): void;
+  onDraftChange(key: Exclude<keyof ItemDraft, "collectionIds">, value: string): void;
 }
 
 function ItemEditForm({
+  availableCollections,
   draft,
   error,
   item,
+  onCollectionIdsChange,
   onDraftChange,
 }: ItemEditFormProps) {
   return (
@@ -1211,9 +1238,11 @@ function ItemEditForm({
       </IconSection>
 
       <IconSection icon={Folder} title="Collections">
-        <ChipList
-          emptyLabel="Not added to a collection yet."
-          items={item.collections.map((collection) => collection.name)}
+        <CollectionMultiSelect
+          availableCollections={availableCollections}
+          label="Collections"
+          onCollectionIdsChange={onCollectionIdsChange}
+          selectedCollectionIds={draft.collectionIds}
         />
       </IconSection>
 
@@ -1477,6 +1506,7 @@ function TagList({ tags }: { tags: string[] }) {
 
 function createItemDraft(item: ItemDetail): ItemDraft {
   return {
+    collectionIds: item.collections.map((collection) => collection.id),
     content: item.content ?? "",
     description: item.description ?? "",
     language: item.language ?? "",
@@ -1503,6 +1533,7 @@ function getDraftTags(value: string) {
 
 function getItemUpdatePayload(item: ItemDetail, draft: ItemDraft) {
   return {
+    collectionIds: draft.collectionIds,
     ...(shouldShowContentField(item.kind)
       ? { content: getNullableDraftValue(draft.content) }
       : {}),

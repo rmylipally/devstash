@@ -97,6 +97,40 @@ describe("item actions", () => {
     });
   });
 
+  it("passes selected collections when creating an item", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.createItemRecord.mockResolvedValue({
+      ...itemDetail,
+      id: "item-new-snippet",
+      title: "Fetch helper",
+    });
+
+    const result = await createItem({
+      collectionIds: [
+        " collection-react-patterns ",
+        "collection-devops",
+        "collection-react-patterns",
+        "",
+      ],
+      content: "export async function getJson() {}",
+      kind: "snippet",
+      tags: [],
+      title: "Fetch helper",
+    });
+
+    assert.equal(result.success, true);
+    assert.deepEqual(mocks.createItemRecord.mock.calls[0]?.[0], {
+      data: {
+        collectionIds: ["collection-react-patterns", "collection-devops"],
+        content: "export async function getJson() {}",
+        kind: "snippet",
+        tags: [],
+        title: "Fetch helper",
+      },
+      userId: "user-123",
+    });
+  });
+
   it("requires an absolute URL when creating link items", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
 
@@ -250,6 +284,37 @@ describe("item actions", () => {
         tags: ["react", "hooks"],
         title: "Updated Hook",
         url: null,
+      },
+      itemId: "item-use-debounce-hook",
+      userId: "user-123",
+    });
+  });
+
+  it("passes selected collections when updating an item", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.getItemDetail.mockResolvedValue({ id: "item-use-debounce-hook" });
+    mocks.updateItemRecord.mockResolvedValue(itemDetail);
+
+    const result = await updateItem("item-use-debounce-hook", {
+      collectionIds: [
+        "collection-react-patterns",
+        " collection-devops ",
+        "collection-react-patterns",
+      ],
+      content: " const value = true; ",
+      language: " typescript ",
+      tags: [" react "],
+      title: " Updated Hook ",
+    });
+
+    assert.equal(result.success, true);
+    assert.deepEqual(mocks.updateItemRecord.mock.calls[0]?.[0], {
+      data: {
+        collectionIds: ["collection-react-patterns", "collection-devops"],
+        content: "const value = true;",
+        language: "typescript",
+        tags: ["react"],
+        title: "Updated Hook",
       },
       itemId: "item-use-debounce-hook",
       userId: "user-123",

@@ -82,8 +82,20 @@ const optionalNullableUrlSchema = optionalNullableStringSchema.refine(
   { message: "Enter a valid URL." },
 );
 
+const optionalCollectionIdsSchema = z
+  .array(z.string().trim())
+  .optional()
+  .transform((collectionIds) => {
+    if (!collectionIds) {
+      return undefined;
+    }
+
+    return Array.from(new Set(collectionIds.filter(Boolean)));
+  });
+
 const createItemInputSchema = z
   .object({
+    collectionIds: optionalCollectionIdsSchema,
     content: optionalNullableStringSchema,
     description: optionalNullableStringSchema,
     fileSizeBytes: z.number().int().positive().optional(),
@@ -141,6 +153,7 @@ const createItemInputSchema = z
   });
 
 const updateItemInputSchema = z.object({
+  collectionIds: optionalCollectionIdsSchema,
   content: optionalNullableStringSchema,
   description: optionalNullableStringSchema,
   language: optionalNullableStringSchema,
@@ -162,6 +175,10 @@ function getItemCreatePayload(data: z.infer<typeof createItemInputSchema>) {
     title: data.title,
   };
 
+  if (data.collectionIds !== undefined) {
+    payload.collectionIds = data.collectionIds;
+  }
+
   if (data.description !== undefined) {
     payload.description = data.description;
   }
@@ -179,6 +196,35 @@ function getItemCreatePayload(data: z.infer<typeof createItemInputSchema>) {
     payload.mimeType = data.mimeType;
     payload.originalFileName = data.originalFileName;
     payload.storageKey = data.storageKey;
+  }
+
+  if (data.url !== undefined) {
+    payload.url = data.url;
+  }
+
+  return payload;
+}
+
+function getItemUpdatePayload(data: z.infer<typeof updateItemInputSchema>) {
+  const payload: ItemUpdateInput = {
+    tags: data.tags,
+    title: data.title,
+  };
+
+  if (data.collectionIds !== undefined) {
+    payload.collectionIds = data.collectionIds;
+  }
+
+  if (data.description !== undefined) {
+    payload.description = data.description;
+  }
+
+  if (data.content !== undefined) {
+    payload.content = data.content;
+  }
+
+  if (data.language !== undefined) {
+    payload.language = data.language;
   }
 
   if (data.url !== undefined) {
@@ -299,7 +345,7 @@ export async function updateItem(
 
   try {
     const updatedItem = await updateItemRecord({
-      data: parsedData.data satisfies ItemUpdateInput,
+      data: getItemUpdatePayload(parsedData.data),
       itemId,
       userId,
     });

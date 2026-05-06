@@ -73,6 +73,7 @@ export interface ItemDetail {
 }
 
 export interface ItemUpdateInput {
+  collectionIds?: string[];
   content?: string | null;
   description?: string | null;
   language?: string | null;
@@ -82,6 +83,7 @@ export interface ItemUpdateInput {
 }
 
 export interface ItemCreateInput {
+  collectionIds?: string[];
   content?: string | null;
   description?: string | null;
   fileSizeBytes?: number | null;
@@ -115,6 +117,14 @@ export interface DashboardItemRow {
 }
 
 export interface DashboardItemWhere {
+  collections?: {
+    some: {
+      collection: {
+        slug: string;
+        userId: string;
+      };
+    };
+  };
   isFavorite?: boolean;
   isPinned?: boolean;
   kind?: PrismaItemKind;
@@ -302,8 +312,19 @@ export interface ItemTagCreateInput {
   };
 }
 
+export interface ItemCollectionCreateInput {
+  collection: {
+    connect: {
+      id: string;
+    };
+  };
+}
+
 export interface ItemDetailUpdateArgs {
   data: {
+    collections?: {
+      create: ItemCollectionCreateInput[];
+    };
     content?: string | null;
     description?: string | null;
     language?: string | null;
@@ -329,8 +350,20 @@ export interface ItemTagDeleteManyArgs {
   };
 }
 
+export interface ItemCollectionDeleteManyArgs {
+  where: {
+    collection: {
+      userId: string;
+    };
+    itemId: string;
+  };
+}
+
 export interface ItemDetailCreateArgs {
   data: {
+    collections?: {
+      create: ItemCollectionCreateInput[];
+    };
     content: string | null;
     contentKind: PrismaContentKind;
     description: string | null;
@@ -383,6 +416,14 @@ export interface ItemDetailClient {
 }
 
 export interface ItemUpdateTransactionClient {
+  collection: {
+    findMany(args: ItemCollectionFindManyArgs): Promise<ItemCollectionRow[]>;
+  };
+  collectionItem: {
+    deleteMany(
+      args: ItemCollectionDeleteManyArgs,
+    ): Promise<ItemDeleteManyResult>;
+  };
   item: {
     update(args: ItemDetailUpdateArgs): Promise<ItemDetailRow>;
   };
@@ -398,9 +439,28 @@ export interface ItemUpdateClient extends ItemUpdateTransactionClient {
 }
 
 export interface ItemCreateClient {
+  collection: {
+    findMany(args: ItemCollectionFindManyArgs): Promise<ItemCollectionRow[]>;
+  };
   item: {
     create(args: ItemDetailCreateArgs): Promise<ItemDetailRow>;
   };
+}
+
+export interface ItemCollectionFindManyArgs {
+  select: {
+    id: true;
+  };
+  where: {
+    id: {
+      in: string[];
+    };
+    userId: string;
+  };
+}
+
+export interface ItemCollectionRow {
+  id: string;
 }
 
 export interface ItemDeleteClient {
@@ -417,6 +477,12 @@ interface GetDashboardItemsOptions {
 
 interface GetDashboardItemsByTypeOptions extends GetDashboardItemsOptions {
   kind: DashboardItemKind;
+}
+
+interface GetDashboardItemsByCollectionSlugOptions
+  extends GetDashboardItemsOptions {
+  collectionSlug: string;
+  userId: string;
 }
 
 interface GetItemDetailOptions {
@@ -626,6 +692,24 @@ function getUniqueTags(tags: string[]) {
   return uniqueTags;
 }
 
+function getUniqueCollectionIds(collectionIds: string[] | undefined) {
+  const seen = new Set<string>();
+  const uniqueCollectionIds: string[] = [];
+
+  for (const collectionId of collectionIds ?? []) {
+    const id = collectionId.trim();
+
+    if (!id || seen.has(id)) {
+      continue;
+    }
+
+    seen.add(id);
+    uniqueCollectionIds.push(id);
+  }
+
+  return uniqueCollectionIds;
+}
+
 function toTagCreateInput(userId: string, name: string): ItemTagCreateInput {
   const slug = slugifyTagName(name);
 
@@ -648,10 +732,52 @@ function toTagCreateInput(userId: string, name: string): ItemTagCreateInput {
   };
 }
 
-function getItemUpdateData(
+function toCollectionCreateInput(id: string): ItemCollectionCreateInput {
+  return {
+    collection: {
+      connect: {
+        id,
+      },
+    },
+  };
+}
+
+async function getUserOwnedCollectionIds(
+  collectionIds: string[] | undefined,
+  userId: string,
+  collectionClient: Pick<ItemCreateClient, "collection">,
+) {
+  const uniqueCollectionIds = getUniqueCollectionIds(collectionIds);
+
+  if (uniqueCollectionIds.length === 0) {
+    return [];
+  }
+
+  const collections = await collectionClient.collection.findMany({
+    select: { id: true },
+    where: {
+      id: {
+        in: uniqueCollectionIds,
+      },
+      userId,
+    },
+  });
+  const ownedCollectionIds = new Set(collections.map((collection) => collection.id));
+
+  if (ownedCollectionIds.size !== uniqueCollectionIds.length) {
+    throw new Error("One or more selected collections are unavailable.");
+  }
+
+  return uniqueCollectionIds.filter((collectionId) =>
+    ownedCollectionIds.has(collectionId),
+  );
+}
+
+async function getItemUpdateData(
   data: ItemUpdateInput,
   userId: string,
-): ItemDetailUpdateArgs["data"] {
+  collectionClient: Pick<ItemUpdateTransactionClient, "collection">,
+): Promise<ItemDetailUpdateArgs["data"]> {
   const updateData: ItemDetailUpdateArgs["data"] = {
     tags: {
       create: getUniqueTags(data.tags).map((tag) =>
@@ -677,13 +803,26 @@ function getItemUpdateData(
     updateData.sourceUrl = data.url;
   }
 
+  if (data.collectionIds !== undefined) {
+    const collectionIds = await getUserOwnedCollectionIds(
+      data.collectionIds,
+      userId,
+      collectionClient,
+    );
+
+    updateData.collections = {
+      create: collectionIds.map(toCollectionCreateInput),
+    };
+  }
+
   return updateData;
 }
 
-function getItemCreateData(
+async function getItemCreateData(
   data: ItemCreateInput,
   userId: string,
-): ItemDetailCreateArgs["data"] {
+  collectionClient: Pick<ItemCreateClient, "collection">,
+): Promise<ItemDetailCreateArgs["data"]> {
   const isLink = data.kind === "link";
   const isUpload = data.kind === "file" || data.kind === "image";
   const supportsLanguage = data.kind === "command" || data.kind === "snippet";
@@ -708,6 +847,18 @@ function getItemCreateData(
     createData.mimeType = data.mimeType ?? null;
     createData.originalFileName = data.originalFileName ?? null;
     createData.storageKey = data.storageKey ?? null;
+  }
+
+  if (data.collectionIds !== undefined) {
+    const collectionIds = await getUserOwnedCollectionIds(
+      data.collectionIds,
+      userId,
+      collectionClient,
+    );
+
+    createData.collections = {
+      create: collectionIds.map(toCollectionCreateInput),
+    };
   }
 
   return createData;
@@ -779,6 +930,12 @@ export async function updateItem(
 ): Promise<ItemDetail> {
   const itemClient = client ?? (await getDefaultItemUpdateClient());
   const updateItemWithTags = async (tx: ItemUpdateTransactionClient) => {
+    const updateData = await getItemUpdateData(
+      options.data,
+      options.userId,
+      tx,
+    );
+
     await tx.itemTag.deleteMany({
       where: {
         item: {
@@ -788,8 +945,19 @@ export async function updateItem(
       },
     });
 
+    if (options.data.collectionIds !== undefined) {
+      await tx.collectionItem.deleteMany({
+        where: {
+          collection: {
+            userId: options.userId,
+          },
+          itemId: options.itemId,
+        },
+      });
+    }
+
     return tx.item.update({
-      data: getItemUpdateData(options.data, options.userId),
+      data: updateData,
       select: itemDetailSelect,
       where: {
         id: options.itemId,
@@ -809,8 +977,13 @@ export async function createItem(
   client?: ItemCreateClient,
 ): Promise<ItemDetail> {
   const itemClient = client ?? (await getDefaultItemCreateClient());
+  const data = await getItemCreateData(
+    options.data,
+    options.userId,
+    itemClient,
+  );
   const item = await itemClient.item.create({
-    data: getItemCreateData(options.data, options.userId),
+    data,
     select: itemDetailSelect,
   });
 
@@ -877,6 +1050,28 @@ export async function getDashboardItemsByType(
     getFindManyArgs(options, {
       kind: prismaItemKindByDashboardKind[options.kind],
       ...getUserWhere(options),
+    }),
+  );
+
+  return items.map(toDashboardItem);
+}
+
+export async function getDashboardItemsByCollectionSlug(
+  options: GetDashboardItemsByCollectionSlugOptions,
+  client?: DashboardItemClient,
+) {
+  const itemClient = client ?? (await getDefaultItemClient());
+  const items = await itemClient.item.findMany(
+    getFindManyArgs(options, {
+      collections: {
+        some: {
+          collection: {
+            slug: options.collectionSlug,
+            userId: options.userId,
+          },
+        },
+      },
+      userId: options.userId,
     }),
   );
 
