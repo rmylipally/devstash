@@ -6,7 +6,10 @@ import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { ItemTypePage } from "@/components/items/ItemTypePage";
-import { getDashboardCollections } from "@/lib/db/collections";
+import {
+  getDashboardCollectionOptions,
+  getDashboardCollections,
+} from "@/lib/db/collections";
 import {
   getDashboardItemsByType,
   getDashboardItemTypes,
@@ -49,9 +52,14 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
   }
 
   const dashboardUser = getDashboardUser(session.user);
-  const [recentDashboardCollections, sidebarItemTypes] = await Promise.all([
+  const [
+    recentDashboardCollections,
+    sidebarItemTypes,
+    collectionOptions,
+  ] = await Promise.all([
     getDashboardCollections({ limit: 6, userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
+    getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
   const itemType = sidebarItemTypes.find(
     (sidebarItemType) => sidebarItemType.slug === type,
@@ -71,7 +79,10 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
     .slice(0, 4);
   const createInitialKind = getCreatableItemKind(itemType.id);
   const typeCreateAction = createInitialKind ? (
-    <ItemCreateButton initialKind={createInitialKind} />
+    <ItemCreateButton
+      availableCollections={collectionOptions}
+      initialKind={createInitialKind}
+    />
   ) : undefined;
 
   return (
@@ -79,11 +90,14 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
       currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
-      newItemAction={<ItemCreateButton />}
+      newItemAction={
+        <ItemCreateButton availableCollections={collectionOptions} />
+      }
       recentCollections={recentSidebarCollections}
     >
       <ItemTypePage
         action={typeCreateAction}
+        availableCollections={collectionOptions}
         itemType={itemType}
         items={items}
       />

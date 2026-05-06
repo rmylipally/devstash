@@ -23,6 +23,7 @@ import {
 
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
+import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
 import { FileUpload } from "@/components/items/FileUpload";
 import { MarkdownEditor } from "@/components/items/MarkdownEditor";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { DashboardCollectionOption } from "@/lib/db/collections";
 import type { ItemCreateKind } from "@/lib/db/items";
 import {
   isUploadItemKind,
@@ -89,6 +91,7 @@ type CreateItemToast =
   | null;
 
 interface ItemCreateDraft {
+  collectionIds: string[];
   content: string;
   description: string;
   kind: ItemCreateKind;
@@ -100,8 +103,13 @@ interface ItemCreateDraft {
 }
 
 type ItemCreateTextDraftField = Exclude<keyof ItemCreateDraft, "uploadedFile">;
+type ItemCreateStringDraftField = Exclude<
+  ItemCreateTextDraftField,
+  "collectionIds"
+>;
 
 interface ItemCreateDialogProps {
+  availableCollections: DashboardCollectionOption[];
   initialKind: ItemCreateKind;
   onCreated(): void;
   onOpenChange(open: boolean): void;
@@ -109,10 +117,14 @@ interface ItemCreateDialogProps {
 }
 
 interface ItemCreateButtonProps {
+  availableCollections?: DashboardCollectionOption[];
   initialKind?: ItemCreateKind;
 }
 
-export function ItemCreateButton({ initialKind }: ItemCreateButtonProps) {
+export function ItemCreateButton({
+  availableCollections = [],
+  initialKind,
+}: ItemCreateButtonProps) {
   const router = useRouter();
   const selectedInitialKind = initialKind ?? "snippet";
   const buttonLabel = initialKind
@@ -151,6 +163,7 @@ export function ItemCreateButton({ initialKind }: ItemCreateButtonProps) {
         <span className="hidden sm:inline">{buttonLabel}</span>
       </Button>
       <ItemCreateDialog
+        availableCollections={availableCollections}
         initialKind={selectedInitialKind}
         onCreated={handleCreated}
         onOpenChange={setIsOpen}
@@ -162,6 +175,7 @@ export function ItemCreateButton({ initialKind }: ItemCreateButtonProps) {
 }
 
 function ItemCreateDialog({
+  availableCollections,
   initialKind,
   onCreated,
   onOpenChange,
@@ -173,10 +187,17 @@ function ItemCreateDialog({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleDraftChange(key: ItemCreateTextDraftField, value: string) {
+  function handleDraftChange(key: ItemCreateStringDraftField, value: string) {
     setDraft((currentDraft) => ({
       ...currentDraft,
       [key]: value,
+    }));
+  }
+
+  function handleCollectionIdsChange(collectionIds: string[]) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      collectionIds,
     }));
   }
 
@@ -194,6 +215,7 @@ function ItemCreateDialog({
 
     setDraft((currentDraft) => ({
       ...createDefaultDraft(kind),
+      collectionIds: currentDraft.collectionIds,
       description: currentDraft.description,
       tags: currentDraft.tags,
       title: currentDraft.title,
@@ -379,6 +401,13 @@ function ItemCreateDialog({
                 </label>
               </div>
 
+              <CollectionMultiSelect
+                availableCollections={availableCollections}
+                label="Collections"
+                onCollectionIdsChange={handleCollectionIdsChange}
+                selectedCollectionIds={draft.collectionIds}
+              />
+
               <label className="space-y-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   Description
@@ -539,6 +568,7 @@ function CreateItemToastMessage({ toast }: { toast: CreateItemToast }) {
 
 function createDefaultDraft(kind: ItemCreateKind = "snippet"): ItemCreateDraft {
   return {
+    collectionIds: [],
     content: "",
     description: "",
     kind,
@@ -567,6 +597,7 @@ function getDraftTags(value: string) {
 
 function getItemCreatePayload(draft: ItemCreateDraft) {
   return {
+    collectionIds: draft.collectionIds,
     ...(shouldShowContentField(draft.kind)
       ? { content: getNullableDraftValue(draft.content) }
       : {}),

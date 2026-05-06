@@ -5,6 +5,7 @@ import {
   createItem,
   deleteItem,
   getDashboardItemTypes,
+  getDashboardItemsByCollectionSlug,
   getDashboardItemsByType,
   getDashboardItemStats,
   getDashboardPinnedItems,
@@ -307,6 +308,131 @@ describe("dashboard item data", () => {
     assert.deepEqual(item.tags, ["cli", "build tools"]);
   });
 
+  it("replaces item collections with user-owned collection selections", async () => {
+    const collectionFindManyArgs: unknown[] = [];
+    const collectionItemDeleteManyArgs: unknown[] = [];
+    const updateArgs: unknown[] = [];
+    const client = {
+      collection: {
+        findMany: async (args: unknown) => {
+          collectionFindManyArgs.push(args);
+
+          return [
+            { id: "collection-react-patterns" },
+            { id: "collection-devops" },
+          ];
+        },
+      },
+      collectionItem: {
+        deleteMany: async (args: unknown) => {
+          collectionItemDeleteManyArgs.push(args);
+
+          return { count: 1 };
+        },
+      },
+      item: {
+        update: async (args: {
+          data: {
+            collections: {
+              create: Array<{ collection: { connect: { id: string } } }>;
+            };
+            title: string;
+          };
+        }) => {
+          updateArgs.push(args);
+
+          return itemDetailRow({
+            collections: args.data.collections.create.map(({ collection }) => ({
+              collection: {
+                id: collection.connect.id,
+                name:
+                  collection.connect.id === "collection-devops"
+                    ? "DevOps"
+                    : "React Patterns",
+                slug:
+                  collection.connect.id === "collection-devops"
+                    ? "devops"
+                    : "react-patterns",
+              },
+            })),
+            title: args.data.title,
+          });
+        },
+      },
+      itemTag: {
+        deleteMany: async () => ({ count: 0 }),
+      },
+    } as unknown as ItemUpdateClient;
+
+    const item = await updateItem(
+      {
+        data: {
+          collectionIds: ["collection-react-patterns", "collection-devops"],
+          tags: [],
+          title: "Run production build",
+        },
+        itemId: "item-build-command",
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(collectionFindManyArgs, [
+      {
+        select: { id: true },
+        where: {
+          id: {
+            in: ["collection-react-patterns", "collection-devops"],
+          },
+          userId: "user-123",
+        },
+      },
+    ]);
+    assert.deepEqual(collectionItemDeleteManyArgs, [
+      {
+        where: {
+          collection: {
+            userId: "user-123",
+          },
+          itemId: "item-build-command",
+        },
+      },
+    ]);
+    assert.deepEqual(
+      (updateArgs[0] as ItemDetailUpdateArgs).data.collections,
+      {
+        create: [
+          {
+            collection: {
+              connect: {
+                id: "collection-react-patterns",
+              },
+            },
+          },
+          {
+            collection: {
+              connect: {
+                id: "collection-devops",
+              },
+            },
+          },
+        ],
+      },
+    );
+    assert.deepEqual(item.collections, [
+      {
+        id: "collection-react-patterns",
+        name: "React Patterns",
+        slug: "react-patterns",
+      },
+      {
+        id: "collection-devops",
+        name: "DevOps",
+        slug: "devops",
+      },
+    ]);
+  });
+
   it("creates text items with user-owned tags", async () => {
     const createArgs: ItemDetailCreateArgs[] = [];
     const client: ItemCreateClient = {
@@ -400,6 +526,92 @@ describe("dashboard item data", () => {
     assert.equal(item.kind, "command");
     assert.equal(item.title, "Run production build");
     assert.deepEqual(item.tags, ["cli", "build tools"]);
+  });
+
+  it("creates items with user-owned collection selections", async () => {
+    const collectionFindManyArgs: unknown[] = [];
+    const createArgs: unknown[] = [];
+    const client = {
+      collection: {
+        findMany: async (args: unknown) => {
+          collectionFindManyArgs.push(args);
+
+          return [{ id: "collection-react-patterns" }];
+        },
+      },
+      item: {
+        create: async (args: {
+          data: {
+            collections: {
+              create: Array<{ collection: { connect: { id: string } } }>;
+            };
+            contentKind: ItemDetailRow["contentKind"];
+            kind: ItemDetailRow["kind"];
+            title: string;
+          };
+        }) => {
+          createArgs.push(args);
+
+          return itemDetailRow({
+            collections: args.data.collections.create.map(({ collection }) => ({
+              collection: {
+                id: collection.connect.id,
+                name: "React Patterns",
+                slug: "react-patterns",
+              },
+            })),
+            contentKind: args.data.contentKind,
+            kind: args.data.kind,
+            title: args.data.title,
+          });
+        },
+      },
+    } as unknown as ItemCreateClient;
+
+    const item = await createItem(
+      {
+        data: {
+          collectionIds: ["collection-react-patterns"],
+          content: "npm run build",
+          kind: "command",
+          language: "bash",
+          tags: [],
+          title: "Run production build",
+        },
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(collectionFindManyArgs, [
+      {
+        select: { id: true },
+        where: {
+          id: {
+            in: ["collection-react-patterns"],
+          },
+          userId: "user-123",
+        },
+      },
+    ]);
+    assert.deepEqual((createArgs[0] as ItemDetailCreateArgs).data.collections, {
+      create: [
+        {
+          collection: {
+            connect: {
+              id: "collection-react-patterns",
+            },
+          },
+        },
+      ],
+    });
+    assert.deepEqual(item.collections, [
+      {
+        id: "collection-react-patterns",
+        name: "React Patterns",
+        slug: "react-patterns",
+      },
+    ]);
   });
 
   it("creates link items with URL content shape", async () => {
@@ -664,6 +876,44 @@ describe("dashboard item data", () => {
     });
     assert.deepEqual(findManyArgs[0]?.orderBy, { lastViewedAt: "desc" });
     assert.equal(items[0]?.kind, "note");
+  });
+
+  it("fetches dashboard items filtered by user-owned collection slug", async () => {
+    const findManyArgs: unknown[] = [];
+    const client: DashboardItemClient = {
+      item: {
+        count: async () => 0,
+        findMany: async (args) => {
+          findManyArgs.push(args);
+          return [itemRow({ kind: "SNIPPET" })];
+        },
+      },
+    };
+
+    const items = await getDashboardItemsByCollectionSlug(
+      {
+        collectionSlug: "react-patterns",
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(findManyArgs[0], {
+      orderBy: { lastViewedAt: "desc" },
+      select: findManyArgs[0]?.select,
+      where: {
+        collections: {
+          some: {
+            collection: {
+              slug: "react-patterns",
+              userId: "user-123",
+            },
+          },
+        },
+        userId: "user-123",
+      },
+    });
+    assert.equal(items[0]?.kind, "snippet");
   });
 
   it("counts total and favorite dashboard items with the same user scope", async () => {

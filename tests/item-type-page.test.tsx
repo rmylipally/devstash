@@ -65,7 +65,7 @@ describe("item type page", () => {
     assert.match(itemsByTypePageSource, /getCreatableItemKind/);
     assert.match(
       itemsByTypePageSource,
-      /<ItemCreateButton initialKind={createInitialKind} \/>/,
+      /availableCollections=\{collectionOptions\}[\s\S]*initialKind=\{createInitialKind\}/,
     );
     assert.match(itemsByTypePageSource, /action={typeCreateAction}/);
   });

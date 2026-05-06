@@ -26,6 +26,14 @@ export interface DashboardCollectionStats {
   total: number;
 }
 
+export interface DashboardCollectionOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export type DashboardCollectionOptionRow = DashboardCollectionOption;
+
 export interface DashboardCollectionRow {
   id: string;
   name: string;
@@ -100,6 +108,23 @@ export interface DashboardCollectionFindUniqueArgs {
   };
 }
 
+export interface DashboardCollectionOptionFindManyArgs {
+  orderBy: {
+    name: "asc";
+  };
+  select: {
+    id: true;
+    name: true;
+    slug: true;
+  };
+  where?: {
+    user?: {
+      email: string;
+    };
+    userId?: string;
+  };
+}
+
 interface DashboardCollectionSelect {
   description: true;
   id: true;
@@ -147,6 +172,9 @@ export interface DashboardCollectionClient {
     findMany(
       args: DashboardCollectionFindManyArgs,
     ): Promise<DashboardCollectionRow[]>;
+    findMany(
+      args: DashboardCollectionOptionFindManyArgs,
+    ): Promise<DashboardCollectionOptionRow[]>;
     findUnique?(
       args: DashboardCollectionFindUniqueArgs,
     ): Promise<{ id: string } | null>;
@@ -209,6 +237,13 @@ const dashboardCollectionSelect: DashboardCollectionSelect = {
   slug: true,
   updatedAt: true,
 };
+
+const dashboardCollectionOptionSelect: DashboardCollectionOptionFindManyArgs["select"] =
+  {
+    id: true,
+    name: true,
+    slug: true,
+  };
 
 async function getDefaultCollectionClient() {
   const { prisma } = await import("@/lib/prisma");
@@ -392,6 +427,20 @@ export async function getDashboardCollectionStats(
     favorite,
     total,
   };
+}
+
+export async function getDashboardCollectionOptions(
+  options: Pick<GetDashboardCollectionsOptions, "userEmail" | "userId"> = {},
+  client?: DashboardCollectionClient,
+): Promise<DashboardCollectionOption[]> {
+  const collectionClient = client ?? (await getDefaultCollectionClient());
+  const where = getCollectionWhere(options);
+
+  return collectionClient.collection.findMany({
+    orderBy: { name: "asc" },
+    select: dashboardCollectionOptionSelect,
+    ...(where ? { where } : {}),
+  });
 }
 
 export async function createCollection(

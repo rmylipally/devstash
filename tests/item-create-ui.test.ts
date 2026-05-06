@@ -19,7 +19,10 @@ describe("item create UI", () => {
     const dialogSource = await readFile("src/components/ui/dialog.tsx", "utf8");
 
     assert.match(dashboardFrameSource, /newItemAction/);
-    assert.match(dashboardShellSource, /<ItemCreateButton \/>/);
+    assert.match(
+      dashboardShellSource,
+      /<ItemCreateButton availableCollections=\{collectionOptions\} \/>/,
+    );
     assert.match(createDialogSource, /function ItemCreateButton/);
     assert.match(createDialogSource, /initialKind\?: ItemCreateKind/);
     assert.match(createDialogSource, /createDefaultDraft\(initialKind\)/);

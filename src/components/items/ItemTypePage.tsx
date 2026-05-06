@@ -8,10 +8,12 @@ import type {
   DashboardItem,
   DashboardItemType,
 } from "@/lib/db/items";
+import type { DashboardCollectionOption } from "@/lib/db/collections";
 import type { ReactNode } from "react";
 
 interface ItemTypePageProps {
   action?: ReactNode;
+  availableCollections: DashboardCollectionOption[];
   itemType: DashboardItemType;
   items: DashboardItem[];
 }
@@ -20,12 +22,17 @@ function formatItemCount(count: number) {
   return `${count} saved ${count === 1 ? "item" : "items"}`;
 }
 
-export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
+export function ItemTypePage({
+  action,
+  availableCollections,
+  itemType,
+  items,
+}: ItemTypePageProps) {
   const isImageGallery = itemType.id === "image";
   const isFileList = itemType.id === "file";
 
   return (
-    <ItemDrawerProvider>
+    <ItemDrawerProvider availableCollections={availableCollections}>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 import {
   createCollection,
   getDashboardCollectionStats,
+  getDashboardCollectionOptions,
   getDashboardCollections,
   toDashboardCollection,
   type DashboardCollectionClient,
@@ -150,6 +151,62 @@ describe("dashboard collection data", () => {
     assert.deepEqual(countArgs, [
       { where: { userId: "user-123" } },
       { where: { isFavorite: true, userId: "user-123" } },
+    ]);
+  });
+
+  it("fetches collection options for item forms scoped to the user", async () => {
+    const findManyArgs: unknown[] = [];
+    const client = {
+      collection: {
+        count: async () => 0,
+        findMany: async (args: unknown) => {
+          findManyArgs.push(args);
+
+          return [
+            {
+              id: "collection-react-patterns",
+              name: "React Patterns",
+              slug: "react-patterns",
+            },
+            {
+              id: "collection-devops",
+              name: "DevOps",
+              slug: "devops",
+            },
+          ];
+        },
+      },
+    } as DashboardCollectionClient;
+
+    const options = await getDashboardCollectionOptions(
+      { userId: "user-123" },
+      client,
+    );
+
+    assert.deepEqual(findManyArgs, [
+      {
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+        where: {
+          userId: "user-123",
+        },
+      },
+    ]);
+    assert.deepEqual(options, [
+      {
+        id: "collection-react-patterns",
+        name: "React Patterns",
+        slug: "react-patterns",
+      },
+      {
+        id: "collection-devops",
+        name: "DevOps",
+        slug: "devops",
+      },
     ]);
   });
 
