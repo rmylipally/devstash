@@ -1,21 +1,16 @@
-# Current Feature: Image Gallery View
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not Started|In Progress|Completed -->
 
 ## Goals
 
-- Create an image thumbnail card to replace the regular item card for images.
-- Show image items in a 3-column grid/gallery.
-- Display thumbnails with a 16:9 aspect ratio using `aspect-video`.
-- Use `object-cover` so thumbnails fill each card, accepting edge cropping.
-- Add a subtle hover zoom effect with 5% scale over 300ms.
+<!-- Goals & requirements -->
 
 ## Notes
 
-- Source spec: `context/features/image-display-spec.md`
-- Overview: Add an image grid/gallery with thumbnail cards instead of the regular item card.
+<!-- Any extra notes -->
 
 ## History
 
@@ -106,3 +101,4 @@ In Progress
 - 2026-05-05: Completed File Upload with Amazon S3 with upload and download API routes, drag-and-drop file/image uploads, item create and drawer integration, S3 delete cleanup, SAML2AWS/shared-profile credential support, and passing lint, unit tests, and build.
 - 2026-05-06: Loaded Image Gallery View from `context/features/image-display-spec.md` and set the feature status to Not Started.
 - 2026-05-06: Started Image Gallery View implementation on `feature/image-gallery-view`.
+- 2026-05-06: Completed Image Gallery View with image-specific thumbnail cards, a three-column gallery layout, 16:9 object-cover thumbnails, subtle hover zoom, focused UI coverage, lint, unit tests, and successful production build verification.
