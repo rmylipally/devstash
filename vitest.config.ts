@@ -21,6 +21,8 @@ export default defineConfig({
       "tests/auth-setup.test.ts",
       "tests/auth-ui.test.tsx",
       "tests/code-editor-ui.test.ts",
+      "tests/collection-create-route.test.ts",
+      "tests/collection-create-ui.test.ts",
       "tests/cleanup-script.test.ts",
       "tests/dashboard-collections.test.ts",
       "tests/dashboard-frame.test.tsx",

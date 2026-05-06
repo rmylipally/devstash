@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import {
+  createCollection,
   getDashboardCollectionStats,
   getDashboardCollections,
   toDashboardCollection,
@@ -150,5 +151,92 @@ describe("dashboard collection data", () => {
       { where: { userId: "user-123" } },
       { where: { isFavorite: true, userId: "user-123" } },
     ]);
+  });
+
+  it("creates user-scoped collections with unique slugs", async () => {
+    const findUniqueArgs: unknown[] = [];
+    const createArgs: unknown[] = [];
+    const client = {
+      collection: {
+        count: async () => 0,
+        create: async (args: unknown) => {
+          createArgs.push(args);
+          return {
+            description: "Reusable React examples",
+            id: "collection-react-patterns-2",
+            isFavorite: false,
+            items: [],
+            name: "React Patterns!",
+            slug: "react-patterns-2",
+            updatedAt,
+          };
+        },
+        findMany: async () => [],
+        findUnique: async (args: { where: { userId_slug: { slug: string } } }) => {
+          findUniqueArgs.push(args);
+          return args.where.userId_slug.slug === "react-patterns"
+            ? { id: "existing" }
+            : null;
+        },
+      },
+    };
+
+    const collection = await createCollection(
+      {
+        data: {
+          description: " Reusable React examples ",
+          name: " React Patterns! ",
+        },
+        userId: "user-123",
+      },
+      client,
+    );
+
+    assert.deepEqual(collection, {
+      description: "Reusable React examples",
+      dominantItemKind: null,
+      id: "collection-react-patterns-2",
+      isFavorite: false,
+      itemCount: 0,
+      itemTypeIds: [],
+      name: "React Patterns!",
+      slug: "react-patterns-2",
+      updatedAt: "2026-04-25T14:30:00.000Z",
+    });
+    assert.deepEqual(findUniqueArgs, [
+      {
+        select: { id: true },
+        where: { userId_slug: { slug: "react-patterns", userId: "user-123" } },
+      },
+      {
+        select: { id: true },
+        where: { userId_slug: { slug: "react-patterns-2", userId: "user-123" } },
+      },
+    ]);
+    assert.deepEqual(createArgs[0], {
+      data: {
+        description: "Reusable React examples",
+        name: "React Patterns!",
+        slug: "react-patterns-2",
+        userId: "user-123",
+      },
+      select: {
+        description: true,
+        id: true,
+        isFavorite: true,
+        items: {
+          select: {
+            item: {
+              select: {
+                kind: true,
+              },
+            },
+          },
+        },
+        name: true,
+        slug: true,
+        updatedAt: true,
+      },
+    });
   });
 });

@@ -78,6 +78,54 @@ export interface DashboardCollectionFindManyArgs {
   };
 }
 
+export interface DashboardCollectionCreateArgs {
+  data: {
+    description: string | null;
+    name: string;
+    slug: string;
+    userId: string;
+  };
+  select: DashboardCollectionSelect;
+}
+
+export interface DashboardCollectionFindUniqueArgs {
+  select: {
+    id: true;
+  };
+  where: {
+    userId_slug: {
+      slug: string;
+      userId: string;
+    };
+  };
+}
+
+interface DashboardCollectionSelect {
+  description: true;
+  id: true;
+  isFavorite: true;
+  items: {
+    select: {
+      item: {
+        select: {
+          kind: true;
+        };
+      };
+    };
+    where?: {
+      item: {
+        user?: {
+          email: string;
+        };
+        userId?: string;
+      };
+    };
+  };
+  name: true;
+  slug: true;
+  updatedAt: true;
+}
+
 export interface DashboardCollectionCountArgs {
   where?: {
     isFavorite?: boolean;
@@ -93,9 +141,15 @@ export interface DashboardCollectionClient {
     count(
       args: DashboardCollectionCountArgs,
     ): Promise<number>;
+    create?(
+      args: DashboardCollectionCreateArgs,
+    ): Promise<DashboardCollectionRow>;
     findMany(
       args: DashboardCollectionFindManyArgs,
     ): Promise<DashboardCollectionRow[]>;
+    findUnique?(
+      args: DashboardCollectionFindUniqueArgs,
+    ): Promise<{ id: string } | null>;
   };
 }
 
@@ -103,6 +157,14 @@ interface GetDashboardCollectionsOptions {
   limit?: number;
   userEmail?: string;
   userId?: string;
+}
+
+interface CreateCollectionOptions {
+  data: {
+    description?: string | null;
+    name: string;
+  };
+  userId: string;
 }
 
 const DEFAULT_COLLECTION_LIMIT = 6;
@@ -128,6 +190,24 @@ const dashboardItemKindByPrismaKind: Record<
   NOTE: "note",
   PROMPT: "prompt",
   SNIPPET: "snippet",
+};
+
+const dashboardCollectionSelect: DashboardCollectionSelect = {
+  description: true,
+  id: true,
+  isFavorite: true,
+  items: {
+    select: {
+      item: {
+        select: {
+          kind: true,
+        },
+      },
+    },
+  },
+  name: true,
+  slug: true,
+  updatedAt: true,
 };
 
 async function getDefaultCollectionClient() {
@@ -201,26 +281,64 @@ function getFindManyArgs(
   return {
     orderBy: { updatedAt: "desc" },
     select: {
-      description: true,
-      id: true,
-      isFavorite: true,
+      ...dashboardCollectionSelect,
       items: {
-        select: {
-          item: {
-            select: {
-              kind: true,
-            },
-          },
-        },
+        ...dashboardCollectionSelect.items,
         ...(itemWhere ? { where: itemWhere } : {}),
       },
-      name: true,
-      slug: true,
-      updatedAt: true,
     },
     take: options.limit ?? DEFAULT_COLLECTION_LIMIT,
     ...(where ? { where } : {}),
   };
+}
+
+function getNullableValue(value: string | null | undefined) {
+  const trimmedValue = value?.trim() ?? "";
+
+  return trimmedValue ? trimmedValue : null;
+}
+
+function slugifyCollectionName(name: string) {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "collection"
+  );
+}
+
+async function getUniqueCollectionSlug(
+  name: string,
+  userId: string,
+  collectionClient: DashboardCollectionClient,
+) {
+  const baseSlug = slugifyCollectionName(name);
+  let nextSlug = baseSlug;
+  let suffix = 2;
+
+  while (collectionClient.collection.findUnique) {
+    const existingCollection = await collectionClient.collection.findUnique({
+      select: { id: true },
+      where: {
+        userId_slug: {
+          slug: nextSlug,
+          userId,
+        },
+      },
+    });
+
+    if (!existingCollection) {
+      return nextSlug;
+    }
+
+    nextSlug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return nextSlug;
 }
 
 export function toDashboardCollection(
@@ -274,4 +392,34 @@ export async function getDashboardCollectionStats(
     favorite,
     total,
   };
+}
+
+export async function createCollection(
+  options: CreateCollectionOptions,
+  client?: DashboardCollectionClient,
+): Promise<DashboardCollection> {
+  const collectionClient = client ?? (await getDefaultCollectionClient());
+
+  if (!collectionClient.collection.create) {
+    throw new Error("Collection create client is not available.");
+  }
+
+  const name = options.data.name.trim();
+  const description = getNullableValue(options.data.description);
+  const slug = await getUniqueCollectionSlug(
+    name,
+    options.userId,
+    collectionClient,
+  );
+  const collection = await collectionClient.collection.create({
+    data: {
+      description,
+      name,
+      slug,
+      userId: options.userId,
+    },
+    select: dashboardCollectionSelect,
+  });
+
+  return toDashboardCollection(collection);
 }

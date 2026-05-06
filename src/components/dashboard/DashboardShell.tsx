@@ -20,6 +20,7 @@ import type { Session } from "next-auth";
 import type { ReactNode } from "react";
 
 import { auth } from "@/auth";
+import { CollectionCreateButton } from "@/components/collections/CollectionCreateDialog";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import {
@@ -160,7 +161,12 @@ export async function DashboardShell() {
       currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
-      newItemAction={<ItemCreateButton />}
+      newItemAction={
+        <div className="flex shrink-0 items-center gap-2">
+          <CollectionCreateButton />
+          <ItemCreateButton />
+        </div>
+      }
       recentCollections={recentSidebarCollections}
     >
       <DashboardMain

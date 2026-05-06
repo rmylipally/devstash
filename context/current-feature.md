@@ -1,24 +1,28 @@
-# Current Feature
+# Current Feature: Collection Create
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
-- Add a quick copy action to item cards/rows without interfering with drawer-opening clicks.
-- Keep placeholder dashboard search visibly disabled until real search is implemented.
-- Clean up stale test coverage wiring and current feature context.
-- Remediate code-scanner audit findings around uploads, auth email origins, dashboard ownership, link safety, and nested card actions.
+- Add a top-bar action for creating a new collection.
+- Open a modal dialog for collection creation with at least name and description fields.
+- Create collections as user-scoped records.
+- Follow the existing item-create patterns for validation, pending state, modal behavior, and toast feedback.
+- Fetch collection data from server components through `lib/db` functions.
+- Use API routes only where client-side collection calls are needed.
+- Refresh the UI after save so the new collection appears in the dashboard/sidebar collection data.
 
 ## Notes
 
 <!-- Any extra notes -->
-- Active branch: `feature/quick-copy-card-action`
-- The top-bar search input is intentionally disabled for now because item search is not implemented yet.
-- Quick copy, search-disabled, cleanup, and audit remediation fixes are ready to land on `main`.
+- Inline feature request loaded on 2026-05-06.
+- Active branch: `feature/collection-create`
+- Collections should mirror item patterns where practical, including scoped DB helpers and client feedback.
+- The create button should be in the top bar, alongside the existing item create flow.
 
 ## History
 
@@ -117,3 +121,5 @@ Completed
 - 2026-05-06: Added a disabled dashboard search placeholder fix while real item search remains unimplemented.
 - 2026-05-06: Remediated code-scanner audit findings for upload key ownership, canonical auth email links, SVG upload safety, dashboard user-id scoping, S3 cleanup paths, link URL protocols, nested interactive card actions, and disabled upload drops.
 - 2026-05-06: Completed Quick Copy Card Action, cleanup, and audit remediation with passing lint, unit tests, and production build verification.
+- 2026-05-06: Loaded Collection Create from inline description and set the feature status to Not Started.
+- 2026-05-06: Started Collection Create implementation on `feature/collection-create`.
