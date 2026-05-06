@@ -21,13 +21,16 @@ const itemType: DashboardItemType = {
 const items: DashboardItem[] = [
   {
     description: "Delay fast-changing values before expensive effects.",
+    fileSizeBytes: null,
     id: "item-use-debounce-hook",
     isFavorite: true,
     isPinned: true,
     kind: "snippet",
     lastViewedAt: "2026-04-25T15:30:00.000Z",
+    originalFileName: null,
     tags: ["react", "hooks", "performance"],
     title: "useDebounce Hook",
+    uploadedAt: "2026-04-25T13:00:00.000Z",
   },
 ];
 

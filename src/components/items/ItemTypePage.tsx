@@ -1,4 +1,5 @@
 import {
+  FileListRow,
   ImageThumbnailCard,
   ItemCard,
   ItemDrawerProvider,
@@ -21,6 +22,7 @@ function formatItemCount(count: number) {
 
 export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
   const isImageGallery = itemType.id === "image";
+  const isFileList = itemType.id === "file";
 
   return (
     <ItemDrawerProvider>
@@ -41,13 +43,17 @@ export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
           {items.length > 0 ? (
             <div
               className={
-                isImageGallery
-                  ? "grid gap-4 md:grid-cols-3"
-                  : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                isFileList
+                  ? "grid grid-cols-1 gap-3"
+                  : isImageGallery
+                    ? "grid gap-4 md:grid-cols-3"
+                    : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
               }
             >
               {items.map((item) => (
-                isImageGallery ? (
+                isFileList ? (
+                  <FileListRow item={item} key={item.id} />
+                ) : isImageGallery ? (
                   <ImageThumbnailCard item={item} key={item.id} />
                 ) : (
                   <ItemCard item={item} key={item.id} />

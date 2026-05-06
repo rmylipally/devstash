@@ -20,13 +20,16 @@ const imageItemType: DashboardItemType = {
 const imageItems: DashboardItem[] = [
   {
     description: "Architecture diagram export.",
+    fileSizeBytes: 524288,
     id: "item-architecture-diagram",
     isFavorite: false,
     isPinned: true,
     kind: "image",
     lastViewedAt: "2026-05-05T15:30:00.000Z",
+    originalFileName: "architecture-diagram.png",
     tags: ["diagram", "architecture"],
     title: "Architecture Diagram",
+    uploadedAt: "2026-05-05T14:00:00.000Z",
   },
 ];
 

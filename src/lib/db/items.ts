@@ -19,10 +19,13 @@ export interface DashboardItem {
   title: string;
   kind: DashboardItemKind;
   description: string;
+  fileSizeBytes: number | null;
+  originalFileName: string | null;
   tags: string[];
   isFavorite: boolean;
   isPinned: boolean;
   lastViewedAt: string;
+  uploadedAt: string;
 }
 
 export interface DashboardItemType {
@@ -93,13 +96,16 @@ export interface ItemCreateInput {
 }
 
 export interface DashboardItemRow {
+  createdAt: Date;
   id: string;
   title: string;
   kind: PrismaItemKind;
   description: string | null;
+  fileSizeBytes: number | null;
   isFavorite: boolean;
   isPinned: boolean;
   lastViewedAt: Date | null;
+  originalFileName: string | null;
   updatedAt: Date;
   tags: Array<{
     tag: {
@@ -126,12 +132,15 @@ export interface DashboardItemFindManyArgs {
     lastViewedAt: "desc";
   };
   select: {
+    createdAt: true;
     description: true;
+    fileSizeBytes: true;
     id: true;
     isFavorite: true;
     isPinned: true;
     kind: true;
     lastViewedAt: true;
+    originalFileName: true;
     tags: {
       select: {
         tag: {
@@ -471,12 +480,15 @@ const dashboardItemTypeSelect: DashboardItemTypeFindManyArgs["select"] = {
 };
 
 const dashboardItemSelect: DashboardItemFindManyArgs["select"] = {
+  createdAt: true,
   description: true,
+  fileSizeBytes: true,
   id: true,
   isFavorite: true,
   isPinned: true,
   kind: true,
   lastViewedAt: true,
+  originalFileName: true,
   tags: {
     select: {
       tag: {
@@ -704,13 +716,16 @@ function getItemCreateData(
 export function toDashboardItem(item: DashboardItemRow): DashboardItem {
   return {
     description: item.description ?? "No description yet.",
+    fileSizeBytes: item.fileSizeBytes,
     id: item.id,
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
     kind: dashboardItemKindByPrismaKind[item.kind],
     lastViewedAt: (item.lastViewedAt ?? item.updatedAt).toISOString(),
+    originalFileName: item.originalFileName,
     tags: item.tags.map(({ tag }) => tag.name),
     title: item.title,
+    uploadedAt: item.createdAt.toISOString(),
   };
 }
 

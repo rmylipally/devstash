@@ -22,6 +22,7 @@ export default defineConfig({
       "tests/cleanup-script.test.ts",
       "tests/dashboard-collections.test.ts",
       "tests/dashboard-items.test.ts",
+      "tests/file-list-ui.test.ts",
       "tests/file-upload-ui.test.ts",
       "tests/file-upload-validation.test.ts",
       "tests/image-gallery-ui.test.ts",

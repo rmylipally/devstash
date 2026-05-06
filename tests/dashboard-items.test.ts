@@ -28,18 +28,22 @@ import {
 } from "../src/lib/db/items";
 
 const viewedAt = new Date("2026-04-25T15:30:00.000Z");
+const createdAt = new Date("2026-04-25T13:00:00.000Z");
 const updatedAt = new Date("2026-04-25T16:00:00.000Z");
 
 function itemRow(
   overrides: Partial<DashboardItemRow> = {},
 ): DashboardItemRow {
   return {
+    createdAt,
     description: null,
+    fileSizeBytes: null,
     id: "item-use-debounce-hook",
     isFavorite: true,
     isPinned: true,
     kind: "SNIPPET",
     lastViewedAt: viewedAt,
+    originalFileName: null,
     tags: [
       { tag: { name: "react" } },
       { tag: { name: "hooks" } },
@@ -90,14 +94,32 @@ describe("dashboard item data", () => {
 
     assert.deepEqual(item, {
       description: "No description yet.",
+      fileSizeBytes: null,
       id: "item-use-debounce-hook",
       isFavorite: true,
       isPinned: true,
       kind: "snippet",
       lastViewedAt: "2026-04-25T15:30:00.000Z",
+      originalFileName: null,
       tags: ["react", "hooks", "performance"],
       title: "useDebounce Hook",
+      uploadedAt: "2026-04-25T13:00:00.000Z",
     });
+  });
+
+  it("maps file metadata into dashboard item data", () => {
+    const item = toDashboardItem(
+      itemRow({
+        fileSizeBytes: 153600,
+        kind: "FILE",
+        originalFileName: "launch-checklist.pdf",
+      }),
+    );
+
+    assert.equal(item.kind, "file");
+    assert.equal(item.fileSizeBytes, 153600);
+    assert.equal(item.originalFileName, "launch-checklist.pdf");
+    assert.equal(item.uploadedAt, "2026-04-25T13:00:00.000Z");
   });
 
   it("uses updatedAt when an item has not been viewed yet", () => {
@@ -562,11 +584,13 @@ describe("dashboard item data", () => {
       orderBy: { lastViewedAt: "desc" },
       select: {
         description: true,
+        fileSizeBytes: true,
         id: true,
         isFavorite: true,
         isPinned: true,
         kind: true,
         lastViewedAt: true,
+        originalFileName: true,
         tags: {
           select: {
             tag: {
@@ -577,6 +601,7 @@ describe("dashboard item data", () => {
           },
         },
         title: true,
+        createdAt: true,
         updatedAt: true,
       },
       take: 4,

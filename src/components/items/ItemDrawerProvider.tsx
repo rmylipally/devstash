@@ -7,6 +7,12 @@ import {
   Download,
   Edit3,
   File,
+  FileArchive,
+  FileAudio,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
   Folder,
   Image,
   Link as LinkIcon,
@@ -33,6 +39,7 @@ import {
   useMemo,
   useState,
   type ComponentProps,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 
@@ -357,6 +364,84 @@ export function ImageThumbnailCard({ item }: { item: DashboardItem }) {
       </div>
     </button>
   );
+}
+
+export function FileListRow({ item }: { item: DashboardItem }) {
+  const { openItemDrawer } = useItemDrawer();
+  const fileName = item.originalFileName ?? item.title;
+
+  function handleDownload(event: MouseEvent<HTMLAnchorElement>) {
+    event.stopPropagation();
+  }
+
+  return (
+    <button
+      className="flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 text-left text-card-foreground transition-colors hover:bg-muted/40 sm:flex-row sm:items-center"
+      onClick={() => openItemDrawer(item.id)}
+      type="button"
+    >
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-500/10 text-slate-300">
+        <FileTypeIcon fileName={fileName} />
+      </span>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate font-medium">{item.title}</h3>
+          {item.isPinned ? (
+            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+          ) : null}
+          {item.isFavorite ? (
+            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+          ) : null}
+        </div>
+        <p className="truncate text-sm text-muted-foreground">
+          {item.originalFileName ?? item.description}
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:w-56 sm:flex-row sm:items-center sm:justify-end sm:gap-6">
+        <span>{formatFileSize(item.fileSizeBytes)}</span>
+        <span>{formatFileDate(item.uploadedAt)}</span>
+      </div>
+      <a
+        aria-label={`Download ${item.title}`}
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+        download
+        href={`/api/items/${item.id}/download`}
+        onClick={handleDownload}
+      >
+        <Download className="size-4" />
+      </a>
+    </button>
+  );
+}
+
+function FileTypeIcon({ fileName }: { fileName: string }) {
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
+
+  if (["md", "pdf", "rtf", "txt", "doc", "docx"].includes(extension)) {
+    return <FileText className="size-5" />;
+  }
+
+  if (["csv", "xls", "xlsx"].includes(extension)) {
+    return <FileSpreadsheet className="size-5" />;
+  }
+
+  if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
+    return <FileArchive className="size-5" />;
+  }
+
+  if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension)) {
+    return <FileImage className="size-5" />;
+  }
+
+  if (["mp3", "wav", "m4a", "flac"].includes(extension)) {
+    return <FileAudio className="size-5" />;
+  }
+
+  if (["mp4", "mov", "webm", "avi"].includes(extension)) {
+    return <FileVideo className="size-5" />;
+  }
+
+  return <File className="size-5" />;
 }
 
 export function RecentItemRow({ item }: { item: DashboardItem }) {
@@ -1437,7 +1522,20 @@ function formatLongDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatFileSize(value: number) {
+function formatFileDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatFileSize(value: number | null | undefined) {
+  if (!value) {
+    return "Unknown size";
+  }
+
   const units = ["B", "KB", "MB", "GB"];
   let size = value;
   let unitIndex = 0;
@@ -1447,5 +1545,8 @@ function formatFileSize(value: number) {
     unitIndex += 1;
   }
 
-  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+  const formattedSize =
+    unitIndex === 0 || size >= 10 ? Math.round(size).toString() : size.toFixed(1);
+
+  return `${formattedSize} ${units[unitIndex]}`;
 }
