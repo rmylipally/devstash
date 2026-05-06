@@ -1,28 +1,16 @@
-# Current Feature: Collection Create
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
-In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
-- Add a top-bar action for creating a new collection.
-- Open a modal dialog for collection creation with at least name and description fields.
-- Create collections as user-scoped records.
-- Follow the existing item-create patterns for validation, pending state, modal behavior, and toast feedback.
-- Fetch collection data from server components through `lib/db` functions.
-- Use API routes only where client-side collection calls are needed.
-- Refresh the UI after save so the new collection appears in the dashboard/sidebar collection data.
 
 ## Notes
 
 <!-- Any extra notes -->
-- Inline feature request loaded on 2026-05-06.
-- Active branch: `feature/collection-create`
-- Collections should mirror item patterns where practical, including scoped DB helpers and client feedback.
-- The create button should be in the top bar, alongside the existing item create flow.
 
 ## History
 
@@ -123,3 +111,4 @@ In Progress
 - 2026-05-06: Completed Quick Copy Card Action, cleanup, and audit remediation with passing lint, unit tests, and production build verification.
 - 2026-05-06: Loaded Collection Create from inline description and set the feature status to Not Started.
 - 2026-05-06: Started Collection Create implementation on `feature/collection-create`.
+- 2026-05-06: Completed Collection Create with a top-bar New Collection dialog, user-scoped collection creation API, unique collection slugs, toast feedback, dashboard refresh, focused route/UI/data tests, lint, unit tests, and successful production build verification.
