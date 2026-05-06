@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import type { ItemCreateKind } from "@/lib/db/items";
 import {
   isUploadItemKind,
+  type UploadItemKind,
   type UploadedFileMetadata,
 } from "@/lib/storage/uploads";
 import { cn } from "@/lib/utils";
@@ -187,6 +188,10 @@ function ItemCreateDialog({
   }
 
   function handleKindChange(kind: ItemCreateKind) {
+    if (isUploadItemKind(draft.kind) && draft.uploadedFile) {
+      void deleteUploadedFile(draft.kind, draft.uploadedFile.storageKey);
+    }
+
     setDraft((currentDraft) => ({
       ...createDefaultDraft(kind),
       description: currentDraft.description,
@@ -202,6 +207,10 @@ function ItemCreateDialog({
     }
 
     if (!nextOpen) {
+      if (isUploadItemKind(draft.kind) && draft.uploadedFile) {
+        void deleteUploadedFile(draft.kind, draft.uploadedFile.storageKey);
+      }
+
       setDraft(createDefaultDraft(initialKind));
       setError(null);
     }
@@ -578,6 +587,20 @@ function getItemCreatePayload(draft: ItemCreateDraft) {
     title: draft.title,
     ...(draft.kind === "link" ? { url: getNullableDraftValue(draft.url) } : {}),
   };
+}
+
+async function deleteUploadedFile(kind: UploadItemKind, storageKey: string) {
+  try {
+    await fetch("/api/uploads", {
+      body: JSON.stringify({ kind, storageKey }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "DELETE",
+    });
+  } catch {
+    // Upload cleanup is best-effort and should not block dialog interaction.
+  }
 }
 
 function shouldShowContentField(kind: ItemCreateKind) {

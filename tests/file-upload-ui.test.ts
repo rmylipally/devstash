@@ -21,6 +21,7 @@ describe("file upload UI and routes", () => {
     assert.match(fileUploadSource, /drag/);
     assert.match(fileUploadSource, /progress/);
     assert.match(fileUploadSource, /URL\.createObjectURL/);
+    assert.match(fileUploadSource, /if \(disabled \|\| isUploading\) \{/);
   });
 
   it("exposes upload and download proxy API routes", async () => {
@@ -39,6 +40,8 @@ describe("file upload UI and routes", () => {
 
     assert.match(uploadRouteSource, /formData/);
     assert.match(uploadRouteSource, /putS3Object/);
+    assert.match(uploadRouteSource, /export async function DELETE/);
+    assert.match(uploadRouteSource, /deleteS3Object/);
     assert.match(downloadRouteSource, /getS3Object/);
     assert.match(downloadRouteSource, /Content-Disposition/);
     assert.match(drawerSource, /Download/);

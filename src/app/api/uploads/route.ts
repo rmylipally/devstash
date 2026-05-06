@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
-import { getS3UploadErrorMessage, putS3Object } from "@/lib/storage/s3";
+import {
+  deleteS3Object,
+  getS3UploadErrorMessage,
+  putS3Object,
+} from "@/lib/storage/s3";
 import {
   createStorageKey,
+  isStorageKeyForUpload,
   isUploadItemKind,
   validateUploadMetadata,
 } from "@/lib/storage/uploads";
@@ -110,5 +115,76 @@ export async function POST(request: Request): Promise<NextResponse> {
       originalFileName: fileValue.name,
       storageKey,
     },
+  });
+}
+
+export async function DELETE(request: Request): Promise<NextResponse> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "You must be signed in to remove uploads.",
+      },
+      { status: 401 },
+    );
+  }
+
+  let input: unknown;
+
+  try {
+    input = await request.json();
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Invalid upload cleanup body.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (typeof input !== "object" || input === null) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Invalid upload cleanup body.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const { kind, storageKey } = input as Record<string, unknown>;
+
+  if (
+    !isUploadItemKind(kind) ||
+    typeof storageKey !== "string" ||
+    !isStorageKeyForUpload({ kind, storageKey, userId })
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Upload not found.",
+      },
+      { status: 404 },
+    );
+  }
+
+  try {
+    await deleteS3Object(storageKey);
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Could not remove upload. Try again.",
+      },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
   });
 }

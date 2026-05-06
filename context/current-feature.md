@@ -3,14 +3,22 @@
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
+- Add a quick copy action to item cards/rows without interfering with drawer-opening clicks.
+- Keep placeholder dashboard search visibly disabled until real search is implemented.
+- Clean up stale test coverage wiring and current feature context.
+- Remediate code-scanner audit findings around uploads, auth email origins, dashboard ownership, link safety, and nested card actions.
 
 ## Notes
 
 <!-- Any extra notes -->
+- Active branch: `feature/quick-copy-card-action`
+- The top-bar search input is intentionally disabled for now because item search is not implemented yet.
+- Quick copy, search-disabled, cleanup, and audit remediation fixes are ready to land on `main`.
 
 ## History
 
@@ -105,3 +113,7 @@
 - 2026-05-06: Loaded File List View from `context/features/file-display-spec.md` and set the feature status to Not Started.
 - 2026-05-06: Started File List View implementation on `feature/file-list-view`.
 - 2026-05-06: Completed File List View with a single-column `/items/files` layout, extension-based file icons, file metadata rows, direct download actions, drawer-opening row clicks, responsive stacking, focused UI/data coverage, lint, unit tests, and successful production build verification.
+- 2026-05-06: Started Quick Copy Card Action implementation on `feature/quick-copy-card-action`.
+- 2026-05-06: Added a disabled dashboard search placeholder fix while real item search remains unimplemented.
+- 2026-05-06: Remediated code-scanner audit findings for upload key ownership, canonical auth email links, SVG upload safety, dashboard user-id scoping, S3 cleanup paths, link URL protocols, nested interactive card actions, and disabled upload drops.
+- 2026-05-06: Completed Quick Copy Card Action, cleanup, and audit remediation with passing lint, unit tests, and production build verification.

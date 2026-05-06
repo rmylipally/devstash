@@ -112,6 +112,21 @@ describe("item actions", () => {
     assert.equal(mocks.createItemRecord.mock.calls.length, 0);
   });
 
+  it("rejects link URLs with unsafe protocols", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+
+    const result = await createItem({
+      kind: "link",
+      tags: [],
+      title: "Script",
+      url: "javascript:alert(1)",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Enter a valid URL/);
+    assert.equal(mocks.createItemRecord.mock.calls.length, 0);
+  });
+
   it("creates image items with uploaded file metadata", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
     mocks.createItemRecord.mockResolvedValue({
@@ -161,6 +176,25 @@ describe("item actions", () => {
 
     const result = await createItem({
       kind: "file",
+      tags: [],
+      title: "Runbook",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Upload a file before creating this item/);
+    assert.equal(mocks.createItemRecord.mock.calls.length, 0);
+  });
+
+  it("rejects uploaded file metadata scoped to a different user", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+
+    const result = await createItem({
+      fileSizeBytes: 2048,
+      kind: "file",
+      mimeType: "text/markdown",
+      originalFileName: "runbook.md",
+      storageKey:
+        "devstash/api/uploads/other-user/file/upload-123-runbook.md",
       tags: [],
       title: "Runbook",
     });
@@ -220,6 +254,41 @@ describe("item actions", () => {
       itemId: "item-use-debounce-hook",
       userId: "user-123",
     });
+  });
+
+  it("rejects unsafe link URL updates before writing to the database", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+
+    const result = await updateItem("item-link", {
+      tags: [],
+      title: "Docs",
+      url: "data:text/html,<script>alert(1)</script>",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Enter a valid URL/);
+    assert.equal(mocks.getItemDetail.mock.calls.length, 0);
+    assert.equal(mocks.updateItemRecord.mock.calls.length, 0);
+  });
+
+  it("does not allow existing link items to be updated without a URL", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.getItemDetail.mockResolvedValue({
+      ...itemDetail,
+      contentKind: "url",
+      kind: "link",
+      sourceUrl: "https://example.com",
+    });
+
+    const result = await updateItem("item-link", {
+      tags: [],
+      title: "Docs",
+      url: null,
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /URL is required for links/);
+    assert.equal(mocks.updateItemRecord.mock.calls.length, 0);
   });
 
   it("rejects unauthenticated item updates", async () => {
@@ -286,7 +355,7 @@ describe("item actions", () => {
     assert.equal(mocks.deleteS3Object.mock.calls.length, 0);
   });
 
-  it("deletes uploaded objects from S3 after deleting file-backed items", async () => {
+  it("deletes uploaded objects from S3 before deleting file-backed item records", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
     mocks.getItemDetail.mockResolvedValue({
       ...itemDetail,
@@ -313,6 +382,11 @@ describe("item actions", () => {
     assert.equal(
       mocks.deleteS3Object.mock.calls[0]?.[0],
       "devstash/api/uploads/user-123/file/upload-123-runbook.md",
+    );
+    assert.equal(
+      mocks.deleteS3Object.mock.invocationCallOrder[0] <
+        mocks.deleteItemRecord.mock.invocationCallOrder[0],
+      true,
     );
   });
 

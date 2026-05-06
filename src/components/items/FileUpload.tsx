@@ -56,6 +56,10 @@ export function FileUpload({
   }
 
   function clearUpload() {
+    if (value) {
+      void deleteUploadedFile(kind, value.storageKey);
+    }
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -86,6 +90,10 @@ export function FileUpload({
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragActive(false);
+
+    if (disabled || isUploading) {
+      return;
+    }
 
     const [file] = Array.from(event.dataTransfer.files);
 
@@ -142,7 +150,7 @@ export function FileUpload({
   return (
     <div className="space-y-3">
       <input
-        accept={kind === "image" ? ".png,.jpg,.jpeg,.gif,.webp,.svg" : ".pdf,.txt,.md,.json,.yaml,.yml,.xml,.csv,.toml,.ini"}
+        accept={kind === "image" ? ".png,.jpg,.jpeg,.gif,.webp" : ".pdf,.txt,.md,.json,.yaml,.yml,.xml,.csv,.toml,.ini"}
         className="sr-only"
         disabled={disabled || isUploading}
         onChange={(event) => {
@@ -267,6 +275,20 @@ function uploadWithProgress(
     request.open("POST", "/api/uploads");
     request.send(formData);
   });
+}
+
+async function deleteUploadedFile(kind: UploadItemKind, storageKey: string) {
+  try {
+    await fetch("/api/uploads", {
+      body: JSON.stringify({ kind, storageKey }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "DELETE",
+    });
+  } catch {
+    // Upload cleanup is best-effort and should not block form interaction.
+  }
 }
 
 function formatFileSize(bytes: number) {

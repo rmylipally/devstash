@@ -27,9 +27,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  const result = await registerUser(input, undefined, {
-    appUrl: new URL(request.url).origin,
-  });
+  const result = await registerUser(input);
 
   if (!result.success) {
     return NextResponse.json(

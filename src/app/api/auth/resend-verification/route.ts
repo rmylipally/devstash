@@ -38,9 +38,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return rateLimitResponse;
   }
 
-  const result = await requestEmailVerification(input, undefined, {
-    appUrl: new URL(request.url).origin,
-  });
+  const result = await requestEmailVerification(input);
 
   if (!result.success) {
     return NextResponse.json(

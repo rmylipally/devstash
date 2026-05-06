@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 describe("item create UI", () => {
   it("wires the top-bar new item action to a create dialog and success refresh", async () => {

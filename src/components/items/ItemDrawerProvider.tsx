@@ -2,6 +2,7 @@
 
 import {
   CalendarDays,
+  Check,
   Code2,
   Copy,
   Download,
@@ -291,40 +292,45 @@ export function ItemCard({
   const Icon = itemKindIcons[item.kind];
 
   return (
-    <button
+    <article
       className={cn(
         "flex w-full gap-4 rounded-lg border border-l-4 border-border bg-card p-5 text-left text-card-foreground transition-colors hover:border-primary/50",
         minHeightClassName,
         itemKindAccentStyles[item.kind],
         className,
       )}
-      onClick={() => openItemDrawer(item.id)}
-      type="button"
     >
-      <span
-        className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-lg",
-          itemKindStyles[item.kind],
-        )}
+      <button
+        className="flex min-w-0 flex-1 gap-4 text-left"
+        onClick={() => openItemDrawer(item.id)}
+        type="button"
       >
-        <Icon className="size-5" />
-      </span>
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-lg font-semibold">{item.title}</h3>
-          {item.isPinned ? (
-            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
-          ) : null}
-          {item.isFavorite ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : null}
+        <span
+          className={cn(
+            "flex size-12 shrink-0 items-center justify-center rounded-lg",
+            itemKindStyles[item.kind],
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="truncate text-lg font-semibold">{item.title}</h3>
+            {item.isPinned ? (
+              <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+            ) : null}
+            {item.isFavorite ? (
+              <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+            ) : null}
+          </div>
+          <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+            {item.description}
+          </p>
+          <TagList tags={item.tags} />
         </div>
-        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {item.description}
-        </p>
-        <TagList tags={item.tags} />
-      </div>
-    </button>
+      </button>
+      <QuickCopyButton item={item} />
+    </article>
   );
 }
 
@@ -332,37 +338,54 @@ export function ImageThumbnailCard({ item }: { item: DashboardItem }) {
   const { openItemDrawer } = useItemDrawer();
 
   return (
-    <button
+    <article
       className="group overflow-hidden rounded-lg border border-border bg-card text-left text-card-foreground transition-colors hover:border-primary/50"
-      onClick={() => openItemDrawer(item.id)}
-      type="button"
     >
-      <div className="relative aspect-video overflow-hidden bg-muted">
-        <NextImage
-          alt={item.title}
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-          fill
-          sizes="(min-width: 768px) 33vw, 100vw"
-          src={`/api/items/${item.id}/download`}
-          unoptimized
-        />
-      </div>
+      <button
+        className="block w-full text-left"
+        onClick={() => openItemDrawer(item.id)}
+        type="button"
+      >
+        <div className="relative aspect-video overflow-hidden bg-muted">
+          <NextImage
+            alt={item.title}
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            sizes="(min-width: 768px) 33vw, 100vw"
+            src={`/api/items/${item.id}/download`}
+            unoptimized
+          />
+        </div>
+      </button>
       <div className="space-y-2 p-4">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-base font-semibold">{item.title}</h3>
-          {item.isPinned ? (
-            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
-          ) : null}
-          {item.isFavorite ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : null}
+          <button
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            onClick={() => openItemDrawer(item.id)}
+            type="button"
+          >
+            <h3 className="truncate text-base font-semibold">{item.title}</h3>
+            {item.isPinned ? (
+              <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+            ) : null}
+            {item.isFavorite ? (
+              <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+            ) : null}
+          </button>
+          <QuickCopyButton item={item} />
         </div>
-        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {item.description}
-        </p>
-        <TagList tags={item.tags} />
+        <button
+          className="block w-full text-left"
+          onClick={() => openItemDrawer(item.id)}
+          type="button"
+        >
+          <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+            {item.description}
+          </p>
+          <TagList tags={item.tags} />
+        </button>
       </div>
-    </button>
+    </article>
   );
 }
 
@@ -370,54 +393,52 @@ export function FileListRow({ item }: { item: DashboardItem }) {
   const { openItemDrawer } = useItemDrawer();
   const fileName = item.originalFileName ?? item.title;
 
-  function handleDownload(event: MouseEvent<HTMLAnchorElement>) {
-    event.stopPropagation();
-  }
-
   return (
-    <button
-      className="flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 text-left text-card-foreground transition-colors hover:bg-muted/40 sm:flex-row sm:items-center"
-      onClick={() => openItemDrawer(item.id)}
-      type="button"
-    >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-500/10 text-slate-300">
-        <FileTypeIcon fileName={fileName} />
-      </span>
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate font-medium">{item.title}</h3>
-          {item.isPinned ? (
-            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
-          ) : null}
-          {item.isFavorite ? (
-            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-          ) : null}
+    <article className="flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 text-left text-card-foreground transition-colors hover:bg-muted/40 sm:flex-row sm:items-center">
+      <button
+        className="flex min-w-0 flex-1 flex-col gap-4 text-left sm:flex-row sm:items-center"
+        onClick={() => openItemDrawer(item.id)}
+        type="button"
+      >
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-500/10 text-slate-300">
+          <FileTypeIcon fileName={fileName} />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="truncate font-medium">{item.title}</h3>
+            {item.isPinned ? (
+              <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+            ) : null}
+            {item.isFavorite ? (
+              <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+            ) : null}
+          </div>
+          <p className="truncate text-sm text-muted-foreground">
+            {item.originalFileName ?? item.description}
+          </p>
         </div>
-        <p className="truncate text-sm text-muted-foreground">
-          {item.originalFileName ?? item.description}
-        </p>
-      </div>
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:w-56 sm:flex-row sm:items-center sm:justify-end sm:gap-6">
-        <span>{formatFileSize(item.fileSizeBytes)}</span>
-        <span>{formatFileDate(item.uploadedAt)}</span>
-      </div>
+        <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:w-56 sm:flex-row sm:items-center sm:justify-end sm:gap-6">
+          <span>{formatFileSize(item.fileSizeBytes)}</span>
+          <span>{formatFileDate(item.uploadedAt)}</span>
+        </div>
+      </button>
+      <QuickCopyButton item={item} />
       <a
         aria-label={`Download ${item.title}`}
         className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
         download
-        href={`/api/items/${item.id}/download`}
-        onClick={handleDownload}
+        href={`/api/items/${item.id}/download?download=1`}
       >
         <Download className="size-4" />
       </a>
-    </button>
+    </article>
   );
 }
 
 function FileTypeIcon({ fileName }: { fileName: string }) {
   const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
 
-  if (["md", "pdf", "rtf", "txt", "doc", "docx"].includes(extension)) {
+  if (["md", "txt", "pdf", "doc", "docx"].includes(extension)) {
     return <FileText className="size-5" />;
   }
 
@@ -429,7 +450,7 @@ function FileTypeIcon({ fileName }: { fileName: string }) {
     return <FileArchive className="size-5" />;
   }
 
-  if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension)) {
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(extension)) {
     return <FileImage className="size-5" />;
   }
 
@@ -442,6 +463,46 @@ function FileTypeIcon({ fileName }: { fileName: string }) {
   }
 
   return <File className="size-5" />;
+}
+
+function QuickCopyButton({ item }: { item: DashboardItem }) {
+  const [hasCopied, setHasCopied] = useState(false);
+
+  async function copyItem() {
+    try {
+      const response = await fetch(`/api/items/${item.id}`);
+      const payload = (await response.json()) as ItemDetailResponse;
+      const copyValue =
+        response.ok && payload.success
+          ? payload.data.content ?? payload.data.sourceUrl ?? item.title
+          : item.title;
+
+      await navigator.clipboard.writeText(copyValue);
+      setHasCopied(true);
+      window.setTimeout(() => setHasCopied(false), 1500);
+    } catch {
+      await navigator.clipboard.writeText(item.title);
+      setHasCopied(true);
+      window.setTimeout(() => setHasCopied(false), 1500);
+    }
+  }
+
+  function handleClick(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    void copyItem();
+  }
+
+  return (
+    <button
+      aria-label={`Copy ${item.title}`}
+      className="ml-auto inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      onClick={handleClick}
+      title={`Copy ${item.title}`}
+      type="button"
+    >
+      {hasCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
+    </button>
+  );
 }
 
 export function RecentItemRow({ item }: { item: DashboardItem }) {
@@ -635,7 +696,10 @@ function ItemDrawerContent({
     router.refresh();
   }
 
-  const isSaveDisabled = !draft?.title.trim() || isSaving;
+  const isSaveDisabled =
+    !draft?.title.trim() ||
+    (item?.kind === "link" && !draft?.url.trim()) ||
+    isSaving;
 
   return (
     <>

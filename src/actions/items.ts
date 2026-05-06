@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/items";
 import { deleteS3Object } from "@/lib/storage/s3";
 import {
+  isStorageKeyForUpload,
   isUploadItemKind,
   validateUploadMetadata,
 } from "@/lib/storage/uploads";
@@ -71,9 +72,9 @@ const optionalNullableUrlSchema = optionalNullableStringSchema.refine(
     }
 
     try {
-      new URL(value);
+      const url = new URL(value);
 
-      return true;
+      return url.protocol === "http:" || url.protocol === "https:";
     } catch {
       return false;
     }
@@ -187,6 +188,22 @@ function getItemCreatePayload(data: z.infer<typeof createItemInputSchema>) {
   return payload;
 }
 
+function isUploadedFileMetadataOwnedByUser({
+  kind,
+  storageKey,
+  userId,
+}: {
+  kind: "file" | "image";
+  storageKey: string;
+  userId: string;
+}) {
+  return isStorageKeyForUpload({
+    kind,
+    storageKey,
+    userId,
+  });
+}
+
 export async function createItem(
   data: unknown,
 ): Promise<CreateItemActionResult> {
@@ -206,6 +223,20 @@ export async function createItem(
     return {
       success: false,
       error: getValidationError(parsedData.error),
+    };
+  }
+
+  if (
+    isUploadItemKind(parsedData.data.kind) &&
+    !isUploadedFileMetadataOwnedByUser({
+      kind: parsedData.data.kind,
+      storageKey: parsedData.data.storageKey ?? "",
+      userId,
+    })
+  ) {
+    return {
+      success: false,
+      error: "Upload a file before creating this item.",
     };
   }
 
@@ -259,6 +290,13 @@ export async function updateItem(
     };
   }
 
+  if (existingItem.kind === "link" && !parsedData.data.url) {
+    return {
+      success: false,
+      error: "URL is required for links.",
+    };
+  }
+
   try {
     const updatedItem = await updateItemRecord({
       data: parsedData.data satisfies ItemUpdateInput,
@@ -301,6 +339,10 @@ export async function deleteItem(
       };
     }
 
+    if (existingItem.contentKind === "file" && existingItem.storageKey) {
+      await deleteS3Object(existingItem.storageKey);
+    }
+
     const wasDeleted = await deleteItemRecord({ itemId, userId });
 
     if (!wasDeleted) {
@@ -308,10 +350,6 @@ export async function deleteItem(
         success: false,
         error: "Item not found.",
       };
-    }
-
-    if (existingItem.contentKind === "file" && existingItem.storageKey) {
-      await deleteS3Object(existingItem.storageKey);
     }
 
     return {

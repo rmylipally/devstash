@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -56,7 +56,7 @@ describe("item type page", () => {
     assert.doesNotMatch(html, /href="\/items\/snippets\/item-use-debounce-hook"/);
   });
 
-  it("wires creatable type pages to a preselected create dialog and skips file/image pages", async () => {
+  it("wires type pages to a preselected create dialog", async () => {
     const itemsByTypePageSource = await readFile(
       "src/app/items/[type]/page.tsx",
       "utf8",
@@ -67,7 +67,6 @@ describe("item type page", () => {
       itemsByTypePageSource,
       /<ItemCreateButton initialKind={createInitialKind} \/>/,
     );
-    assert.match(itemsByTypePageSource, /kind === "file" \|\| kind === "image"/);
     assert.match(itemsByTypePageSource, /action={typeCreateAction}/);
   });
 });

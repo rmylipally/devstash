@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 describe("item delete UI", () => {
   it("wires the drawer delete action to a confirmation dialog and success toast", async () => {

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
+import { ContentKind } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { deleteS3Object } from "@/lib/storage/s3";
 
 export async function DELETE(): Promise<NextResponse> {
   const session = await auth();
@@ -18,6 +20,21 @@ export async function DELETE(): Promise<NextResponse> {
   }
 
   try {
+    const fileItems = await prisma.item.findMany({
+      select: { storageKey: true },
+      where: {
+        contentKind: ContentKind.FILE,
+        storageKey: { not: null },
+        userId,
+      },
+    });
+
+    for (const item of fileItems) {
+      if (item.storageKey) {
+        await deleteS3Object(item.storageKey);
+      }
+    }
+
     await prisma.user.delete({
       where: { id: userId },
     });

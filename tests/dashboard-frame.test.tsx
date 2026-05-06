@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -112,5 +112,18 @@ describe("dashboard frame sidebar", () => {
     assert.match(html, /href="\/profile"/);
     assert.match(html, />DU</);
     assert.match(html, /Sign out/);
+  });
+
+  it("queries dashboard data by authenticated user id instead of email fallbacks", async () => {
+    const source = await import("node:fs/promises").then(({ readFile }) =>
+      readFile("src/components/dashboard/DashboardShell.tsx", "utf8"),
+    );
+
+    assert.match(source, /if \(!session\?\.user\?\.id\)/);
+    assert.match(source, /getDashboardCollections\(\{ limit: 6, userId: dashboardUser\.id \}\)/);
+    assert.match(source, /getDashboardCollectionStats\(\{ userId: dashboardUser\.id \}\)/);
+    assert.match(source, /getDashboardItemStats\(\{ userId: dashboardUser\.id \}\)/);
+    assert.match(source, /getDashboardItemTypes\(\{ userId: dashboardUser\.id \}\)/);
+    assert.doesNotMatch(source, /userEmail: dashboardUser\.email/);
   });
 });

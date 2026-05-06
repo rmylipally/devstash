@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 describe("item drawer edit UI", () => {
   it("renders the title editor in the drawer header while editing", async () => {

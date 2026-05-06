@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 describe("dashboard item card styles", () => {
   it("uses item-kind left border accents on recent item rows", async () => {

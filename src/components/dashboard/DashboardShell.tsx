@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import NextLink from "next/link";
+import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import type { ReactNode } from "react";
 
@@ -112,14 +113,14 @@ function getDashboardStats(
   ];
 }
 
-function getDashboardUser(sessionUser?: Session["user"]): DashboardUser {
-  const email = sessionUser?.email ?? currentUser.email;
-  const name = sessionUser?.name ?? email.split("@")[0] ?? currentUser.name;
+function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
+  const email = sessionUser.email ?? currentUser.email;
+  const name = sessionUser.name ?? email.split("@")[0] ?? currentUser.name;
 
   return {
     email,
-    id: sessionUser?.id ?? currentUser.id,
-    image: sessionUser?.image ?? null,
+    id: sessionUser.id,
+    image: sessionUser.image ?? null,
     name,
     plan: currentUser.plan,
   };
@@ -127,7 +128,12 @@ function getDashboardUser(sessionUser?: Session["user"]): DashboardUser {
 
 export async function DashboardShell() {
   const session = await auth();
-  const dashboardUser = getDashboardUser(session?.user);
+
+  if (!session?.user?.id) {
+    redirect("/sign-in?callbackUrl=/dashboard");
+  }
+
+  const dashboardUser = getDashboardUser(session.user);
   const [
     recentDashboardCollections,
     collectionStats,
@@ -136,12 +142,12 @@ export async function DashboardShell() {
     pinnedDashboardItems,
     recentDashboardItems,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 6, userEmail: dashboardUser.email }),
-    getDashboardCollectionStats({ userEmail: dashboardUser.email }),
-    getDashboardItemStats({ userEmail: dashboardUser.email }),
-    getDashboardItemTypes({ userEmail: dashboardUser.email }),
-    getDashboardPinnedItems({ userEmail: dashboardUser.email }),
-    getDashboardRecentItems({ limit: 10, userEmail: dashboardUser.email }),
+    getDashboardCollections({ limit: 6, userId: dashboardUser.id }),
+    getDashboardCollectionStats({ userId: dashboardUser.id }),
+    getDashboardItemStats({ userId: dashboardUser.id }),
+    getDashboardItemTypes({ userId: dashboardUser.id }),
+    getDashboardPinnedItems({ userId: dashboardUser.id }),
+    getDashboardRecentItems({ limit: 10, userId: dashboardUser.id }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
   const favoriteCollections = recentDashboardCollections

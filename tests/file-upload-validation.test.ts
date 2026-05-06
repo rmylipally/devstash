@@ -30,6 +30,18 @@ describe("file upload validation", () => {
     assert.match(result.error, /Images must be 5 MB or smaller/);
   });
 
+  it("rejects SVG images because they are not safe to serve inline", () => {
+    const result = validateUploadMetadata({
+      fileName: "diagram.svg",
+      kind: "image",
+      mimeType: "image/svg+xml",
+      size: 1024,
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /Unsupported image extension/);
+  });
+
   it("accepts supported file uploads under the file size limit", () => {
     const result = validateUploadMetadata({
       fileName: "runbook.md",

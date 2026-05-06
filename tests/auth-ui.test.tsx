@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -213,5 +213,18 @@ describe("auth ui", () => {
     assert.match(envExample, /RESEND_API_KEY=/);
     assert.match(envExample, /RESEND_FROM_EMAIL=/);
     assert.match(envExample, /EMAIL_VERIFICATION_ENABLED=true/);
+  });
+
+  it("does not build verification email links from the request origin", async () => {
+    const [registerRoute, resendVerificationRoute] = await Promise.all([
+      readFile("src/app/api/auth/register/route.ts", "utf8"),
+      readFile("src/app/api/auth/resend-verification/route.ts", "utf8"),
+    ]);
+
+    assert.doesNotMatch(registerRoute, /new URL\(request\.url\)\.origin/);
+    assert.doesNotMatch(
+      resendVerificationRoute,
+      /new URL\(request\.url\)\.origin/,
+    );
   });
 });

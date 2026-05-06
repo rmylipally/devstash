@@ -124,7 +124,7 @@ Important cleanup decision:
 - Tags
 - Favorites / pinned items
 - Recently used
-- Full-text search
+- Full-text search (planned; the current dashboard search control is disabled until implemented)
 - Markdown editing for text-based items
 - Quick-create and quick-edit drawer
 - Free-tier limits

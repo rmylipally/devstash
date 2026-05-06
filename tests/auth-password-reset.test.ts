@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { compare } from "bcryptjs";
 import { describe, it } from "vitest";
 
@@ -228,5 +229,17 @@ describe("auth password reset", () => {
 
     assert.equal(typeof forgotPasswordRoute.POST, "function");
     assert.equal(typeof resetPasswordRoute.POST, "function");
+  });
+
+  it("does not build password reset email links from the request origin", async () => {
+    const forgotPasswordRoute = await readFile(
+      "src/app/api/auth/forgot-password/route.ts",
+      "utf8",
+    );
+
+    assert.doesNotMatch(
+      forgotPasswordRoute,
+      /new URL\(request\.url\)\.origin/,
+    );
   });
 });

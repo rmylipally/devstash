@@ -21,6 +21,12 @@ interface CreateStorageKeyOptions {
   uuid?: string;
 }
 
+interface ValidateStorageKeyOptions {
+  kind: UploadItemKind;
+  storageKey: string;
+  userId: string;
+}
+
 type UploadValidationResult =
   | {
       success: true;
@@ -71,16 +77,10 @@ const uploadConstraints: Record<
     ]),
   },
   image: {
-    extensions: new Set([".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"]),
+    extensions: new Set([".gif", ".jpeg", ".jpg", ".png", ".webp"]),
     label: "Images",
     maxSizeBytes: 5 * MB_IN_BYTES,
-    mimeTypes: new Set([
-      "image/gif",
-      "image/jpeg",
-      "image/png",
-      "image/svg+xml",
-      "image/webp",
-    ]),
+    mimeTypes: new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]),
   },
 };
 
@@ -138,6 +138,23 @@ export function createStorageKey({
   const safeFileName = sanitizeFileName(fileName);
 
   return `${STORAGE_KEY_PREFIX}/${safeUserId}/${kind}/${uuid}-${safeFileName}`;
+}
+
+export function isStorageKeyForUpload({
+  kind,
+  storageKey,
+  userId,
+}: ValidateStorageKeyOptions) {
+  const safeUserId = sanitizePathSegment(userId);
+  const expectedPrefix = `${STORAGE_KEY_PREFIX}/${safeUserId}/${kind}/`;
+  const objectName = storageKey.slice(expectedPrefix.length);
+
+  return (
+    storageKey.startsWith(expectedPrefix) &&
+    objectName.length > 0 &&
+    !objectName.includes("/") &&
+    !objectName.includes("\\")
+  );
 }
 
 function getFileExtension(fileName: string) {
