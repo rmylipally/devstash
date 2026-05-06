@@ -1,16 +1,21 @@
-# Current Feature
+# Current Feature: Image Gallery View
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals & requirements -->
+- Create an image thumbnail card to replace the regular item card for images.
+- Show image items in a 3-column grid/gallery.
+- Display thumbnails with a 16:9 aspect ratio using `aspect-video`.
+- Use `object-cover` so thumbnails fill each card, accepting edge cropping.
+- Add a subtle hover zoom effect with 5% scale over 300ms.
 
 ## Notes
 
-<!-- Any extra notes -->
+- Source spec: `context/features/image-display-spec.md`
+- Overview: Add an image grid/gallery with thumbnail cards instead of the regular item card.
 
 ## History
 
@@ -99,3 +104,5 @@
 - 2026-05-05: Switched the active file upload storage target from Cloudflare R2 to Amazon S3 bucket `eapi-chc-dev-ets-attachments` under `devstash/api/uploads/`.
 - 2026-05-05: Renamed the feature branch to `feature/file-upload-s3`.
 - 2026-05-05: Completed File Upload with Amazon S3 with upload and download API routes, drag-and-drop file/image uploads, item create and drawer integration, S3 delete cleanup, SAML2AWS/shared-profile credential support, and passing lint, unit tests, and build.
+- 2026-05-06: Loaded Image Gallery View from `context/features/image-display-spec.md` and set the feature status to Not Started.
+- 2026-05-06: Started Image Gallery View implementation on `feature/image-gallery-view`.

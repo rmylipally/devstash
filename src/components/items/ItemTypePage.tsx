@@ -1,4 +1,8 @@
-import { ItemCard, ItemDrawerProvider } from "@/components/items/ItemDrawerProvider";
+import {
+  ImageThumbnailCard,
+  ItemCard,
+  ItemDrawerProvider,
+} from "@/components/items/ItemDrawerProvider";
 import type {
   DashboardItem,
   DashboardItemType,
@@ -16,6 +20,8 @@ function formatItemCount(count: number) {
 }
 
 export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
+  const isImageGallery = itemType.id === "image";
+
   return (
     <ItemDrawerProvider>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
@@ -33,9 +39,19 @@ export function ItemTypePage({ action, itemType, items }: ItemTypePageProps) {
           </div>
 
           {items.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div
+              className={
+                isImageGallery
+                  ? "grid gap-4 md:grid-cols-3"
+                  : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+              }
+            >
               {items.map((item) => (
-                <ItemCard item={item} key={item.id} />
+                isImageGallery ? (
+                  <ImageThumbnailCard item={item} key={item.id} />
+                ) : (
+                  <ItemCard item={item} key={item.id} />
+                )
               ))}
             </div>
           ) : (

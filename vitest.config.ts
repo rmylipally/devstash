@@ -24,6 +24,7 @@ export default defineConfig({
       "tests/dashboard-items.test.ts",
       "tests/file-upload-ui.test.ts",
       "tests/file-upload-validation.test.ts",
+      "tests/image-gallery-ui.test.ts",
       "tests/item-actions.test.ts",
       "tests/rate-limit.test.ts",
       "tests/s3-storage.test.ts",

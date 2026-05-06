@@ -321,6 +321,44 @@ export function ItemCard({
   );
 }
 
+export function ImageThumbnailCard({ item }: { item: DashboardItem }) {
+  const { openItemDrawer } = useItemDrawer();
+
+  return (
+    <button
+      className="group overflow-hidden rounded-lg border border-border bg-card text-left text-card-foreground transition-colors hover:border-primary/50"
+      onClick={() => openItemDrawer(item.id)}
+      type="button"
+    >
+      <div className="relative aspect-video overflow-hidden bg-muted">
+        <NextImage
+          alt={item.title}
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
+          src={`/api/items/${item.id}/download`}
+          unoptimized
+        />
+      </div>
+      <div className="space-y-2 p-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate text-base font-semibold">{item.title}</h3>
+          {item.isPinned ? (
+            <Pin className="size-4 shrink-0 fill-muted-foreground text-muted-foreground" />
+          ) : null}
+          {item.isFavorite ? (
+            <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
+          ) : null}
+        </div>
+        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+          {item.description}
+        </p>
+        <TagList tags={item.tags} />
+      </div>
+    </button>
+  );
+}
+
 export function RecentItemRow({ item }: { item: DashboardItem }) {
   const { openItemDrawer } = useItemDrawer();
   const Icon = itemKindIcons[item.kind];
