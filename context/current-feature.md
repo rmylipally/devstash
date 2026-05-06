@@ -1,29 +1,16 @@
-# Current Feature: Item Collection Assignment
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
-In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
-- Add collection selection to the new item form.
-- Add collection selection to the edit item form.
-- Allow selecting one collection, multiple collections, or no collections.
-- Load available collections for the signed-in user and keep collection membership user-scoped.
-- Persist selected collection memberships when creating an item.
-- Replace selected collection memberships when editing an item.
-- Preserve existing item create/edit validation, pending states, save behavior, and toast feedback.
 
 ## Notes
 
 <!-- Any extra notes -->
-- Inline feature request loaded on 2026-05-06.
-- Active branch: `feature/item-collection-assignment`
-- Collection page display is explicitly out of scope for this feature.
-- Existing collection data should continue to be fetched through `lib/db` helpers.
-- Follow the current item create/edit patterns for form controls and server-side persistence.
 
 ## History
 
@@ -127,3 +114,4 @@ In Progress
 - 2026-05-06: Completed Collection Create with a top-bar New Collection dialog, user-scoped collection creation API, unique collection slugs, toast feedback, dashboard refresh, focused route/UI/data tests, lint, unit tests, and successful production build verification.
 - 2026-05-06: Loaded Item Collection Assignment from inline description and set the feature status to Not Started.
 - 2026-05-06: Started Item Collection Assignment implementation on `feature/item-collection-assignment`.
+- 2026-05-06: Completed Item Collection Assignment with searchable alphabetized collection selection in create/edit item forms, user-owned collection membership persistence and replacement, collection list/detail routes, collection item card display, focused UI/data tests, lint, unit tests, and successful production build verification.
