@@ -113,6 +113,8 @@ describe("dashboard frame sidebar", () => {
     assert.match(html, /Demo User/);
     assert.match(html, /demo@devstash\.io/);
     assert.match(html, /href="\/profile"/);
+    assert.match(html, /href="\/settings"/);
+    assert.match(html, /Settings/);
     assert.match(html, />DU</);
     assert.match(html, /Sign out/);
   });

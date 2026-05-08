@@ -13,6 +13,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  Settings,
   Star,
   StickyNote,
   Terminal,
@@ -490,6 +491,13 @@ function UserFooter({ collapsed, currentUser }: UserFooterProps) {
             >
               <User className="size-4" />
               Profile
+            </NextLink>
+            <NextLink
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              href="/settings"
+            >
+              <Settings className="size-4" />
+              Settings
             </NextLink>
             <SignOutButton />
           </div>

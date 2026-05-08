@@ -19,7 +19,6 @@ import { UserAvatar } from "@/components/auth/UserAvatar";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
-import { ProfileAccountActions } from "@/components/profile/ProfileAccountActions";
 import { Badge } from "@/components/ui/badge";
 import {
   getDashboardCollectionOptions,
@@ -273,8 +272,6 @@ function ProfileMain({ profile }: { profile: ProfileData }) {
             })}
           </div>
         </section>
-
-        <ProfileAccountActions canChangePassword={profile.canChangePassword} />
       </div>
     </div>
   );
