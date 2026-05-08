@@ -1,22 +1,16 @@
-# Current Feature: Add Client-Side Sorting to Favorites Page
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Add client-side sorting controls on the favorites page.
-- Support sorting favorites by name.
-- Support sorting favorites by date.
-- Support sorting favorites by item type.
-- Ensure sorting applies cleanly to both favorites items and collections display as appropriate.
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Loaded from inline description (no dedicated spec file provided).
-- Requested sort options: name, date, and item type.
-- Sorting should be client-side to keep interactions immediate.
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -143,3 +137,5 @@ In Progress
 - 2026-05-08: Started Add Favorite Toggle Buttons in Drawer, Collection Page, and Cards implementation on `feature/add-favorite-toggle-buttons-drawer-collection-cards`.
 - 2026-05-08: Loaded Add Client-Side Sorting to Favorites Page from inline description and set the feature status to Not Started.
 - 2026-05-08: Started Add Client-Side Sorting to Favorites Page implementation on `feature/client-side-sorting-favorites-page`.
+- 2026-05-08: Completed Add Favorite Toggle Buttons in Drawer, Collection Page, and Cards with server-backed favorite toggles for items and collections across drawer actions, collection cards/pages, and shared list/card surfaces.
+- 2026-05-08: Completed Add Client-Side Sorting to Favorites Page with in-page sort controls for name/date/item type, ascending/descending direction toggle, and client-side sorting for favorite items and collections.
