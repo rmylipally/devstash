@@ -1,23 +1,16 @@
-# Current Feature: Collection Actions (Edit, Delete, Favorite)
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not Started|In Progress|Completed -->
 
 ## Goals
 
-- Add Edit, Delete, and Favorite buttons on `/collections/[slug]` page header
-- Favorite button is icon/button only (no backend implementation yet)
-- Edit button opens a modal to edit collection metadata (name, description, color)
-- Delete button shows a confirmation dialog; deleting a collection does NOT delete its items — items are simply unassigned
-- On collection cards at `/collections` and dashboard, show a 3-dots (ellipsis) menu with Edit, Delete, and Favorite options
-- Clicking anywhere else on the card navigates to the collection page
-- 3-dots menu click does NOT trigger card navigation
+<!-- Goals & requirements -->
 
 ## Notes
 
-- Favorites are placeholder UI only — no backend/persistence for now
-- "Delete collection" means removing the collection record; items remain in the system but lose that collection assignment
+<!-- Any extra notes -->
 - Edit modal should allow editing the same metadata fields used during collection creation
 
 ## History
@@ -123,3 +116,6 @@ In Progress
 - 2026-05-06: Loaded Item Collection Assignment from inline description and set the feature status to Not Started.
 - 2026-05-06: Started Item Collection Assignment implementation on `feature/item-collection-assignment`.
 - 2026-05-06: Completed Item Collection Assignment with searchable alphabetized collection selection in create/edit item forms, user-owned collection membership persistence and replacement, collection list/detail routes, collection item card display, focused UI/data tests, lint, unit tests, and successful production build verification.
+- 2026-05-07: Loaded Collection Actions from inline description and set the feature status to Not Started.
+- 2026-05-07: Started Collection Actions implementation on `feature/collection-actions`.
+- 2026-05-07: Completed Collection Actions with a dropdown-menu UI component wrapping @base-ui/react menu, updateCollection and deleteCollection server actions, CollectionActions component with edit modal and delete confirmation, 3-dots menu on collection cards, action buttons on collection detail page header, overlay links on cards preventing menu clicks from navigating, edit modal for name/description changes, delete confirmation removing collections without deleting items (items persist but lose collection assignment), and favorite button as UI placeholder only.
