@@ -47,6 +47,10 @@ import {
   type DashboardItemKind,
 } from "@/lib/db/items";
 import { currentUser } from "@/lib/mock-data";
+import {
+  DASHBOARD_COLLECTIONS_LIMIT,
+  DASHBOARD_RECENT_ITEMS_LIMIT,
+} from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 const itemKindIcons: Record<DashboardItemKind, LucideIcon> = {
@@ -148,12 +152,12 @@ export async function DashboardShell() {
     recentDashboardItems,
     collectionOptions,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 6, userId: dashboardUser.id }),
+    getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
     getDashboardCollectionStats({ userId: dashboardUser.id }),
     getDashboardItemStats({ userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardPinnedItems({ userId: dashboardUser.id }),
-    getDashboardRecentItems({ limit: 10, userId: dashboardUser.id }),
+    getDashboardRecentItems({ limit: DASHBOARD_RECENT_ITEMS_LIMIT, userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);

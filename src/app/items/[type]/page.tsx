@@ -12,17 +12,28 @@ import {
 } from "@/lib/db/collections";
 import {
   getDashboardItemsByType,
+  getDashboardItemCountByType,
   getDashboardItemTypes,
   type DashboardItemKind,
   type ItemCreateKind,
 } from "@/lib/db/items";
 import { currentUser } from "@/lib/mock-data";
+import {
+  DASHBOARD_COLLECTIONS_LIMIT,
+  ITEMS_PER_PAGE,
+  getPageOffset,
+  getTotalPages,
+  parsePageParam,
+} from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
 interface ItemsByTypePageProps {
   params: Promise<{
     type: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
   }>;
 }
 
@@ -43,8 +54,12 @@ function getCreatableItemKind(kind: DashboardItemKind): ItemCreateKind | null {
   return kind;
 }
 
-export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) {
+export default async function ItemsByTypePage({
+  params,
+  searchParams,
+}: ItemsByTypePageProps) {
   const { type } = await params;
+  const { page } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -57,7 +72,7 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
     sidebarItemTypes,
     collectionOptions,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 6, userId: dashboardUser.id }),
+    getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
@@ -69,8 +84,17 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
     notFound();
   }
 
+  const requestedPage = parsePageParam(page);
+  const totalItems = await getDashboardItemCountByType({
+    kind: itemType.id,
+    userId: dashboardUser.id,
+  });
+  const totalPages = getTotalPages(totalItems, ITEMS_PER_PAGE);
+  const currentPage = Math.min(requestedPage, totalPages);
   const items = await getDashboardItemsByType({
     kind: itemType.id,
+    limit: ITEMS_PER_PAGE,
+    offset: getPageOffset(currentPage, ITEMS_PER_PAGE),
     userId: dashboardUser.id,
   });
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
@@ -98,8 +122,12 @@ export default async function ItemsByTypePage({ params }: ItemsByTypePageProps) 
       <ItemTypePage
         action={typeCreateAction}
         availableCollections={collectionOptions}
+        basePath={`/items/${itemType.slug}`}
+        currentPage={currentPage}
         itemType={itemType}
         items={items}
+        totalItems={totalItems}
+        totalPages={totalPages}
       />
     </DashboardFrame>
   );

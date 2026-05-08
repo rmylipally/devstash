@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Pagination
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add pagination to /items/[type] and /collections/[id] pages.
+- Add pagination controls at the bottom with page numbers and previous/next links.
+- Disable previous/next controls when unavailable.
+- Use constants ITEMS_PER_PAGE = 21 and COLLECTIONS_PER_PAGE = 21.
+- Keep dashboard limits at DASHBOARD_COLLECTIONS_LIMIT = 6 and DASHBOARD_RECENT_ITEMS_LIMIT = 10.
+- Fetch only the records required for each requested page.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Source spec: context/features/pagination-spec.md
+- Scope includes both items listing and collection detail listing pagination.
+- Pagination should avoid loading all resources in memory and rely on page-sized queries.
 
 ## History
 
@@ -121,3 +128,5 @@ Not Started
 - 2026-05-07: Loaded Global Search / Command Palette from `context/features/global-search-spec.md` and set the feature status to Not Started.
 - 2026-05-07: Started Global Search / Command Palette implementation on `feature/global-search-command-palette`.
 - 2026-05-07: Completed Global Search / Command Palette with a global Cmd+K/Ctrl+K command palette, searchable item and collection results via server action data, dashboard search trigger integration, cmdk result selection navigation, and dashboard deep-link item drawer opening via `openItem` query handling.
+- 2026-05-07: Loaded Pagination from `context/features/pagination-spec.md` and set the feature status to Not Started.
+- 2026-05-07: Started Pagination implementation on `feature/pagination`.

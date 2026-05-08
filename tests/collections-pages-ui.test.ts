@@ -12,6 +12,10 @@ describe("collections pages", () => {
 
     assert.match(collectionsPageSource, /auth\(\)/);
     assert.match(collectionsPageSource, /getDashboardCollections/);
+    assert.match(collectionsPageSource, /getDashboardCollectionCount/);
+    assert.match(collectionsPageSource, /COLLECTIONS_PER_PAGE/);
+    assert.match(collectionsPageSource, /parsePageParam/);
+    assert.match(collectionsPageSource, /PaginationNav/);
     assert.match(collectionsPageSource, /Collections/);
     assert.match(collectionDetailPageSource, /auth\(\)/);
     assert.match(collectionDetailPageSource, /params: Promise/);

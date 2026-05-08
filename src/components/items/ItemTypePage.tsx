@@ -4,6 +4,7 @@ import {
   ItemCard,
   ItemDrawerProvider,
 } from "@/components/items/ItemDrawerProvider";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 import type {
   DashboardItem,
   DashboardItemType,
@@ -14,8 +15,12 @@ import type { ReactNode } from "react";
 interface ItemTypePageProps {
   action?: ReactNode;
   availableCollections: DashboardCollectionOption[];
+  basePath: string;
+  currentPage: number;
   itemType: DashboardItemType;
   items: DashboardItem[];
+  totalItems?: number;
+  totalPages?: number;
 }
 
 function formatItemCount(count: number) {
@@ -25,11 +30,17 @@ function formatItemCount(count: number) {
 export function ItemTypePage({
   action,
   availableCollections,
+  basePath,
+  currentPage,
   itemType,
   items,
+  totalItems,
+  totalPages,
 }: ItemTypePageProps) {
   const isImageGallery = itemType.id === "image";
   const isFileList = itemType.id === "file";
+  const itemCount = totalItems ?? items.length;
+  const pageCount = totalPages ?? 1;
 
   return (
     <ItemDrawerProvider availableCollections={availableCollections}>
@@ -41,7 +52,7 @@ export function ItemTypePage({
                 {itemType.pluralLabel}
               </h1>
               <p className="text-lg text-muted-foreground">
-                {formatItemCount(items.length)}
+                {formatItemCount(itemCount)}
               </p>
             </div>
             {action ? <div className="shrink-0">{action}</div> : null}
@@ -72,6 +83,13 @@ export function ItemTypePage({
               <p className="text-lg font-medium">No {itemType.slug} yet.</p>
             </div>
           )}
+
+          <PaginationNav
+            basePath={basePath}
+            className="pt-2"
+            currentPage={currentPage}
+            totalPages={pageCount}
+          />
         </div>
       </div>
     </ItemDrawerProvider>

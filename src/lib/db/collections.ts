@@ -1,4 +1,5 @@
 import type { ItemKind as PrismaItemKind } from "@/generated/prisma/enums";
+import { DASHBOARD_COLLECTIONS_LIMIT } from "@/lib/pagination";
 
 export type DashboardItemKind =
   | "snippet"
@@ -28,6 +29,14 @@ export interface DashboardCollectionStats {
 
 export interface DashboardCollectionOption {
   id: string;
+  name: string;
+  slug: string;
+}
+
+export interface DashboardCollectionActionTarget {
+  description: string;
+  id: string;
+  isFavorite: boolean;
   name: string;
   slug: string;
 }
@@ -77,6 +86,7 @@ export interface DashboardCollectionFindManyArgs {
     slug: true;
     updatedAt: true;
   };
+  skip?: number;
   take: number;
   where?: {
     user?: {
@@ -105,6 +115,20 @@ export interface DashboardCollectionFindUniqueArgs {
       slug: string;
       userId: string;
     };
+  };
+}
+
+export interface DashboardCollectionFindFirstActionTargetArgs {
+  select: {
+    description: true;
+    id: true;
+    isFavorite: true;
+    name: true;
+    slug: true;
+  };
+  where: {
+    slug: string;
+    userId: string;
   };
 }
 
@@ -175,6 +199,15 @@ export interface DashboardCollectionClient {
     findMany(
       args: DashboardCollectionOptionFindManyArgs,
     ): Promise<DashboardCollectionOptionRow[]>;
+    findFirst?(
+      args: DashboardCollectionFindFirstActionTargetArgs,
+    ): Promise<{
+      description: string | null;
+      id: string;
+      isFavorite: boolean;
+      name: string;
+      slug: string;
+    } | null>;
     findUnique?(
       args: DashboardCollectionFindUniqueArgs,
     ): Promise<{ id: string } | null>;
@@ -183,6 +216,7 @@ export interface DashboardCollectionClient {
 
 interface GetDashboardCollectionsOptions {
   limit?: number;
+  offset?: number;
   userEmail?: string;
   userId?: string;
 }
@@ -195,7 +229,12 @@ interface CreateCollectionOptions {
   userId: string;
 }
 
-const DEFAULT_COLLECTION_LIMIT = 6;
+interface GetDashboardCollectionBySlugOptions {
+  slug: string;
+  userId: string;
+}
+
+const DEFAULT_COLLECTION_LIMIT = DASHBOARD_COLLECTIONS_LIMIT;
 
 const itemKindOrder: DashboardItemKind[] = [
   "snippet",
@@ -244,6 +283,14 @@ const dashboardCollectionOptionSelect: DashboardCollectionOptionFindManyArgs["se
     name: true,
     slug: true,
   };
+
+const dashboardCollectionActionTargetSelect: DashboardCollectionFindFirstActionTargetArgs["select"] = {
+  description: true,
+  id: true,
+  isFavorite: true,
+  name: true,
+  slug: true,
+};
 
 async function getDefaultCollectionClient() {
   const { prisma } = await import("@/lib/prisma");
@@ -322,6 +369,7 @@ function getFindManyArgs(
         ...(itemWhere ? { where: itemWhere } : {}),
       },
     },
+    ...(options.offset ? { skip: options.offset } : {}),
     take: options.limit ?? DEFAULT_COLLECTION_LIMIT,
     ...(where ? { where } : {}),
   };
@@ -429,6 +477,18 @@ export async function getDashboardCollectionStats(
   };
 }
 
+export async function getDashboardCollectionCount(
+  options: Pick<GetDashboardCollectionsOptions, "userEmail" | "userId"> = {},
+  client?: DashboardCollectionClient,
+): Promise<number> {
+  const collectionClient = client ?? (await getDefaultCollectionClient());
+  const where = getCollectionWhere(options);
+
+  return collectionClient.collection.count({
+    ...(where ? { where } : {}),
+  });
+}
+
 export async function getDashboardCollectionOptions(
   options: Pick<GetDashboardCollectionsOptions, "userEmail" | "userId"> = {},
   client?: DashboardCollectionClient,
@@ -441,6 +501,37 @@ export async function getDashboardCollectionOptions(
     select: dashboardCollectionOptionSelect,
     ...(where ? { where } : {}),
   });
+}
+
+export async function getDashboardCollectionBySlug(
+  options: GetDashboardCollectionBySlugOptions,
+  client?: DashboardCollectionClient,
+): Promise<DashboardCollectionActionTarget | null> {
+  const collectionClient = client ?? (await getDefaultCollectionClient());
+
+  if (!collectionClient.collection.findFirst) {
+    throw new Error("Collection findFirst client is required.");
+  }
+
+  const collection = await collectionClient.collection.findFirst({
+    select: dashboardCollectionActionTargetSelect,
+    where: {
+      slug: options.slug,
+      userId: options.userId,
+    },
+  });
+
+  if (!collection) {
+    return null;
+  }
+
+  return {
+    description: collection.description ?? "No description yet.",
+    id: collection.id,
+    isFavorite: collection.isFavorite,
+    name: collection.name,
+    slug: collection.slug,
+  };
 }
 
 export async function createCollection(

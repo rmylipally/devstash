@@ -9,13 +9,22 @@ import { CollectionDropdownMenu } from "@/components/collections/CollectionActio
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 import {
+  getDashboardCollectionCount,
   getDashboardCollectionOptions,
   getDashboardCollections,
   type DashboardCollection,
 } from "@/lib/db/collections";
 import { getDashboardItemTypes } from "@/lib/db/items";
 import { currentUser } from "@/lib/mock-data";
+import {
+  COLLECTIONS_PER_PAGE,
+  DASHBOARD_COLLECTIONS_LIMIT,
+  getPageOffset,
+  getTotalPages,
+  parsePageParam,
+} from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +41,16 @@ function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
   };
 }
 
-export default async function CollectionsPage() {
+interface CollectionsPageProps {
+  searchParams: Promise<{
+    page?: string;
+  }>;
+}
+
+export default async function CollectionsPage({
+  searchParams,
+}: CollectionsPageProps) {
+  const { page } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -40,13 +58,22 @@ export default async function CollectionsPage() {
   }
 
   const dashboardUser = getDashboardUser(session.user);
-  const [collections, sidebarItemTypes, collectionOptions] = await Promise.all([
-    getDashboardCollections({ limit: 100, userId: dashboardUser.id }),
+  const requestedPage = parsePageParam(page);
+  const [totalCollections, recentDashboardCollections, sidebarItemTypes, collectionOptions] = await Promise.all([
+    getDashboardCollectionCount({ userId: dashboardUser.id }),
+    getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
-  const recentSidebarCollections = collections.slice(0, 4);
-  const favoriteCollections = collections
+  const totalPages = getTotalPages(totalCollections, COLLECTIONS_PER_PAGE);
+  const currentPage = Math.min(requestedPage, totalPages);
+  const collections = await getDashboardCollections({
+    limit: COLLECTIONS_PER_PAGE,
+    offset: getPageOffset(currentPage, COLLECTIONS_PER_PAGE),
+    userId: dashboardUser.id,
+  });
+  const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
+  const favoriteCollections = recentDashboardCollections
     .filter((collection) => collection.isFavorite)
     .slice(0, 4);
 
@@ -63,15 +90,23 @@ export default async function CollectionsPage() {
       }
       recentCollections={recentSidebarCollections}
     >
-      <CollectionsMain collections={collections} />
+      <CollectionsMain
+        collections={collections}
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
     </DashboardFrame>
   );
 }
 
 function CollectionsMain({
   collections,
+  currentPage,
+  totalPages,
 }: {
   collections: DashboardCollection[];
+  currentPage: number;
+  totalPages: number;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
@@ -86,14 +121,22 @@ function CollectionsMain({
         </div>
 
         {collections.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {collections.map((collection) => (
-              <CollectionOverviewCard
-                collection={collection}
-                key={collection.id}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {collections.map((collection) => (
+                <CollectionOverviewCard
+                  collection={collection}
+                  key={collection.id}
+                />
+              ))}
+            </div>
+            <PaginationNav
+              basePath="/collections"
+              className="pt-2"
+              currentPage={currentPage}
+              totalPages={totalPages}
+            />
+          </>
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-card p-8 text-card-foreground">
             <p className="text-lg font-medium">No collections yet.</p>

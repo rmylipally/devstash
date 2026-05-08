@@ -32,6 +32,7 @@ import {
   type ProfileItemKind,
 } from "@/lib/db/profile";
 import { currentUser } from "@/lib/mock-data";
+import { DASHBOARD_COLLECTIONS_LIMIT } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -113,7 +114,7 @@ export default async function ProfilePage() {
     sidebarItemTypes,
     collectionOptions,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 6, userId: profile.id }),
+    getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: profile.id }),
     getDashboardItemTypes({ userId: profile.id }),
     getDashboardCollectionOptions({ userId: profile.id }),
   ]);

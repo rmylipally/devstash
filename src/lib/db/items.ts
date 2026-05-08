@@ -2,6 +2,7 @@ import type {
   ContentKind as PrismaContentKind,
   ItemKind as PrismaItemKind,
 } from "@/generated/prisma/enums";
+import { DASHBOARD_RECENT_ITEMS_LIMIT } from "@/lib/pagination";
 
 export type DashboardItemKind =
   | "snippet"
@@ -163,6 +164,7 @@ export interface DashboardItemFindManyArgs {
     title: true;
     updatedAt: true;
   };
+  skip?: number;
   take?: number;
   where?: DashboardItemWhere;
 }
@@ -471,6 +473,7 @@ export interface ItemDeleteClient {
 
 interface GetDashboardItemsOptions {
   limit?: number;
+  offset?: number;
   userEmail?: string;
   userId?: string;
 }
@@ -501,7 +504,7 @@ interface CreateItemOptions {
 
 type DeleteItemOptions = GetItemDetailOptions;
 
-const DEFAULT_RECENT_ITEM_LIMIT = 10;
+const DEFAULT_RECENT_ITEM_LIMIT = DASHBOARD_RECENT_ITEMS_LIMIT;
 
 const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
   {
@@ -656,8 +659,32 @@ function getFindManyArgs(
   return {
     orderBy: { lastViewedAt: "desc" },
     select: dashboardItemSelect,
+    ...(options.offset ? { skip: options.offset } : {}),
     ...(options.limit ? { take: options.limit } : {}),
     where,
+  };
+}
+
+function getItemsByTypeWhere(options: GetDashboardItemsByTypeOptions): DashboardItemWhere {
+  return {
+    kind: prismaItemKindByDashboardKind[options.kind],
+    ...getUserWhere(options),
+  };
+}
+
+function getItemsByCollectionSlugWhere(
+  options: GetDashboardItemsByCollectionSlugOptions,
+): DashboardItemWhere {
+  return {
+    collections: {
+      some: {
+        collection: {
+          slug: options.collectionSlug,
+          userId: options.userId,
+        },
+      },
+    },
+    userId: options.userId,
   };
 }
 
@@ -1047,13 +1074,21 @@ export async function getDashboardItemsByType(
 ) {
   const itemClient = client ?? (await getDefaultItemClient());
   const items = await itemClient.item.findMany(
-    getFindManyArgs(options, {
-      kind: prismaItemKindByDashboardKind[options.kind],
-      ...getUserWhere(options),
-    }),
+    getFindManyArgs(options, getItemsByTypeWhere(options)),
   );
 
   return items.map(toDashboardItem);
+}
+
+export async function getDashboardItemCountByType(
+  options: GetDashboardItemsByTypeOptions,
+  client?: DashboardItemClient,
+): Promise<number> {
+  const itemClient = client ?? (await getDefaultItemClient());
+
+  return itemClient.item.count({
+    where: getItemsByTypeWhere(options),
+  });
 }
 
 export async function getDashboardItemsByCollectionSlug(
@@ -1062,20 +1097,21 @@ export async function getDashboardItemsByCollectionSlug(
 ) {
   const itemClient = client ?? (await getDefaultItemClient());
   const items = await itemClient.item.findMany(
-    getFindManyArgs(options, {
-      collections: {
-        some: {
-          collection: {
-            slug: options.collectionSlug,
-            userId: options.userId,
-          },
-        },
-      },
-      userId: options.userId,
-    }),
+    getFindManyArgs(options, getItemsByCollectionSlugWhere(options)),
   );
 
   return items.map(toDashboardItem);
+}
+
+export async function getDashboardItemCountByCollectionSlug(
+  options: GetDashboardItemsByCollectionSlugOptions,
+  client?: DashboardItemClient,
+): Promise<number> {
+  const itemClient = client ?? (await getDefaultItemClient());
+
+  return itemClient.item.count({
+    where: getItemsByCollectionSlugWhere(options),
+  });
 }
 
 export async function getDashboardItemStats(
