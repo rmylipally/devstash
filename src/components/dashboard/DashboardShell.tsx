@@ -24,6 +24,7 @@ import { CollectionCreateButton } from "@/components/collections/CollectionCreat
 import { CollectionDropdownMenu } from "@/components/collections/CollectionActions";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
+import { DashboardItemOpenHandler } from "@/components/dashboard/DashboardItemOpenHandler";
 import {
   ItemCard,
   ItemDrawerProvider,
@@ -202,6 +203,7 @@ function DashboardMain({
 }: DashboardMainProps) {
   return (
     <ItemDrawerProvider availableCollections={collectionOptions}>
+      <DashboardItemOpenHandler />
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
           <div className="space-y-2">

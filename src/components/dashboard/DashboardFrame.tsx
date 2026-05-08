@@ -27,7 +27,7 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { useCommandPalette } from "@/components/search/CommandPaletteContext";
 import type { DashboardCollection } from "@/lib/db/collections";
 import type {
   DashboardItemKind,
@@ -85,6 +85,7 @@ export function DashboardFrame({
 }: DashboardFrameProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { openPalette } = useCommandPalette();
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -158,14 +159,17 @@ export function DashboardFrame({
 
               <div className="relative min-w-0 flex-1 md:max-w-2xl">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  aria-disabled="true"
-                  aria-label="Search items"
-                  className="h-11 rounded-lg bg-muted/40 pl-10 text-base"
-                  disabled
-                  placeholder="Search items..."
-                  type="search"
-                />
+                <button
+                  onClick={openPalette}
+                  aria-label="Open search"
+                  className="h-11 w-full rounded-lg bg-muted/40 pl-10 pr-3 text-left text-base text-muted-foreground transition-colors hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <span className="hidden sm:inline">Search items...</span>
+                  <span className="sm:hidden">Search...</span>
+                  <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden md:inline-flex h-6 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-xs font-medium text-muted-foreground">
+                    <span className="text-xs">⌘K</span>
+                  </kbd>
+                </button>
               </div>
             </div>
 

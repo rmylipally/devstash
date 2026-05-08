@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { DashboardFrame } from "../src/components/dashboard/DashboardFrame";
+import { CommandPaletteContextProvider } from "../src/components/search/CommandPaletteContext";
 import type { DashboardCollection } from "../src/lib/db/collections";
 import type { DashboardItemType } from "../src/lib/db/items";
 
@@ -63,14 +64,16 @@ const favoriteCollection: DashboardCollection = {
 
 function renderDashboardFrame() {
   return renderToStaticMarkup(
-    <DashboardFrame
-      currentUser={currentUser}
-      favoriteCollections={[favoriteCollection]}
-      itemTypes={itemTypes}
-      recentCollections={[recentCollection]}
-    >
-      <div>Dashboard content</div>
-    </DashboardFrame>,
+    <CommandPaletteContextProvider>
+      <DashboardFrame
+        currentUser={currentUser}
+        favoriteCollections={[favoriteCollection]}
+        itemTypes={itemTypes}
+        recentCollections={[recentCollection]}
+      >
+        <div>Dashboard content</div>
+      </DashboardFrame>
+    </CommandPaletteContextProvider>,
   );
 }
 

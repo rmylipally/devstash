@@ -2,16 +2,15 @@
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
+Not Started
 
 ## Goals
 
-<!-- Goals & requirements -->
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-<!-- Any extra notes -->
-- Edit modal should allow editing the same metadata fields used during collection creation
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -119,3 +118,6 @@
 - 2026-05-07: Loaded Collection Actions from inline description and set the feature status to Not Started.
 - 2026-05-07: Started Collection Actions implementation on `feature/collection-actions`.
 - 2026-05-07: Completed Collection Actions with a dropdown-menu UI component wrapping @base-ui/react menu, updateCollection and deleteCollection server actions, CollectionActions component with edit modal and delete confirmation, 3-dots menu on collection cards, action buttons on collection detail page header, overlay links on cards preventing menu clicks from navigating, edit modal for name/description changes, delete confirmation removing collections without deleting items (items persist but lose collection assignment), and favorite button as UI placeholder only.
+- 2026-05-07: Loaded Global Search / Command Palette from `context/features/global-search-spec.md` and set the feature status to Not Started.
+- 2026-05-07: Started Global Search / Command Palette implementation on `feature/global-search-command-palette`.
+- 2026-05-07: Completed Global Search / Command Palette with a global Cmd+K/Ctrl+K command palette, searchable item and collection results via server action data, dashboard search trigger integration, cmdk result selection navigation, and dashboard deep-link item drawer opening via `openItem` query handling.
