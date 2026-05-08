@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "vitest";
 
 import { DashboardFrame } from "../src/components/dashboard/DashboardFrame";
+import { CommandPaletteContextProvider } from "../src/components/search/CommandPaletteContext";
 import type { DashboardCollection } from "../src/lib/db/collections";
 import type { DashboardItemType } from "../src/lib/db/items";
 
@@ -44,20 +45,23 @@ describe("dashboard search UI", () => {
   it("renders the placeholder search input as disabled until search is implemented", () => {
     const html = renderToStaticMarkup(
       createElement(
-        DashboardFrame,
-        {
-          currentUser,
-          favoriteCollections: [collection],
-          itemTypes,
-          recentCollections: [collection],
-        },
-        createElement("div", null, "Dashboard content"),
+        CommandPaletteContextProvider,
+        null,
+        createElement(
+          DashboardFrame,
+          {
+            currentUser,
+            favoriteCollections: [collection],
+            itemTypes,
+            recentCollections: [collection],
+          },
+          createElement("div", null, "Dashboard content"),
+        ),
       ),
     );
 
-    assert.match(html, /aria-label="Search items"/);
-    assert.match(html, /disabled=""/);
-    assert.match(html, /aria-disabled="true"/);
-    assert.match(html, /placeholder="Search items\.\.\."/);
+    assert.match(html, /aria-label="Open search"/);
+    assert.match(html, /Search items/);
+    assert.match(html, /⌘K/);
   });
 });

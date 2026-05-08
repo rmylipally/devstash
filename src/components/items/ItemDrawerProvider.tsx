@@ -287,6 +287,8 @@ export function ItemDrawerProvider({
   );
 }
 
+export { useItemDrawer };
+
 interface ItemCardProps {
   className?: string;
   item: DashboardItem;
