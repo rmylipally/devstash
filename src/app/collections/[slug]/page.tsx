@@ -16,6 +16,7 @@ import {
   getDashboardCollectionOptions,
   getDashboardCollectionBySlug,
   getDashboardCollections,
+  getFavoriteCollections,
   type DashboardCollectionOption,
 } from "@/lib/db/collections";
 import {
@@ -74,12 +75,14 @@ export default async function CollectionDetailPage({
   const requestedPage = parsePageParam(page);
   const [
     recentDashboardCollections,
+    sidebarFavoriteCollections,
     sidebarItemTypes,
     collectionOptions,
     collection,
     collectionItemCount,
   ] = await Promise.all([
     getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
+    getFavoriteCollections(dashboardUser.id),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
     getDashboardCollectionBySlug({ slug, userId: dashboardUser.id }),
@@ -100,9 +103,7 @@ export default async function CollectionDetailPage({
   });
 
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-  const favoriteCollections = recentDashboardCollections
-    .filter((dashboardCollection) => dashboardCollection.isFavorite)
-    .slice(0, 4);
+  const favoriteCollections = sidebarFavoriteCollections.slice(0, 4);
 
   return (
     <DashboardFrame

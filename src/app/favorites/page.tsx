@@ -53,9 +53,7 @@ export default async function FavoritesPage() {
   ]);
 
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-  const favoriteCollectionsForSidebar = recentDashboardCollections
-    .filter((collection) => collection.isFavorite)
-    .slice(0, 4);
+  const favoriteCollectionsForSidebar = favoriteCollections.slice(0, 4);
 
   return (
     <DashboardFrame

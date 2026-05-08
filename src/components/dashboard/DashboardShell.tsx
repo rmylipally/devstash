@@ -35,6 +35,7 @@ import {
   getDashboardCollectionOptions,
   getDashboardCollectionStats,
   getDashboardCollections,
+  getFavoriteCollections,
   type DashboardCollection,
   type DashboardCollectionOption,
 } from "@/lib/db/collections";
@@ -145,6 +146,7 @@ export async function DashboardShell() {
   const dashboardUser = getDashboardUser(session.user);
   const [
     recentDashboardCollections,
+    sidebarFavoriteCollections,
     collectionStats,
     itemStats,
     sidebarItemTypes,
@@ -153,6 +155,7 @@ export async function DashboardShell() {
     collectionOptions,
   ] = await Promise.all([
     getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
+    getFavoriteCollections(dashboardUser.id),
     getDashboardCollectionStats({ userId: dashboardUser.id }),
     getDashboardItemStats({ userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
@@ -161,9 +164,7 @@ export async function DashboardShell() {
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-  const favoriteCollections = recentDashboardCollections
-    .filter((collection) => collection.isFavorite)
-    .slice(0, 4);
+  const favoriteCollections = sidebarFavoriteCollections.slice(0, 4);
   const stats = getDashboardStats(collectionStats, itemStats);
 
   return (

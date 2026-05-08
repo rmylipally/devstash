@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   getDashboardCollectionOptions,
   getDashboardCollections,
+  getFavoriteCollections,
 } from "@/lib/db/collections";
 import { getDashboardItemTypes } from "@/lib/db/items";
 import {
@@ -110,17 +111,17 @@ export default async function ProfilePage() {
 
   const [
     recentDashboardCollections,
+    sidebarFavoriteCollections,
     sidebarItemTypes,
     collectionOptions,
   ] = await Promise.all([
     getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: profile.id }),
+    getFavoriteCollections(profile.id),
     getDashboardItemTypes({ userId: profile.id }),
     getDashboardCollectionOptions({ userId: profile.id }),
   ]);
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-  const favoriteCollections = recentDashboardCollections
-    .filter((collection) => collection.isFavorite)
-    .slice(0, 4);
+  const favoriteCollections = sidebarFavoriteCollections.slice(0, 4);
 
   return (
     <DashboardFrame

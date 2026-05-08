@@ -9,6 +9,7 @@ import { ItemTypePage } from "@/components/items/ItemTypePage";
 import {
   getDashboardCollectionOptions,
   getDashboardCollections,
+  getFavoriteCollections,
 } from "@/lib/db/collections";
 import {
   getDashboardItemsByType,
@@ -69,10 +70,12 @@ export default async function ItemsByTypePage({
   const dashboardUser = getDashboardUser(session.user);
   const [
     recentDashboardCollections,
+    sidebarFavoriteCollections,
     sidebarItemTypes,
     collectionOptions,
   ] = await Promise.all([
     getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
+    getFavoriteCollections(dashboardUser.id),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
   ]);
@@ -98,9 +101,7 @@ export default async function ItemsByTypePage({
     userId: dashboardUser.id,
   });
   const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-  const favoriteCollections = recentDashboardCollections
-    .filter((collection) => collection.isFavorite)
-    .slice(0, 4);
+  const favoriteCollections = sidebarFavoriteCollections.slice(0, 4);
   const createInitialKind = getCreatableItemKind(itemType.id);
   const typeCreateAction = createInitialKind ? (
     <ItemCreateButton
