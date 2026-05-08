@@ -649,3 +649,25 @@ export async function deleteCollection(
 
   return true;
 }
+
+export async function getFavoriteCollections(
+  userId: string,
+): Promise<DashboardCollection[]> {
+  const collectionClient = await getDefaultCollectionClient();
+  const where = { userId, isFavorite: true };
+  const collections = await collectionClient.collection.findMany({
+    ...getFindManyArgs({ userId }),
+    where,
+  });
+
+  return collections.map(toDashboardCollection);
+}
+
+export async function getFavoriteCollectionsCount(
+  userId: string,
+): Promise<number> {
+  const collectionClient = await getDefaultCollectionClient();
+  return collectionClient.collection.count({
+    where: { userId, isFavorite: true },
+  });
+}

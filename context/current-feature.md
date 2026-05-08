@@ -1,16 +1,29 @@
-# Current Feature
+# Current Feature: Favorites Page
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add star icon button to TopBar linking to /favorites
+- Create /favorites route with protection
+- Fetch all user favorited items and collections
+- Build compact list view (VS Code/terminal style, not cards)
+- Display rows with type icon, title, type badge, date added
+- Show separate sections for items and collections with counts
+- Allow clicking item to open ItemDrawer, clicking collection to navigate to /collections/[slug]
+- Handle empty state when no favorites
+- Sort by most recently favorited (updatedAt)
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+Compact, dev-focused list UI (terminal/VS Code style):
+- Monospace or semi-monospace font
+- Minimal padding, high density
+- Subtle hover states
+- No cards or heavy borders, clean lines only
+- Separate favorited items and collections sections
 
 ## History
 
@@ -130,3 +143,5 @@
 - 2026-05-08: Loaded Editor Preferences Settings from `context/features/editor-settings-spec.md` and set the feature status to Not Started.
 - 2026-05-08: Started Editor Preferences Settings implementation on `feature/editor-preferences-settings`.
 - 2026-05-08: Completed Editor Preferences Settings with Prisma User model JSON column, database migration, server actions for get/update, EditorPreferencesContext provider with fallback defaults, EditorPreferencesSettings UI component with font size/tab size/theme dropdowns and word wrap/minimap toggles, toast notifications on save, settings page integration, CodeEditor theme/font/tab/wrap/minimap preference application, app-level provider wrapping, all tests passing, and successful production build verification.
+- 2026-05-08: Loaded Favorites Page from `context/features/favorites-spec.md` and set the feature status to Not Started.
+- 2026-05-08: Started Favorites Page implementation on `feature/favorites`.

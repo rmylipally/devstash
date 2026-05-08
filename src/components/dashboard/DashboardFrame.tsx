@@ -174,12 +174,25 @@ export function DashboardFrame({
               </div>
             </div>
 
-            {newItemAction ?? (
-              <Button className="h-11 gap-2 px-4" type="button">
-                <Plus className="size-5" />
-                <span className="hidden sm:inline">New Item</span>
-              </Button>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              <NextLink href="/favorites">
+                <Button
+                  aria-label="View favorites"
+                  size="icon"
+                  variant="ghost"
+                  title="Favorites"
+                >
+                  <Star className="size-5" />
+                </Button>
+              </NextLink>
+
+              {newItemAction ?? (
+                <Button className="h-11 gap-2 px-4" type="button">
+                  <Plus className="size-5" />
+                  <span className="hidden sm:inline">New Item</span>
+                </Button>
+              )}
+            </div>
           </header>
 
           {children}

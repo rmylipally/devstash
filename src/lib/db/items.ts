@@ -1174,3 +1174,28 @@ export async function getDashboardItemTypes(
     count: countByKind.get(itemType.kind) ?? 0,
   }));
 }
+
+export async function getFavoriteItems(
+  options: Pick<GetDashboardItemsOptions, "userEmail" | "userId"> = {},
+  client?: DashboardItemClient,
+): Promise<DashboardItem[]> {
+  const itemClient = client ?? (await getDefaultItemClient());
+  const where = getUserWhere(options);
+  const items = await itemClient.item.findMany({
+    ...getFindManyArgs(options, where),
+    where: { ...where, isFavorite: true },
+  });
+
+  return items.map(toDashboardItem);
+}
+
+export async function getFavoritesCount(
+  options: Pick<GetDashboardItemsOptions, "userEmail" | "userId"> = {},
+  client?: DashboardItemClient,
+): Promise<number> {
+  const itemClient = client ?? (await getDefaultItemClient());
+  const where = getUserWhere(options);
+  return itemClient.item.count({
+    where: { ...where, isFavorite: true },
+  });
+}
