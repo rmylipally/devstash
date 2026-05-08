@@ -7,6 +7,7 @@ import {
   createItem as createItemRecord,
   deleteItem as deleteItemRecord,
   getItemDetail,
+  toggleItemFavorite as toggleItemFavoriteRecord,
   updateItem as updateItemRecord,
   type ItemDetail,
   type ItemCreateInput,
@@ -41,6 +42,16 @@ type UpdateItemActionResult =
 
 type DeleteItemActionResult =
   | {
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+type ToggleItemFavoriteActionResult =
+  | {
+      data: ItemDetail;
       success: true;
     }
   | {
@@ -405,6 +416,44 @@ export async function deleteItem(
     return {
       success: false,
       error: "Could not delete item. Try again.",
+    };
+  }
+}
+
+export async function toggleItemFavorite(
+  itemId: string,
+): Promise<ToggleItemFavoriteActionResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to update items.",
+    };
+  }
+
+  try {
+    const updatedItem = await toggleItemFavoriteRecord({
+      itemId,
+      userId,
+    });
+
+    if (!updatedItem) {
+      return {
+        success: false,
+        error: "Item not found.",
+      };
+    }
+
+    return {
+      success: true,
+      data: updatedItem,
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update item. Try again.",
     };
   }
 }

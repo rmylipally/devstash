@@ -629,6 +629,8 @@ interface DeleteCollectionOptions {
   userId: string;
 }
 
+type ToggleCollectionFavoriteOptions = DeleteCollectionOptions;
+
 export async function deleteCollection(
   options: DeleteCollectionOptions,
 ): Promise<boolean> {
@@ -648,6 +650,46 @@ export async function deleteCollection(
   });
 
   return true;
+}
+
+export async function toggleCollectionFavorite(
+  options: ToggleCollectionFavoriteOptions,
+): Promise<DashboardCollectionActionTarget | null> {
+  const { prisma } = await import("@/lib/prisma");
+
+  const existing = await prisma.collection.findUnique({
+    select: {
+      id: true,
+      isFavorite: true,
+    },
+    where: {
+      id: options.collectionId,
+      userId: options.userId,
+    },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const updated = await prisma.collection.update({
+    data: {
+      isFavorite: !existing.isFavorite,
+    },
+    select: dashboardCollectionActionTargetSelect,
+    where: {
+      id: options.collectionId,
+      userId: options.userId,
+    },
+  });
+
+  return {
+    description: updated.description ?? "No description yet.",
+    id: updated.id,
+    isFavorite: updated.isFavorite,
+    name: updated.name,
+    slug: updated.slug,
+  };
 }
 
 export async function getFavoriteCollections(

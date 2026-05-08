@@ -13,4 +13,16 @@ describe("item drawer edit UI", () => {
     assert.match(source, /aria-label="Item title"/);
     assert.doesNotMatch(source, /<DetailSection title="Title">/);
   });
+
+  it("wires favorite toggle controls for drawer and cards", async () => {
+    const source = await readFile(
+      "src/components/items/ItemDrawerProvider.tsx",
+      "utf8",
+    );
+
+    assert.match(source, /toggleItemFavorite/);
+    assert.match(source, /onToggleFavorite/);
+    assert.match(source, /function ItemFavoriteToggleButton/);
+    assert.match(source, /aria-label=\{`\$\{isFavorite \? "Unfavorite" : "Favorite"\}/);
+  });
 });

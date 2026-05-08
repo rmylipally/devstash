@@ -16,6 +16,7 @@ describe("collections pages", () => {
     assert.match(collectionsPageSource, /COLLECTIONS_PER_PAGE/);
     assert.match(collectionsPageSource, /parsePageParam/);
     assert.match(collectionsPageSource, /PaginationNav/);
+    assert.match(collectionsPageSource, /CollectionFavoriteIconButton/);
     assert.match(collectionsPageSource, /Collections/);
     assert.match(collectionDetailPageSource, /auth\(\)/);
     assert.match(collectionDetailPageSource, /params: Promise/);
@@ -23,5 +24,6 @@ describe("collections pages", () => {
     assert.match(collectionDetailPageSource, /getDashboardItemsByCollectionSlug/);
     assert.match(collectionDetailPageSource, /ItemDrawerProvider/);
     assert.match(collectionDetailPageSource, /ItemCard/);
+    assert.match(collectionDetailPageSource, /CollectionDetailActions/);
   });
 });

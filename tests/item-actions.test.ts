@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   deleteItemRecord: vi.fn(),
   deleteS3Object: vi.fn(),
   getItemDetail: vi.fn(),
+  toggleItemFavoriteRecord: vi.fn(),
   updateItemRecord: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock("@/lib/db/items", () => ({
   createItem: mocks.createItemRecord,
   deleteItem: mocks.deleteItemRecord,
   getItemDetail: mocks.getItemDetail,
+  toggleItemFavorite: mocks.toggleItemFavoriteRecord,
   updateItem: mocks.updateItemRecord,
 }));
 
@@ -25,7 +27,7 @@ vi.mock("@/lib/storage/s3", () => ({
   deleteS3Object: mocks.deleteS3Object,
 }));
 
-const { createItem, deleteItem, updateItem } = await import("../src/actions/items");
+const { createItem, deleteItem, toggleItemFavorite, updateItem } = await import("../src/actions/items");
 
 const itemDetail = {
   aiSummary: null,
@@ -56,6 +58,7 @@ describe("item actions", () => {
     mocks.deleteItemRecord.mockReset();
     mocks.deleteS3Object.mockReset();
     mocks.getItemDetail.mockReset();
+    mocks.toggleItemFavoriteRecord.mockReset();
     mocks.updateItemRecord.mockReset();
   });
 
@@ -479,5 +482,39 @@ describe("item actions", () => {
     });
     assert.equal(mocks.deleteItemRecord.mock.calls.length, 0);
     assert.equal(mocks.deleteS3Object.mock.calls.length, 0);
+  });
+
+  it("toggles favorite state for an owned item", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.toggleItemFavoriteRecord.mockResolvedValue({
+      ...itemDetail,
+      isFavorite: true,
+    });
+
+    const result = await toggleItemFavorite("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: true,
+      data: {
+        ...itemDetail,
+        isFavorite: true,
+      },
+    });
+    assert.deepEqual(mocks.toggleItemFavoriteRecord.mock.calls[0]?.[0], {
+      itemId: "item-use-debounce-hook",
+      userId: "user-123",
+    });
+  });
+
+  it("rejects unauthenticated favorite toggles", async () => {
+    mocks.auth.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "You must be signed in to update items.",
+    });
+    assert.equal(mocks.toggleItemFavoriteRecord.mock.calls.length, 0);
   });
 });

@@ -33,6 +33,7 @@ export default defineConfig({
       "tests/file-list-ui.test.ts",
       "tests/file-upload-ui.test.ts",
       "tests/file-upload-validation.test.ts",
+      "tests/favorites-sort-ui.test.ts",
       "tests/image-gallery-ui.test.ts",
       "tests/item-actions.test.ts",
       "tests/item-collection-assignment-ui.test.ts",

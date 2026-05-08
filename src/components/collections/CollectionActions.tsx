@@ -9,10 +9,11 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 
 import {
   deleteCollection,
+  toggleCollectionFavorite,
   updateCollection,
 } from "@/actions/collections";
 import {
@@ -45,6 +46,7 @@ type CollectionActionToast =
 interface CollectionActionTarget {
   description: string;
   id: string;
+  isFavorite: boolean;
   name: string;
 }
 
@@ -57,8 +59,36 @@ interface CollectionDropdownMenuProps {
 export function CollectionDropdownMenu({
   collection,
 }: CollectionDropdownMenuProps) {
+  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(collection.isFavorite);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(collection.isFavorite);
+  }, [collection.isFavorite]);
+
+  async function handleToggleFavorite() {
+    if (isTogglingFavorite) {
+      return;
+    }
+
+    setIsTogglingFavorite(true);
+
+    try {
+      const result = await toggleCollectionFavorite({
+        collectionId: collection.id,
+      });
+
+      if (result.success) {
+        setIsFavorite(result.data.isFavorite);
+        router.refresh();
+      }
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  }
 
   return (
     <>
@@ -75,9 +105,21 @@ export function CollectionDropdownMenu({
             <Edit className="size-4" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => {}}>
-            <Heart className="size-4" />
-            Favorite
+          <DropdownMenuItem
+            disabled={isTogglingFavorite}
+            onClick={() => void handleToggleFavorite()}
+          >
+            {isTogglingFavorite ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Heart
+                className={cn(
+                  "size-4",
+                  isFavorite && "fill-rose-500 text-rose-500",
+                )}
+              />
+            )}
+            {isFavorite ? "Unfavorite" : "Favorite"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -126,13 +168,10 @@ export function CollectionDetailActions({
         >
           <Edit className="size-4" />
         </button>
-        <button
-          aria-label="Favorite collection"
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          type="button"
-        >
-          <Heart className="size-4" />
-        </button>
+        <CollectionFavoriteIconButton
+          collectionId={collection.id}
+          initialIsFavorite={collection.isFavorite}
+        />
         <button
           aria-label="Delete collection"
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
@@ -153,6 +192,69 @@ export function CollectionDetailActions({
         open={deleteOpen}
       />
     </>
+  );
+}
+
+export function CollectionFavoriteIconButton({
+  className,
+  collectionId,
+  initialIsFavorite,
+}: {
+  className?: string;
+  collectionId: string;
+  initialIsFavorite: boolean;
+}) {
+  const router = useRouter();
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(initialIsFavorite);
+  }, [initialIsFavorite]);
+
+  async function handleToggle(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (isToggling) {
+      return;
+    }
+
+    setIsToggling(true);
+
+    try {
+      const result = await toggleCollectionFavorite({
+        collectionId,
+      });
+
+      if (result.success) {
+        setIsFavorite(result.data.isFavorite);
+        router.refresh();
+      }
+    } finally {
+      setIsToggling(false);
+    }
+  }
+
+  return (
+    <button
+      aria-label={isFavorite ? "Unfavorite collection" : "Favorite collection"}
+      aria-pressed={isFavorite}
+      className={cn(
+        "flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        isFavorite && "text-rose-500 hover:text-rose-400",
+        className,
+      )}
+      disabled={isToggling}
+      onClick={handleToggle}
+      type="button"
+    >
+      {isToggling ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Heart className={cn("size-4", isFavorite && "fill-rose-500 text-rose-500")} />
+      )}
+    </button>
   );
 }
 

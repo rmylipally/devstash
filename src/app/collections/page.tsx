@@ -5,7 +5,10 @@ import type { Session } from "next-auth";
 
 import { auth } from "@/auth";
 import { CollectionCreateButton } from "@/components/collections/CollectionCreateDialog";
-import { CollectionDropdownMenu } from "@/components/collections/CollectionActions";
+import {
+  CollectionDropdownMenu,
+  CollectionFavoriteIconButton,
+} from "@/components/collections/CollectionActions";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
@@ -182,6 +185,10 @@ function CollectionOverviewCard({
             </p>
           </div>
           <div className="relative z-10 flex items-center gap-1">
+            <CollectionFavoriteIconButton
+              collectionId={collection.id}
+              initialIsFavorite={collection.isFavorite}
+            />
             <CollectionDropdownMenu collection={collection} />
           </div>
         </div>

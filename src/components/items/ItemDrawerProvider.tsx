@@ -44,7 +44,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { deleteItem, updateItem } from "@/actions/items";
+import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
 import { MarkdownEditor } from "@/components/items/MarkdownEditor";
@@ -341,6 +341,11 @@ export function ItemCard({
           <TagList tags={item.tags} />
         </div>
       </button>
+      <ItemFavoriteToggleButton
+        initialIsFavorite={item.isFavorite}
+        itemId={item.id}
+        itemTitle={item.title}
+      />
       <QuickCopyButton item={item} />
     </article>
   );
@@ -384,6 +389,11 @@ export function ImageThumbnailCard({ item }: { item: DashboardItem }) {
               <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
             ) : null}
           </button>
+          <ItemFavoriteToggleButton
+            initialIsFavorite={item.isFavorite}
+            itemId={item.id}
+            itemTitle={item.title}
+          />
           <QuickCopyButton item={item} />
         </div>
         <button
@@ -434,6 +444,11 @@ export function FileListRow({ item }: { item: DashboardItem }) {
           <span>{formatFileDate(item.uploadedAt)}</span>
         </div>
       </button>
+      <ItemFavoriteToggleButton
+        initialIsFavorite={item.isFavorite}
+        itemId={item.id}
+        itemTitle={item.title}
+      />
       <QuickCopyButton item={item} />
       <a
         aria-label={`Download ${item.title}`}
@@ -517,6 +532,69 @@ function QuickCopyButton({ item }: { item: DashboardItem }) {
   );
 }
 
+function ItemFavoriteToggleButton({
+  initialIsFavorite,
+  itemId,
+  itemTitle,
+}: {
+  initialIsFavorite: boolean;
+  itemId: string;
+  itemTitle: string;
+}) {
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(initialIsFavorite);
+  }, [initialIsFavorite]);
+
+  async function handleToggle(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+
+    if (isToggling) {
+      return;
+    }
+
+    setIsToggling(true);
+
+    try {
+      const result = await toggleItemFavorite(itemId);
+
+      if (result.success) {
+        setIsFavorite(result.data.isFavorite);
+      }
+    } finally {
+      setIsToggling(false);
+    }
+  }
+
+  return (
+    <button
+      aria-label={`${isFavorite ? "Unfavorite" : "Favorite"} ${itemTitle}`}
+      aria-pressed={isFavorite}
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        isFavorite && "text-yellow-400 hover:text-yellow-300",
+      )}
+      disabled={isToggling}
+      onClick={handleToggle}
+      title={`${isFavorite ? "Unfavorite" : "Favorite"} ${itemTitle}`}
+      type="button"
+    >
+      {isToggling ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Star
+          className={cn(
+            "size-4",
+            isFavorite && "fill-yellow-400 text-yellow-400",
+          )}
+        />
+      )}
+    </button>
+  );
+}
+
 export function RecentItemRow({ item }: { item: DashboardItem }) {
   const { openItemDrawer } = useItemDrawer();
   const Icon = itemKindIcons[item.kind];
@@ -587,6 +665,7 @@ function ItemDrawerContent({
   const [formError, setFormError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFavoriteToggling, setIsFavoriteToggling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<DrawerMode>("view");
   const [toast, setToast] = useState<DrawerToast>(null);
@@ -719,6 +798,47 @@ function ItemDrawerContent({
     router.refresh();
   }
 
+  async function handleToggleFavorite() {
+    if (!item || isFavoriteToggling) {
+      return;
+    }
+
+    setIsFavoriteToggling(true);
+
+    let result: Awaited<ReturnType<typeof toggleItemFavorite>>;
+
+    try {
+      result = await toggleItemFavorite(item.id);
+    } catch {
+      result = {
+        success: false,
+        error: "Could not update item. Try again.",
+      };
+    }
+
+    setIsFavoriteToggling(false);
+
+    if (!result.success) {
+      setToast({
+        message: result.error,
+        variant: "error",
+      });
+      return;
+    }
+
+    onItemUpdated(result.data);
+    setDraft((currentDraft) =>
+      currentDraft ? createItemDraft(result.data) : currentDraft,
+    );
+    setToast({
+      message: result.data.isFavorite
+        ? "Added to favorites."
+        : "Removed from favorites.",
+      variant: "success",
+    });
+    router.refresh();
+  }
+
   const isSaveDisabled =
     !draft?.title.trim() ||
     (item?.kind === "link" && !draft?.url.trim()) ||
@@ -761,6 +881,7 @@ function ItemDrawerContent({
       </div>
 
       <ItemActionBar
+        isFavoriteToggling={isFavoriteToggling}
         isSaveDisabled={isSaveDisabled}
         isSaving={isSaving}
         item={item}
@@ -770,6 +891,7 @@ function ItemDrawerContent({
         onEdit={handleEdit}
         isDeleting={isDeleting}
         onSave={() => void handleSave()}
+        onToggleFavorite={() => void handleToggleFavorite()}
       />
 
       <DeleteItemDialog
@@ -848,6 +970,7 @@ function ItemDrawerHeaderTitle({
 
 interface ItemActionBarProps {
   isDeleting: boolean;
+  isFavoriteToggling: boolean;
   isSaveDisabled: boolean;
   isSaving: boolean;
   item: ItemDetail | null;
@@ -856,10 +979,12 @@ interface ItemActionBarProps {
   onDelete(): void;
   onEdit(): void;
   onSave(): void;
+  onToggleFavorite(): void;
 }
 
 function ItemActionBar({
   isDeleting,
+  isFavoriteToggling,
   isSaveDisabled,
   isSaving,
   item,
@@ -868,6 +993,7 @@ function ItemActionBar({
   onDelete,
   onEdit,
   onSave,
+  onToggleFavorite,
 }: ItemActionBarProps) {
   async function handleCopy() {
     if (!item) {
@@ -917,16 +1043,21 @@ function ItemActionBar({
           "h-10 gap-2 px-3",
           item?.isFavorite && "text-yellow-400 hover:text-yellow-300",
         )}
-        disabled={!item}
+        disabled={!item || isFavoriteToggling}
+        onClick={onToggleFavorite}
         type="button"
         variant="ghost"
       >
-        <Star
-          className={cn(
-            "size-5",
-            item?.isFavorite && "fill-yellow-400 text-yellow-400",
-          )}
-        />
+        {isFavoriteToggling ? (
+          <Loader2 className="size-5 animate-spin" />
+        ) : (
+          <Star
+            className={cn(
+              "size-5",
+              item?.isFavorite && "fill-yellow-400 text-yellow-400",
+            )}
+          />
+        )}
         Favorite
       </Button>
       <Button

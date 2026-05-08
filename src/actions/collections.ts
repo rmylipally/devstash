@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import {
   deleteCollection as deleteCollectionRecord,
+  toggleCollectionFavorite as toggleCollectionFavoriteRecord,
   updateCollection as updateCollectionRecord,
 } from "@/lib/db/collections";
 
@@ -19,6 +20,18 @@ type UpdateCollectionActionResult =
 
 type DeleteCollectionActionResult =
   | {
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+type ToggleCollectionFavoriteActionResult =
+  | {
+      data: {
+        isFavorite: boolean;
+      };
       success: true;
     }
   | {
@@ -103,4 +116,40 @@ export async function deleteCollection(
   }
 
   return { success: true };
+}
+
+export async function toggleCollectionFavorite(
+  input: z.infer<typeof deleteCollectionSchema>,
+): Promise<ToggleCollectionFavoriteActionResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return { error: "You must be signed in.", success: false };
+  }
+
+  const parsed = deleteCollectionSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues.map((i) => i.message).join(" "),
+      success: false,
+    };
+  }
+
+  const updated = await toggleCollectionFavoriteRecord({
+    collectionId: parsed.data.collectionId,
+    userId,
+  });
+
+  if (!updated) {
+    return { error: "Collection not found.", success: false };
+  }
+
+  return {
+    data: {
+      isFavorite: updated.isFavorite,
+    },
+    success: true,
+  };
 }
