@@ -4,6 +4,7 @@ import type { Session } from "next-auth";
 
 import { auth } from "@/auth";
 import { CollectionCreateButton } from "@/components/collections/CollectionCreateDialog";
+import { CollectionDetailActions } from "@/components/collections/CollectionActions";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import {
@@ -136,6 +137,7 @@ function CollectionDetailMain({
                   {collection.description}
                 </p>
               </div>
+              <CollectionDetailActions collection={collection} />
             </div>
           </div>
 

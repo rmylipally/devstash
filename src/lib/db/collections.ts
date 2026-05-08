@@ -472,3 +472,89 @@ export async function createCollection(
 
   return toDashboardCollection(collection);
 }
+
+interface UpdateCollectionOptions {
+  collectionId: string;
+  data: {
+    description?: string | null;
+    name?: string;
+  };
+  userId: string;
+}
+
+export async function updateCollection(
+  options: UpdateCollectionOptions,
+): Promise<DashboardCollection | null> {
+  const { prisma } = await import("@/lib/prisma");
+
+  const existing = await prisma.collection.findUnique({
+    select: { id: true },
+    where: { id: options.collectionId, userId: options.userId },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const updateData: Record<string, unknown> = {};
+
+  if (options.data.name !== undefined) {
+    const name = options.data.name.trim();
+
+    if (name) {
+      updateData.name = name;
+      updateData.slug = await getUniqueCollectionSlug(
+        name,
+        options.userId,
+        (await import("@/lib/prisma")).prisma as unknown as DashboardCollectionClient,
+      );
+    }
+  }
+
+  if (options.data.description !== undefined) {
+    updateData.description = getNullableValue(options.data.description);
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    const row = await prisma.collection.findUnique({
+      select: dashboardCollectionSelect,
+      where: { id: options.collectionId },
+    });
+
+    return row ? toDashboardCollection(row as unknown as DashboardCollectionRow) : null;
+  }
+
+  const updated = await prisma.collection.update({
+    data: updateData,
+    select: dashboardCollectionSelect,
+    where: { id: options.collectionId },
+  });
+
+  return toDashboardCollection(updated as unknown as DashboardCollectionRow);
+}
+
+interface DeleteCollectionOptions {
+  collectionId: string;
+  userId: string;
+}
+
+export async function deleteCollection(
+  options: DeleteCollectionOptions,
+): Promise<boolean> {
+  const { prisma } = await import("@/lib/prisma");
+
+  const existing = await prisma.collection.findUnique({
+    select: { id: true },
+    where: { id: options.collectionId, userId: options.userId },
+  });
+
+  if (!existing) {
+    return false;
+  }
+
+  await prisma.collection.delete({
+    where: { id: options.collectionId },
+  });
+
+  return true;
+}

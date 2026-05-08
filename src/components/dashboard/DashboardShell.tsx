@@ -21,6 +21,7 @@ import type { ReactNode } from "react";
 
 import { auth } from "@/auth";
 import { CollectionCreateButton } from "@/components/collections/CollectionCreateDialog";
+import { CollectionDropdownMenu } from "@/components/collections/CollectionActions";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import {
@@ -329,15 +330,20 @@ function CollectionCard({ collection }: CollectionCardProps) {
   const visibleTypes = collection.itemTypeIds;
 
   return (
-    <NextLink
+    <div
       className={cn(
-        "group flex min-h-44 flex-col justify-between rounded-lg border border-l-4 border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50",
+        "group relative flex min-h-44 flex-col justify-between rounded-lg border border-l-4 border-border bg-card p-5 text-card-foreground transition-colors hover:border-primary/50",
         collection.dominantItemKind
           ? itemKindAccentStyles[collection.dominantItemKind]
           : "border-l-border",
       )}
-      href={`/collections/${collection.slug}`}
     >
+      <NextLink
+        className="absolute inset-0 rounded-lg"
+        href={`/collections/${collection.slug}`}
+      >
+        <span className="sr-only">View {collection.name}</span>
+      </NextLink>
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -353,7 +359,9 @@ function CollectionCard({ collection }: CollectionCardProps) {
               {collection.itemCount} items
             </p>
           </div>
-          <Folder className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          <div className="relative z-10 flex items-center gap-1">
+            <CollectionDropdownMenu collection={collection} />
+          </div>
         </div>
         <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
           {collection.description}
@@ -377,6 +385,6 @@ function CollectionCard({ collection }: CollectionCardProps) {
           );
         })}
       </div>
-    </NextLink>
+    </div>
   );
 }
