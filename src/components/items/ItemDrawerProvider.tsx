@@ -44,7 +44,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
+import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
 import { MarkdownEditor } from "@/components/items/MarkdownEditor";
@@ -666,6 +666,7 @@ function ItemDrawerContent({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFavoriteToggling, setIsFavoriteToggling] = useState(false);
+  const [isPinToggling, setIsPinToggling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<DrawerMode>("view");
   const [toast, setToast] = useState<DrawerToast>(null);
@@ -839,6 +840,47 @@ function ItemDrawerContent({
     router.refresh();
   }
 
+  async function handleTogglePin() {
+    if (!item || isPinToggling) {
+      return;
+    }
+
+    setIsPinToggling(true);
+
+    let result: Awaited<ReturnType<typeof toggleItemPin>>;
+
+    try {
+      result = await toggleItemPin(item.id);
+    } catch {
+      result = {
+        success: false,
+        error: "Could not update item. Try again.",
+      };
+    }
+
+    setIsPinToggling(false);
+
+    if (!result.success) {
+      setToast({
+        message: result.error,
+        variant: "error",
+      });
+      return;
+    }
+
+    onItemUpdated(result.data);
+    setDraft((currentDraft) =>
+      currentDraft ? createItemDraft(result.data) : currentDraft,
+    );
+    setToast({
+      message: result.data.isPinned
+        ? "Added to pinned items."
+        : "Removed from pinned items.",
+      variant: "success",
+    });
+    router.refresh();
+  }
+
   const isSaveDisabled =
     !draft?.title.trim() ||
     (item?.kind === "link" && !draft?.url.trim()) ||
@@ -882,6 +924,7 @@ function ItemDrawerContent({
 
       <ItemActionBar
         isFavoriteToggling={isFavoriteToggling}
+        isPinToggling={isPinToggling}
         isSaveDisabled={isSaveDisabled}
         isSaving={isSaving}
         item={item}
@@ -892,6 +935,7 @@ function ItemDrawerContent({
         isDeleting={isDeleting}
         onSave={() => void handleSave()}
         onToggleFavorite={() => void handleToggleFavorite()}
+        onTogglePin={() => void handleTogglePin()}
       />
 
       <DeleteItemDialog
@@ -971,6 +1015,7 @@ function ItemDrawerHeaderTitle({
 interface ItemActionBarProps {
   isDeleting: boolean;
   isFavoriteToggling: boolean;
+  isPinToggling: boolean;
   isSaveDisabled: boolean;
   isSaving: boolean;
   item: ItemDetail | null;
@@ -980,11 +1025,13 @@ interface ItemActionBarProps {
   onEdit(): void;
   onSave(): void;
   onToggleFavorite(): void;
+  onTogglePin(): void;
 }
 
 function ItemActionBar({
   isDeleting,
   isFavoriteToggling,
+  isPinToggling,
   isSaveDisabled,
   isSaving,
   item,
@@ -994,6 +1041,7 @@ function ItemActionBar({
   onEdit,
   onSave,
   onToggleFavorite,
+  onTogglePin,
 }: ItemActionBarProps) {
   async function handleCopy() {
     if (!item) {
@@ -1063,16 +1111,21 @@ function ItemActionBar({
       <Button
         aria-pressed={item?.isPinned ?? false}
         className="h-10 gap-2 px-3"
-        disabled={!item}
+        disabled={!item || isPinToggling}
+        onClick={onTogglePin}
         type="button"
         variant="ghost"
       >
-        <Pin
-          className={cn(
-            "size-5",
-            item?.isPinned && "fill-muted-foreground text-muted-foreground",
-          )}
-        />
+        {isPinToggling ? (
+          <Loader2 className="size-5 animate-spin" />
+        ) : (
+          <Pin
+            className={cn(
+              "size-5",
+              item?.isPinned && "fill-muted-foreground text-muted-foreground",
+            )}
+          />
+        )}
         Pin
       </Button>
       <Button

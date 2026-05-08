@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   deleteS3Object: vi.fn(),
   getItemDetail: vi.fn(),
   toggleItemFavoriteRecord: vi.fn(),
+  toggleItemPinRecord: vi.fn(),
   updateItemRecord: vi.fn(),
 }));
 
@@ -20,6 +21,7 @@ vi.mock("@/lib/db/items", () => ({
   deleteItem: mocks.deleteItemRecord,
   getItemDetail: mocks.getItemDetail,
   toggleItemFavorite: mocks.toggleItemFavoriteRecord,
+  toggleItemPin: mocks.toggleItemPinRecord,
   updateItem: mocks.updateItemRecord,
 }));
 
@@ -27,7 +29,7 @@ vi.mock("@/lib/storage/s3", () => ({
   deleteS3Object: mocks.deleteS3Object,
 }));
 
-const { createItem, deleteItem, toggleItemFavorite, updateItem } = await import("../src/actions/items");
+const { createItem, deleteItem, toggleItemFavorite, toggleItemPin, updateItem } = await import("../src/actions/items");
 
 const itemDetail = {
   aiSummary: null,
@@ -59,6 +61,7 @@ describe("item actions", () => {
     mocks.deleteS3Object.mockReset();
     mocks.getItemDetail.mockReset();
     mocks.toggleItemFavoriteRecord.mockReset();
+    mocks.toggleItemPinRecord.mockReset();
     mocks.updateItemRecord.mockReset();
   });
 
@@ -516,5 +519,39 @@ describe("item actions", () => {
       error: "You must be signed in to update items.",
     });
     assert.equal(mocks.toggleItemFavoriteRecord.mock.calls.length, 0);
+  });
+
+  it("toggles pin state for an owned item", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.toggleItemPinRecord.mockResolvedValue({
+      ...itemDetail,
+      isPinned: true,
+    });
+
+    const result = await toggleItemPin("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: true,
+      data: {
+        ...itemDetail,
+        isPinned: true,
+      },
+    });
+    assert.deepEqual(mocks.toggleItemPinRecord.mock.calls[0]?.[0], {
+      itemId: "item-use-debounce-hook",
+      userId: "user-123",
+    });
+  });
+
+  it("rejects unauthenticated pin toggles", async () => {
+    mocks.auth.mockResolvedValue(null);
+
+    const result = await toggleItemPin("item-use-debounce-hook");
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "You must be signed in to update items.",
+    });
+    assert.equal(mocks.toggleItemPinRecord.mock.calls.length, 0);
   });
 });

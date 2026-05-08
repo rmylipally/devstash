@@ -506,6 +506,8 @@ type DeleteItemOptions = GetItemDetailOptions;
 
 type ToggleItemFavoriteOptions = GetItemDetailOptions;
 
+type ToggleItemPinOptions = GetItemDetailOptions;
+
 const DEFAULT_RECENT_ITEM_LIMIT = DASHBOARD_RECENT_ITEMS_LIMIT;
 
 const dashboardItemKindByPrismaKind: Record<PrismaItemKind, DashboardItemKind> =
@@ -1057,6 +1059,40 @@ export async function toggleItemFavorite(
   const updated = await prisma.item.update({
     data: {
       isFavorite: !existing.isFavorite,
+    },
+    select: itemDetailSelect,
+    where: {
+      id: options.itemId,
+      userId: options.userId,
+    },
+  });
+
+  return toItemDetail(updated as unknown as ItemDetailRow);
+}
+
+export async function toggleItemPin(
+  options: ToggleItemPinOptions,
+): Promise<ItemDetail | null> {
+  const { prisma } = await import("@/lib/prisma");
+
+  const existing = await prisma.item.findFirst({
+    select: {
+      id: true,
+      isPinned: true,
+    },
+    where: {
+      id: options.itemId,
+      userId: options.userId,
+    },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const updated = await prisma.item.update({
+    data: {
+      isPinned: !existing.isPinned,
     },
     select: itemDetailSelect,
     where: {

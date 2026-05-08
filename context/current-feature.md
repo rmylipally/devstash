@@ -1,16 +1,27 @@
-# Current Feature
+# Pinned Items
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Create `toggleItemPin` server action with auth scoping and error handling
+- Wire onClick handler to Pin button in ItemDrawer (button exists but non-functional)
+- Implement optimistic UI updates for instant feedback
+- Add toast notification on success/error
+- Pinned items sort to top of listings in dashboard and collection views
+- Follow Favorite Button implementation pattern from previous feature
+- Items only (not collections); Pin icon on ItemCard remains static indicator
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Button UI already exists in ItemDrawer but has no onClick handler
+- Follow same DB helper + server action + client component pattern as favorites feature
+- Database: Item model already has `isPinned` boolean field
+- Pinned items should appear at top of all item listings (dashboard, collections, favorites)
+- Dashboard has dedicated "pinned items" section that should populate
+- Reference: pinned-spec.md in context/features/
 
 ## History
 
