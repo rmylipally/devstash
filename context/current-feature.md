@@ -2,30 +2,15 @@
 
 ## Status
 
-Complete
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Add editor preferences section to settings page with auto-save to database
-- Create font size dropdown
-- Create tab size dropdown
-- Create word wrap toggle (default: on)
-- Create minimap toggle (default: off)
-- Create theme dropdown with options: vs-dark, monokai, github-dark (default: vs-dark)
-- Store preferences in JSON column `editorPreferences` on User model
-- Create and run database migration
-- Create server action to update preferences
-- Apply settings to Monaco editor component
-- Implement auto-save on change (no save button)
-- Show success toast on save
-- Create EditorPreferencesContext for client components
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-Add editor preferences section to settings page with auto-save to database. Constraints:
-- Never use `db push` for migration
-- JSON column storage on User model
-- Auto-save behavior without explicit save button
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
