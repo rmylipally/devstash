@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Settings Page and Account Actions Move
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add a protected settings page route at `/settings`.
+- Add a Settings link to the user dropdown at the bottom of the sidebar.
+- Ensure the Settings link navigates to `/settings`.
+- Move account actions from profile to settings:
+- Include delete account in settings page account actions.
+- Include forgot password flow access in settings page account actions.
+- Remove these account actions from the profile page.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Feature source: inline description.
+- `/settings` must be protected with the same authenticated access pattern used by dashboard/profile routes.
+- Reuse existing account actions UI/logic where possible to avoid behavior regressions.
 
 ## History
 
@@ -124,3 +132,5 @@ Not Started
 - 2026-05-07: Loaded Pagination from `context/features/pagination-spec.md` and set the feature status to Not Started.
 - 2026-05-07: Started Pagination implementation on `feature/pagination`.
 - 2026-05-07: Completed Pagination with page-based fetching and numbered prev/next controls on `/items/[type]`, `/collections/[slug]`, and `/collections`, plus shared pagination utilities/constants and collection/item count-backed total page calculation.
+- 2026-05-07: Loaded Settings Page and Account Actions Move from inline description and set the feature status to Not Started.
+- 2026-05-07: Started Settings Page and Account Actions Move implementation on `feature/settings-page-account-actions`.

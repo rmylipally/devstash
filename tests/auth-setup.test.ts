@@ -33,7 +33,7 @@ describe("auth setup", () => {
 
     assert.equal(typeof proxy, "function");
     assert.deepEqual(config, {
-      matcher: ["/dashboard/:path*", "/profile", "/items/:path*"],
+      matcher: ["/dashboard/:path*", "/profile", "/settings", "/items/:path*"],
     });
     assert.equal(redirectUrl.pathname, "/sign-in");
     assert.equal(

@@ -224,23 +224,28 @@ describe("profile page", () => {
       "../src/components/profile/ProfileAccountActions"
     );
     const emailUserHtml = renderToStaticMarkup(
-      <ProfileAccountActions canChangePassword />,
+      <ProfileAccountActions
+        accountEmail="demo@devstash.io"
+        canChangePassword
+      />,
     );
     const oauthUserHtml = renderToStaticMarkup(
       <ProfileAccountActions canChangePassword={false} />,
     );
 
-    assert.match(emailUserHtml, /href="\/forgot-password"/);
-    assert.match(emailUserHtml, /Change password/);
+    assert.match(emailUserHtml, /Send reset link/);
+    assert.match(emailUserHtml, /demo@devstash\.io/);
+    assert.doesNotMatch(emailUserHtml, /href="\/forgot-password"/);
     assert.match(emailUserHtml, /Delete account/);
     assert.match(emailUserHtml, /This action cannot be undone/);
-    assert.doesNotMatch(oauthUserHtml, /Change password/);
+    assert.doesNotMatch(oauthUserHtml, /Send reset link/);
     assert.match(oauthUserHtml, /Delete account/);
   });
 
-  it("wires the protected profile page and account delete API", async () => {
-    const [profilePage, proxy, accountRoute] = await Promise.all([
+  it("wires protected profile/settings pages and account delete API", async () => {
+    const [profilePage, settingsPage, proxy, accountRoute] = await Promise.all([
       readFile("src/app/profile/page.tsx", "utf8"),
+      readFile("src/app/settings/page.tsx", "utf8"),
       readFile("src/proxy.ts", "utf8"),
       import("../src/app/api/account/route"),
     ]);
@@ -249,12 +254,20 @@ describe("profile page", () => {
     assert.match(profilePage, /DashboardFrame/);
     assert.match(profilePage, /getDashboardCollections/);
     assert.match(profilePage, /getDashboardItemTypes/);
-    assert.match(profilePage, /ProfileAccountActions/);
+    assert.doesNotMatch(profilePage, /ProfileAccountActions/);
     assert.match(profilePage, /Account created/);
     assert.match(profilePage, /Usage stats/);
     assert.match(profilePage, /Item type breakdown/);
     assert.match(profilePage, /redirect\("\/sign-in\?callbackUrl=\/profile"\)/);
+
+    assert.match(settingsPage, /DashboardFrame/);
+    assert.match(settingsPage, /getProfileData/);
+    assert.match(settingsPage, /ProfileAccountActions/);
+    assert.match(settingsPage, /accountEmail=\{profile\.email\}/);
+    assert.match(settingsPage, /redirect\("\/sign-in\?callbackUrl=\/settings"\)/);
+
     assert.match(proxy, /"\/profile"/);
+    assert.match(proxy, /"\/settings"/);
     assert.equal(typeof accountRoute.DELETE, "function");
   });
 });
