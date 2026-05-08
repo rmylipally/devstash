@@ -2,15 +2,30 @@
 
 ## Status
 
-Not Started
+Complete
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add editor preferences section to settings page with auto-save to database
+- Create font size dropdown
+- Create tab size dropdown
+- Create word wrap toggle (default: on)
+- Create minimap toggle (default: off)
+- Create theme dropdown with options: vs-dark, monokai, github-dark (default: vs-dark)
+- Store preferences in JSON column `editorPreferences` on User model
+- Create and run database migration
+- Create server action to update preferences
+- Apply settings to Monaco editor component
+- Implement auto-save on change (no save button)
+- Show success toast on save
+- Create EditorPreferencesContext for client components
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+Add editor preferences section to settings page with auto-save to database. Constraints:
+- Never use `db push` for migration
+- JSON column storage on User model
+- Auto-save behavior without explicit save button
 
 ## History
 
@@ -127,3 +142,6 @@ Not Started
 - 2026-05-07: Loaded Settings Page and Account Actions Move from inline description and set the feature status to Not Started.
 - 2026-05-07: Started Settings Page and Account Actions Move implementation on `feature/settings-page-account-actions`.
 - 2026-05-07: Completed Settings Page and Account Actions Move with a protected `/settings` route, a new Settings entry in the sidebar user dropdown, account actions moved off `/profile`, and inline reset-link and delete-account controls centralized in settings.
+- 2026-05-08: Loaded Editor Preferences Settings from `context/features/editor-settings-spec.md` and set the feature status to Not Started.
+- 2026-05-08: Started Editor Preferences Settings implementation on `feature/editor-preferences-settings`.
+- 2026-05-08: Completed Editor Preferences Settings with Prisma User model JSON column, database migration, server actions for get/update, EditorPreferencesContext provider with fallback defaults, EditorPreferencesSettings UI component with font size/tab size/theme dropdowns and word wrap/minimap toggles, toast notifications on save, settings page integration, CodeEditor theme/font/tab/wrap/minimap preference application, app-level provider wrapping, all tests passing, and successful production build verification.

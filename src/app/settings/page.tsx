@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
+import { EditorPreferencesSettings } from "@/components/profile/EditorPreferencesSettings";
 import { ProfileAccountActions } from "@/components/profile/ProfileAccountActions";
 import {
   getDashboardCollectionOptions,
@@ -125,6 +126,8 @@ function SettingsMain({
             canChangePassword={canChangePassword}
           />
         </section>
+
+        <EditorPreferencesSettings />
       </div>
     </div>
   );

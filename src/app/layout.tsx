@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { EditorPreferencesContextProvider } from "@/components/profile/EditorPreferencesContext";
 import { CommandPaletteProvider } from "@/components/search/CommandPaletteProvider";
 
 const geistSans = Geist({
@@ -29,7 +30,11 @@ export default function RootLayout({
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <CommandPaletteProvider>{children}</CommandPaletteProvider>
+        <CommandPaletteProvider>
+          <EditorPreferencesContextProvider>
+            {children}
+          </EditorPreferencesContextProvider>
+        </CommandPaletteProvider>
       </body>
     </html>
   );

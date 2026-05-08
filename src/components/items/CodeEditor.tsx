@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EditorProps } from "@monaco-editor/react";
 
 import { Button } from "@/components/ui/button";
+import { useEditorPreferences } from "@/components/profile/EditorPreferencesContext";
 import { cn } from "@/lib/utils";
 
 const MonacoEditor = dynamic<EditorProps>(
@@ -53,10 +54,19 @@ export function CodeEditor({
   readOnly = false,
   value,
 }: CodeEditorProps) {
+  const { preferences } = useEditorPreferences();
   const [hasCopied, setHasCopied] = useState(false);
   const editorHeight = getEditorHeight(value, minEditorHeight, maxEditorHeight);
   const languageLabel = getLanguageLabel(language);
   const monacoLanguage = getMonacoLanguage(languageLabel);
+
+  // Provide defaults while preferences load
+  const fontSize = preferences?.fontSize ?? 13;
+  const tabSize = preferences?.tabSize ?? 2;
+  const wordWrap = preferences?.wordWrap ?? true;
+  const minimap = preferences?.minimap ?? false;
+  const theme = preferences?.theme ?? "vs-dark";
+
   const options = useMemo<EditorProps["options"]>(
     () => ({
       ariaLabel,
@@ -66,12 +76,12 @@ export function CodeEditor({
       folding: false,
       fontFamily: "var(--font-mono)",
       fontLigatures: true,
-      fontSize: 13,
+      fontSize,
       glyphMargin: false,
       hideCursorInOverviewRuler: true,
       lineDecorationsWidth: 12,
       lineNumbers: "on",
-      minimap: { enabled: false },
+      minimap: { enabled: minimap },
       overviewRulerLanes: 0,
       padding: { bottom: 14, top: 14 },
       readOnly,
@@ -84,10 +94,10 @@ export function CodeEditor({
         useShadows: false,
         verticalScrollbarSize: 10,
       },
-      tabSize: 2,
-      wordWrap: "on",
+      tabSize,
+      wordWrap: wordWrap ? "on" : "off",
     }),
-    [ariaLabel, readOnly],
+    [ariaLabel, fontSize, minimap, readOnly, tabSize, wordWrap],
   );
 
   useEffect(() => {
@@ -146,7 +156,7 @@ export function CodeEditor({
           language={monacoLanguage}
           onChange={(nextValue) => onChange?.(nextValue ?? "")}
           options={options}
-          theme="vs-dark"
+          theme={theme}
           value={value}
         />
       </div>

@@ -52,6 +52,7 @@ model User {
   plan                 PlanTier  @default(FREE)
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
+  editorPreferences    Json      @default("{\"fontSize\":13,\"tabSize\":2,\"wordWrap\":true,\"minimap\":false,\"theme\":\"vs-dark\"}")
 
   accounts    Account[]
   sessions    Session[]
