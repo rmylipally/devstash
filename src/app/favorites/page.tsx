@@ -7,6 +7,9 @@ import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { FavoritesList } from "@/components/favorites/FavoritesList";
 import {
+  ItemDrawerProvider,
+} from "@/components/items/ItemDrawerProvider";
+import {
   getDashboardCollectionOptions,
   getDashboardCollections,
   getFavoriteCollections,
@@ -64,10 +67,12 @@ export default async function FavoritesPage() {
       }
       recentCollections={recentSidebarCollections}
     >
-      <FavoritesList
-        items={favoriteItems}
-        collections={favoriteCollections}
-      />
+      <ItemDrawerProvider availableCollections={collectionOptions}>
+        <FavoritesList
+          items={favoriteItems}
+          collections={favoriteCollections}
+        />
+      </ItemDrawerProvider>
     </DashboardFrame>
   );
 }
