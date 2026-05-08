@@ -14,22 +14,34 @@ import {
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import {
   getDashboardCollectionOptions,
+  getDashboardCollectionBySlug,
   getDashboardCollections,
-  type DashboardCollection,
   type DashboardCollectionOption,
 } from "@/lib/db/collections";
 import {
+  getDashboardItemCountByCollectionSlug,
   getDashboardItemsByCollectionSlug,
   getDashboardItemTypes,
   type DashboardItem,
 } from "@/lib/db/items";
 import { currentUser } from "@/lib/mock-data";
+import {
+  COLLECTIONS_PER_PAGE,
+  DASHBOARD_COLLECTIONS_LIMIT,
+  getPageOffset,
+  getTotalPages,
+  parsePageParam,
+} from "@/lib/pagination";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 
 export const dynamic = "force-dynamic";
 
 interface CollectionDetailPageProps {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
   }>;
 }
 
@@ -48,8 +60,10 @@ function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
 
 export default async function CollectionDetailPage({
   params,
+  searchParams,
 }: CollectionDetailPageProps) {
   const { slug } = await params;
+  const { page } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -57,30 +71,36 @@ export default async function CollectionDetailPage({
   }
 
   const dashboardUser = getDashboardUser(session.user);
+  const requestedPage = parsePageParam(page);
   const [
-    collections,
+    recentDashboardCollections,
     sidebarItemTypes,
     collectionOptions,
-    collectionItems,
+    collection,
+    collectionItemCount,
   ] = await Promise.all([
-    getDashboardCollections({ limit: 100, userId: dashboardUser.id }),
+    getDashboardCollections({ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser.id }),
     getDashboardItemTypes({ userId: dashboardUser.id }),
     getDashboardCollectionOptions({ userId: dashboardUser.id }),
-    getDashboardItemsByCollectionSlug({
-      collectionSlug: slug,
-      userId: dashboardUser.id,
-    }),
+    getDashboardCollectionBySlug({ slug, userId: dashboardUser.id }),
+    getDashboardItemCountByCollectionSlug({ collectionSlug: slug, userId: dashboardUser.id }),
   ]);
-  const collection = collections.find(
-    (dashboardCollection) => dashboardCollection.slug === slug,
-  );
 
   if (!collection) {
     notFound();
   }
 
-  const recentSidebarCollections = collections.slice(0, 4);
-  const favoriteCollections = collections
+  const totalPages = getTotalPages(collectionItemCount, COLLECTIONS_PER_PAGE);
+  const currentPage = Math.min(requestedPage, totalPages);
+  const collectionItems = await getDashboardItemsByCollectionSlug({
+    collectionSlug: slug,
+    limit: COLLECTIONS_PER_PAGE,
+    offset: getPageOffset(currentPage, COLLECTIONS_PER_PAGE),
+    userId: dashboardUser.id,
+  });
+
+  const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
+  const favoriteCollections = recentDashboardCollections
     .filter((dashboardCollection) => dashboardCollection.isFavorite)
     .slice(0, 4);
 
@@ -101,6 +121,9 @@ export default async function CollectionDetailPage({
         collection={collection}
         collectionItems={collectionItems}
         collectionOptions={collectionOptions}
+        currentPage={currentPage}
+        totalItemCount={collectionItemCount}
+        totalPages={totalPages}
       />
     </DashboardFrame>
   );
@@ -110,10 +133,22 @@ function CollectionDetailMain({
   collection,
   collectionItems,
   collectionOptions,
+  currentPage,
+  totalItemCount,
+  totalPages,
 }: {
-  collection: DashboardCollection;
+  collection: {
+    description: string;
+    id: string;
+    isFavorite: boolean;
+    name: string;
+    slug: string;
+  };
   collectionItems: DashboardItem[];
   collectionOptions: DashboardCollectionOption[];
+  currentPage: number;
+  totalItemCount: number;
+  totalPages: number;
 }) {
   return (
     <ItemDrawerProvider availableCollections={collectionOptions}>
@@ -145,15 +180,23 @@ function CollectionDetailMain({
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-2xl font-semibold tracking-tight">Items</h2>
               <p className="text-sm text-muted-foreground">
-                {collectionItems.length} saved items
+                {totalItemCount} saved items
               </p>
             </div>
             {collectionItems.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {collectionItems.map((item) => (
-                  <ItemCard item={item} key={item.id} />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {collectionItems.map((item) => (
+                    <ItemCard item={item} key={item.id} />
+                  ))}
+                </div>
+                <PaginationNav
+                  basePath={`/collections/${collection.slug}`}
+                  className="pt-2"
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                />
+              </>
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-card p-8 text-card-foreground">
                 <p className="text-lg font-medium">

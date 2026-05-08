@@ -123,7 +123,9 @@ describe("dashboard frame sidebar", () => {
     );
 
     assert.match(source, /if \(!session\?\.user\?\.id\)/);
-    assert.match(source, /getDashboardCollections\(\{ limit: 6, userId: dashboardUser\.id \}\)/);
+    assert.match(source, /DASHBOARD_COLLECTIONS_LIMIT/);
+    assert.match(source, /DASHBOARD_RECENT_ITEMS_LIMIT/);
+    assert.match(source, /getDashboardCollections\(\{ limit: DASHBOARD_COLLECTIONS_LIMIT, userId: dashboardUser\.id \}\)/);
     assert.match(source, /getDashboardCollectionStats\(\{ userId: dashboardUser\.id \}\)/);
     assert.match(source, /getDashboardItemStats\(\{ userId: dashboardUser\.id \}\)/);
     assert.match(source, /getDashboardItemTypes\(\{ userId: dashboardUser\.id \}\)/);
