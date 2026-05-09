@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { createCollection } from "@/lib/db/collections";
+import {
+  createCollection,
+  getDashboardCollectionCount,
+} from "@/lib/db/collections";
+import { getCollectionCreationLimitResult } from "@/lib/usage-limits";
 
 const createCollectionSchema = z.object({
   description: z
@@ -54,6 +58,23 @@ export async function POST(request: Request): Promise<NextResponse> {
         error: getValidationError(parsedInput.error),
       },
       { status: 400 },
+    );
+  }
+
+  const currentPlan = session.user.plan === "pro" ? "pro" : "free";
+  const collectionCount = await getDashboardCollectionCount({ userId });
+  const collectionCreationLimitResult = getCollectionCreationLimitResult({
+    currentCount: collectionCount,
+    plan: currentPlan,
+  });
+
+  if (!collectionCreationLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: collectionCreationLimitResult.reason,
+      },
+      { status: 403 },
     );
   }
 

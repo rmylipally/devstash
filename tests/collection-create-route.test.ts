@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   createCollection: vi.fn(),
   deleteCollection: vi.fn(),
+  getDashboardCollectionCount: vi.fn(),
   toggleCollectionFavorite: vi.fn(),
   updateCollection: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock("@/auth", () => ({
 vi.mock("@/lib/db/collections", () => ({
   createCollection: mocks.createCollection,
   deleteCollection: mocks.deleteCollection,
+  getDashboardCollectionCount: mocks.getDashboardCollectionCount,
   toggleCollectionFavorite: mocks.toggleCollectionFavorite,
   updateCollection: mocks.updateCollection,
 }));
@@ -28,8 +30,10 @@ describe("collection create API", () => {
     mocks.auth.mockReset();
     mocks.createCollection.mockReset();
     mocks.deleteCollection.mockReset();
+    mocks.getDashboardCollectionCount.mockReset();
     mocks.toggleCollectionFavorite.mockReset();
     mocks.updateCollection.mockReset();
+    mocks.getDashboardCollectionCount.mockResolvedValue(0);
   });
 
   it("creates a collection for the signed-in user", async () => {
@@ -104,6 +108,27 @@ describe("collection create API", () => {
     );
 
     assert.equal(response.status, 401);
+    assert.equal(mocks.createCollection.mock.calls.length, 0);
+  });
+
+  it("blocks free users after reaching collection limit", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "free" } });
+    mocks.getDashboardCollectionCount.mockResolvedValue(3);
+
+    const response = await POST(
+      new Request("https://devstash.test/api/collections", {
+        body: JSON.stringify({
+          description: "Reusable React examples",
+          name: "React Patterns",
+        }),
+        method: "POST",
+      }),
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(body.success, false);
+    assert.match(body.error, /Free plan is limited to 3 collections/);
     assert.equal(mocks.createCollection.mock.calls.length, 0);
   });
 });

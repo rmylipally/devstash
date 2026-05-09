@@ -41,13 +41,14 @@ interface ItemsByTypePageProps {
 function getDashboardUser(sessionUser: Session["user"]): DashboardUser {
   const email = sessionUser.email ?? currentUser.email;
   const name = sessionUser.name ?? email.split("@")[0] ?? currentUser.name;
+  const plan = sessionUser.plan === "pro" ? "pro" : "free";
 
   return {
     email,
     id: sessionUser.id,
     image: sessionUser.image ?? null,
     name,
-    plan: currentUser.plan,
+    plan,
   };
 }
 

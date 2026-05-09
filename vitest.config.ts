@@ -20,6 +20,7 @@ export default defineConfig({
       "tests/auth-password-reset.test.ts",
       "tests/auth-setup.test.ts",
       "tests/auth-ui.test.tsx",
+      "tests/billing-gating.test.ts",
       "tests/code-editor-ui.test.ts",
       "tests/collection-create-route.test.ts",
       "tests/collection-create-ui.test.ts",
@@ -49,6 +50,7 @@ export default defineConfig({
       "tests/seed-data.test.ts",
       "tests/stripe-checkout-route.test.ts",
       "tests/stripe-portal-route.test.ts",
+      "tests/stripe-webhook-route.test.ts",
       "tests/usage-limits.test.ts",
     ],
     server: {

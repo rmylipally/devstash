@@ -46,8 +46,14 @@ STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_PRICE_PRO_MONTHLY=
 STRIPE_PRICE_PRO_YEARLY=
+STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+For local webhook testing, run `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+and copy the CLI signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+Detailed Stripe manual testing steps are documented in `docs/stripe-cli-testing.md`.
 
 For SAML2AWS/local development, raw AWS key variables can be left empty. DevStash will read `~/.aws/credentials` using `S3_AWS_PROFILE`, then `AWS_PROFILE`, then `AWS_DEFAULT_PROFILE`, then `default`.
 

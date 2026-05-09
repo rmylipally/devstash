@@ -31,7 +31,6 @@ import {
   type ProfileData,
   type ProfileItemKind,
 } from "@/lib/db/profile";
-import { currentUser } from "@/lib/mock-data";
 import { DASHBOARD_COLLECTIONS_LIMIT } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
@@ -83,13 +82,16 @@ function getUsageStats(profile: ProfileData) {
   ];
 }
 
-function getProfileDashboardUser(profile: ProfileData): DashboardUser {
+function getProfileDashboardUser(
+  profile: ProfileData,
+  plan: "free" | "pro",
+): DashboardUser {
   return {
     email: profile.email,
     id: profile.id,
     image: profile.image,
     name: profile.name,
-    plan: currentUser.plan,
+    plan,
   };
 }
 
@@ -125,7 +127,10 @@ export default async function ProfilePage() {
 
   return (
     <DashboardFrame
-      currentUser={getProfileDashboardUser(profile)}
+      currentUser={getProfileDashboardUser(
+        profile,
+        session.user.plan === "pro" ? "pro" : "free",
+      )}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
       newItemAction={

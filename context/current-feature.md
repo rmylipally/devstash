@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Stripe Integration - Phase 2 (Webhooks, Feature Gating, and UI)
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add a Stripe webhook endpoint with signature verification and idempotent subscription-event handling.
+- Persist Stripe-driven plan/customer/subscription updates on the user record.
+- Enforce free-tier limits and Pro-only behavior in item and collection creation paths.
+- Build and integrate billing UI components for upgrade/manage subscription flows.
+- Add automated webhook/gating tests and Stripe CLI-based manual validation docs.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Source spec: context/features/stripe-phase-2-spec.md
+- Depends on Stripe Phase 1 foundations (`src/lib/stripe.ts`, `src/lib/billing.ts`, `src/lib/usage-limits.ts`).
+- Stripe CLI testing is required in this phase, including local webhook forwarding and manual event scenarios.
+- Include `STRIPE_WEBHOOK_SECRET` in docs and runtime handling for verified webhook processing.
+- Scope includes webhook + gating + billing UI; excludes coupons, advanced analytics, and extra pricing models.
 
 ## History
 
@@ -145,3 +153,5 @@
 - 2026-05-09: Loaded Stripe Integration - Phase 1 (Core Infrastructure) from `context/features/stripe-phase-1-spec.md` and set the feature status to Not Started.
 - 2026-05-09: Started Stripe Integration - Phase 1 (Core Infrastructure) implementation on `feature/stripe-integration-phase-1-core-infrastructure`.
 - 2026-05-09: Completed Stripe Integration - Phase 1 (Core Infrastructure) with Stripe dependency setup, billing/usage-limit helper modules, new checkout and portal API routes, auth session plan sync updates, settings billing section scaffolding, aligned Stripe environment docs, and new usage-limits/Stripe route tests passing along with full test suite and production build.
+- 2026-05-09: Loaded Stripe Integration - Phase 2 (Webhooks, Feature Gating, and UI) from `context/features/stripe-phase-2-spec.md` and set the feature status to Not Started.
+- 2026-05-09: Started Stripe Integration - Phase 2 (Webhooks, Feature Gating, and UI) implementation on `feature/stripe-integration-phase-2-webhooks-feature-gating-ui`.

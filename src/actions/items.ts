@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import {
   createItem as createItemRecord,
   deleteItem as deleteItemRecord,
+  getDashboardItemStats,
   getItemDetail,
   toggleItemFavorite as toggleItemFavoriteRecord,
   toggleItemPin as toggleItemPinRecord,
@@ -20,6 +21,10 @@ import {
   isUploadItemKind,
   validateUploadMetadata,
 } from "@/lib/storage/uploads";
+import {
+  getItemCreationLimitResult,
+  getItemKindPlanAccessResult,
+} from "@/lib/usage-limits";
 
 type CreateItemActionResult =
   | {
@@ -309,6 +314,38 @@ export async function createItem(
   }
 
   try {
+    const itemStats = await getDashboardItemStats({
+      userId,
+    });
+    const currentPlan = session.user.plan === "pro" ? "pro" : "free";
+    const kindPlanAccessResult = getItemKindPlanAccessResult({
+      kind: parsedData.data.kind,
+      plan: currentPlan,
+    });
+
+    if (!kindPlanAccessResult.allowed) {
+      return {
+        success: false,
+        error:
+          kindPlanAccessResult.reason ??
+          "Your current plan does not allow creating this item type.",
+      };
+    }
+
+    const itemCreationLimitResult = getItemCreationLimitResult({
+      currentCount: itemStats.total,
+      plan: currentPlan,
+    });
+
+    if (!itemCreationLimitResult.allowed) {
+      return {
+        success: false,
+        error:
+          itemCreationLimitResult.reason ??
+          "You have reached your plan item limit.",
+      };
+    }
+
     const createdItem = await createItemRecord({
       data: getItemCreatePayload(parsedData.data),
       userId,

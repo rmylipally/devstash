@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
+import { BillingSettingsCard } from "@/components/profile/BillingSettingsCard";
 import { EditorPreferencesSettings } from "@/components/profile/EditorPreferencesSettings";
 import { ProfileAccountActions } from "@/components/profile/ProfileAccountActions";
 import {
@@ -134,26 +135,7 @@ function SettingsMain({
           />
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5 text-card-foreground">
-          <h2 className="text-xl font-semibold">Billing</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Current plan: <span className="font-medium text-foreground">{currentPlan === "pro" ? "Pro" : "Free"}</span>
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-              type="button"
-            >
-              Upgrade to Pro
-            </button>
-            <button
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-              type="button"
-            >
-              Manage subscription
-            </button>
-          </div>
-        </section>
+        <BillingSettingsCard currentPlan={currentPlan} />
 
         <EditorPreferencesSettings />
       </div>

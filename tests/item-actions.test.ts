@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   createItemRecord: vi.fn(),
   deleteItemRecord: vi.fn(),
   deleteS3Object: vi.fn(),
+  getDashboardItemStats: vi.fn(),
   getItemDetail: vi.fn(),
   toggleItemFavoriteRecord: vi.fn(),
   toggleItemPinRecord: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/auth", () => ({
 vi.mock("@/lib/db/items", () => ({
   createItem: mocks.createItemRecord,
   deleteItem: mocks.deleteItemRecord,
+  getDashboardItemStats: mocks.getDashboardItemStats,
   getItemDetail: mocks.getItemDetail,
   toggleItemFavorite: mocks.toggleItemFavoriteRecord,
   toggleItemPin: mocks.toggleItemPinRecord,
@@ -59,14 +61,16 @@ describe("item actions", () => {
     mocks.createItemRecord.mockReset();
     mocks.deleteItemRecord.mockReset();
     mocks.deleteS3Object.mockReset();
+    mocks.getDashboardItemStats.mockReset();
     mocks.getItemDetail.mockReset();
     mocks.toggleItemFavoriteRecord.mockReset();
     mocks.toggleItemPinRecord.mockReset();
     mocks.updateItemRecord.mockReset();
+    mocks.getDashboardItemStats.mockResolvedValue({ favorite: 0, total: 0 });
   });
 
   it("creates an item for the signed-in user with normalized fields", async () => {
-    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "pro" } });
     mocks.createItemRecord.mockResolvedValue({
       ...itemDetail,
       id: "item-new-snippet",
@@ -168,7 +172,7 @@ describe("item actions", () => {
   });
 
   it("creates image items with uploaded file metadata", async () => {
-    mocks.auth.mockResolvedValue({ user: { id: "user-123" } });
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "pro" } });
     mocks.createItemRecord.mockResolvedValue({
       ...itemDetail,
       contentKind: "file",

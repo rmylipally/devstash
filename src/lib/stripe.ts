@@ -28,3 +28,7 @@ export function getStripePriceIds() {
     proYearly: requireEnv("STRIPE_PRICE_PRO_YEARLY"),
   } as const;
 }
+
+export function getStripeWebhookSecret(): string {
+  return requireEnv("STRIPE_WEBHOOK_SECRET");
+}
