@@ -1,24 +1,16 @@
-# Current Feature: Stripe Integration - Phase 1 (Core Infrastructure)
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Install and configure Stripe core infrastructure for server-side billing operations.
-- Add checkout and customer portal API routes for Pro monthly/yearly subscription flows.
-- Extend auth/session typing and callbacks so user plan is available from real session data.
-- Create a reusable usage-limits module for free-tier constraints.
-- Add unit tests for usage-limits and route tests for checkout/portal endpoints.
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Source spec: context/features/stripe-phase-1-spec.md
-- Reference plan: docs/stripe-integration-plan.md
-- This phase includes core infrastructure only and excludes webhook handling and full feature gating.
-- Required environment variables in scope include Stripe secret and price IDs; webhook secret is phase 2.
-- Unit testing for usage-limits is mandatory in this phase.
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -152,3 +144,4 @@ In Progress
 - 2026-05-09: Completed Auth Nav and Dashboard Logo Alignment by reusing homepage top nav on sign-in/register screens, switching homepage and dashboard brand marks to the same folder icon, and removing the boxed DS mark from dashboard branding.
 - 2026-05-09: Loaded Stripe Integration - Phase 1 (Core Infrastructure) from `context/features/stripe-phase-1-spec.md` and set the feature status to Not Started.
 - 2026-05-09: Started Stripe Integration - Phase 1 (Core Infrastructure) implementation on `feature/stripe-integration-phase-1-core-infrastructure`.
+- 2026-05-09: Completed Stripe Integration - Phase 1 (Core Infrastructure) with Stripe dependency setup, billing/usage-limit helper modules, new checkout and portal API routes, auth session plan sync updates, settings billing section scaffolding, aligned Stripe environment docs, and new usage-limits/Stripe route tests passing along with full test suite and production build.
