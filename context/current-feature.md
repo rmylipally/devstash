@@ -1,16 +1,25 @@
-# Current Feature
+# Homepage Implementation
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Replace the current iframe/prototype root with a real Next.js homepage implementation
+- Use Tailwind + shadcn patterns consistent with the rest of the app
+- Keep implementation clean, reusable, and DRY
+- Ensure all buttons and links route to correct app destinations
+- Build the complete homepage sections from the approved mockup reference
+- Use server components by default and client components only for required interactivity
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Spec source: `context/features/homepage-spec.md`
+- Mockup references: `prototypes/homepage/index.html`, `prototypes/homepage/styles.css`, `prototypes/homepage/script.js`
+- Required interactive client behaviors: navbar scroll opacity, chaos icon animation/mouse repel, reveal-on-scroll, pricing cadence toggle
+- Routing: brand `/`, sign in `/sign-in`, get started and primary CTA `/register`, section anchors `#features` and `#pricing`
+- Preserve dark theme, accent colors, and responsive behavior from the homepage mockup spec
 
 ## History
 
