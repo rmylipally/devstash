@@ -1,23 +1,16 @@
-# Auth Nav and Dashboard Logo Alignment
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Add the homepage top navigation to the sign-in page
-- Add the homepage top navigation to the sign-up/register page
-- Add the same folder icon used in homepage nav to the dashboard nav logo area
-- Remove the existing boxed DS logo mark from dashboard nav branding
-- Keep branding and navigation behavior visually consistent across public auth pages and dashboard
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Feature loaded from inline description
-- Reuse existing homepage nav styles/components where practical to keep implementation DRY
-- Ensure sign-in and sign-up buttons/links still point to correct auth routes
-- Dashboard logo should use the homepage folder icon treatment while removing the DS box
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -148,3 +141,4 @@ In Progress
 - 2026-05-08: Completed Add Client-Side Sorting to Favorites Page with in-page sort controls for name/date/item type, ascending/descending direction toggle, and client-side sorting for favorite items and collections.
 - 2026-05-09: Completed Homepage Mockup with a standalone marketing prototype in `prototypes/homepage` (HTML/CSS/JS), full spec sections and animations, and root route wiring to render the mockup from `/` via static assets in `public/prototypes/homepage`.
 - 2026-05-09: Completed Homepage Implementation by replacing the iframe prototype on `/` with real Next.js server/client components using Tailwind + shadcn patterns, preserving the approved mockup visual/animations, and wiring CTA/navigation links to in-app routes.
+- 2026-05-09: Completed Auth Nav and Dashboard Logo Alignment by reusing homepage top nav on sign-in/register screens, switching homepage and dashboard brand marks to the same folder icon, and removing the boxed DS mark from dashboard branding.
