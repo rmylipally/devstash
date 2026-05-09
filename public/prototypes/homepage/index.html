@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevStash | Stop Losing Your Developer Knowledge</title>
+    <meta
+      name="description"
+      content="DevStash organizes your snippets, prompts, commands, notes, files, images, and links in one searchable hub."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-nav" id="siteNav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top" aria-label="DevStash homepage">
+          <span class="brand-mark" aria-hidden="true">DS</span>
+          <span class="brand-text">DevStash</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+        </nav>
+
+        <div class="nav-actions">
+          <a class="btn btn-ghost" href="#">Sign In</a>
+          <a class="btn btn-primary" href="#">Get Started</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero section-padding">
+        <div class="container hero-grid">
+          <div class="hero-copy reveal">
+            <p class="eyebrow">Developer Knowledge Hub</p>
+            <h1>
+              Stop Losing Your
+              <span class="gradient-text">Developer Knowledge</span>
+            </h1>
+            <p class="hero-sub">
+              Your snippets, commands, prompts, docs, and links are scattered across tools. DevStash gives
+              you one place to capture, organize, and instantly find everything.
+            </p>
+            <div class="hero-cta">
+              <a class="btn btn-primary btn-lg" href="#">Start Free</a>
+              <a class="btn btn-secondary btn-lg" href="#features">See Features</a>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal" aria-label="Chaos to order visual">
+            <section class="chaos-card" aria-label="Your knowledge today">
+              <h2>Your knowledge today...</h2>
+              <div class="chaos-field" id="chaosField">
+                <button class="floating-icon notion" data-icon="notion" type="button" aria-label="Notion">N</button>
+                <button class="floating-icon github" data-icon="github" type="button" aria-label="GitHub">GH</button>
+                <button class="floating-icon slack" data-icon="slack" type="button" aria-label="Slack">S</button>
+                <button class="floating-icon vscode" data-icon="vscode" type="button" aria-label="VS Code">VS</button>
+                <button class="floating-icon tabs" data-icon="tabs" type="button" aria-label="Browser tabs">TAB</button>
+                <button class="floating-icon terminal" data-icon="terminal" type="button" aria-label="Terminal">$</button>
+                <button class="floating-icon text" data-icon="text" type="button" aria-label="Text file">TXT</button>
+                <button class="floating-icon bookmark" data-icon="bookmark" type="button" aria-label="Bookmark">BM</button>
+              </div>
+            </section>
+
+            <div class="hero-arrow" aria-hidden="true">
+              <svg viewBox="0 0 140 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 30H125" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                <path d="M95 10L125 30L95 50" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+
+            <section class="order-card" aria-label="DevStash dashboard preview">
+              <h2>...with DevStash</h2>
+              <div class="dashboard-preview">
+                <aside class="dash-sidebar">
+                  <span>Dashboard</span>
+                  <span>Snippets</span>
+                  <span>Prompts</span>
+                  <span>Files</span>
+                  <span>Collections</span>
+                </aside>
+                <div class="dash-main">
+                  <div class="dash-main-header"></div>
+                  <div class="dash-grid">
+                    <article class="dash-card snippet"><h3>Snippet</h3></article>
+                    <article class="dash-card prompt"><h3>Prompt</h3></article>
+                    <article class="dash-card command"><h3>Command</h3></article>
+                    <article class="dash-card note"><h3>Note</h3></article>
+                    <article class="dash-card file"><h3>File</h3></article>
+                    <article class="dash-card image"><h3>Image</h3></article>
+                    <article class="dash-card url"><h3>Link</h3></article>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="features section-padding" id="features">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="eyebrow">Core Features</p>
+            <h2>Everything You Need to Build a Reliable Knowledge System</h2>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card snippet reveal"><h3>Code Snippets</h3><p>Save production-ready snippets with language context and tags.</p></article>
+            <article class="feature-card prompt reveal"><h3>AI Prompts</h3><p>Store winning prompts and their best output variations.</p></article>
+            <article class="feature-card url reveal"><h3>Instant Search</h3><p>Find any item in seconds with fast global search.</p></article>
+            <article class="feature-card command reveal"><h3>Commands</h3><p>Capture terminal commands and reusable shell recipes.</p></article>
+            <article class="feature-card file reveal"><h3>Files & Docs</h3><p>Keep docs, references, and specs linked to your workflow.</p></article>
+            <article class="feature-card note reveal"><h3>Collections</h3><p>Group related knowledge into project-based collections.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="ai section-padding" id="ai">
+        <div class="container ai-grid">
+          <div class="ai-copy reveal">
+            <p class="badge">Pro Feature</p>
+            <h2>Let AI Structure Your Messy Notes</h2>
+            <ul class="ai-list">
+              <li>Generate tags from raw notes and snippets</li>
+              <li>Create summaries for long technical references</li>
+              <li>Suggest related items from your existing stash</li>
+              <li>Improve prompt quality with saved context</li>
+            </ul>
+          </div>
+          <div class="editor-mock reveal" aria-label="AI generated tags demo">
+            <div class="editor-topbar">
+              <span></span><span></span><span></span>
+              <p>snippet.ts</p>
+            </div>
+            <pre><code>export function fetchProfile(id: string) {
+  return api.get(`/profile/${id}`);
+}
+
+const recommendation = await ai.suggestTags(content);</code></pre>
+            <div class="tag-suggestion">
+              <h3>AI Generated Tags</h3>
+              <div class="tag-row">
+                <span>#typescript</span>
+                <span>#api</span>
+                <span>#profile</span>
+                <span>#helper</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pricing section-padding" id="pricing">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="eyebrow">Pricing</p>
+            <h2>Simple Pricing For Solo Developers</h2>
+          </div>
+
+          <div class="pricing-toggle reveal" role="group" aria-label="Billing cadence">
+            <button class="toggle-btn active" data-billing="monthly" type="button">Monthly</button>
+            <button class="toggle-btn" data-billing="yearly" type="button">Yearly</button>
+            <span class="toggle-note">Yearly saves $24</span>
+          </div>
+
+          <div class="pricing-grid">
+            <article class="price-card reveal" data-plan="free">
+              <h3>Free</h3>
+              <p class="price" data-monthly="$0" data-yearly="$0">$0</p>
+              <p class="price-meta">Forever</p>
+              <ul>
+                <li>Up to 50 items</li>
+                <li>3 collections</li>
+                <li>Core search</li>
+              </ul>
+              <a class="btn btn-secondary" href="#">Start Free</a>
+            </article>
+
+            <article class="price-card pro reveal" data-plan="pro">
+              <p class="popular">Most Popular</p>
+              <h3>Pro</h3>
+              <p class="price" data-monthly="$8/mo" data-yearly="$72/yr">$8/mo</p>
+              <p class="price-meta">Unlimited everything</p>
+              <ul>
+                <li>Unlimited items and collections</li>
+                <li>AI tags and summaries</li>
+                <li>Priority support</li>
+              </ul>
+              <a class="btn btn-primary" href="#">Upgrade to Pro</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta section-padding">
+        <div class="container reveal cta-panel">
+          <h2>Ready to Organize Your Knowledge?</h2>
+          <p>Start with the free plan and upgrade whenever your workflow grows.</p>
+          <a class="btn btn-primary btn-lg" href="#">Get Started</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <a class="brand" href="#top">
+            <span class="brand-mark" aria-hidden="true">DS</span>
+            <span class="brand-text">DevStash</span>
+          </a>
+          <p>Developer knowledge hub for modern teams.</p>
+        </div>
+        <div>
+          <h3>Product</h3>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#">Roadmap</a>
+        </div>
+        <div>
+          <h3>Resources</h3>
+          <a href="#">Docs</a>
+          <a href="#">API</a>
+          <a href="#">Changelog</a>
+        </div>
+        <div>
+          <h3>Company</h3>
+          <a href="#">About</a>
+          <a href="#">Contact</a>
+          <a href="#">Privacy</a>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <p>&copy; <span id="year"></span> DevStash. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

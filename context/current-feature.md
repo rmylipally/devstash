@@ -1,4 +1,4 @@
-# Pinned Items
+# Homepage Mockup
 
 ## Status
 
@@ -6,22 +6,23 @@ In Progress
 
 ## Goals
 
-- Create `toggleItemPin` server action with auth scoping and error handling
-- Wire onClick handler to Pin button in ItemDrawer (button exists but non-functional)
-- Implement optimistic UI updates for instant feedback
-- Add toast notification on success/error
-- Pinned items sort to top of listings in dashboard and collection views
-- Follow Favorite Button implementation pattern from previous feature
-- Items only (not collections); Pin icon on ItemCard remains static indicator
+- Create marketing homepage mockup for DevStash in `prototypes/homepage/`
+- Add fixed top navigation with logo, links, and auth CTAs
+- Build hero section with headline/subheadline/CTAs and chaos-to-order visual
+- Implement animated chaos container icons with drift, bounce, and mouse-repel behavior
+- Add transform arrow with pulse animation and dashboard preview mockup
+- Add features, AI capabilities, pricing, CTA, and footer sections
+- Implement scroll fade-in effects and navbar opacity-on-scroll behavior
+- Ensure responsive mobile layout with stacked hero visual and rotated arrow
 
 ## Notes
 
-- Button UI already exists in ItemDrawer but has no onClick handler
-- Follow same DB helper + server action + client component pattern as favorites feature
-- Database: Item model already has `isPinned` boolean field
-- Pinned items should appear at top of all item listings (dashboard, collections, favorites)
-- Dashboard has dedicated "pinned items" section that should populate
-- Reference: pinned-spec.md in context/features/
+- Spec source: `context/features/homepage-mockup-spec.md`
+- Output files required: `prototypes/homepage/index.html`, `prototypes/homepage/styles.css`, `prototypes/homepage/script.js`
+- Use dark theme with item-type accent colors provided in the spec
+- Chaos container should include 8 recognizable developer-tool icons
+- Keep the dashboard preview simplified and visually aligned to existing DevStash style
+- Pricing section needs free vs pro cards plus yearly toggle option
 
 ## History
 
