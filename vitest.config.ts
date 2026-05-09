@@ -44,6 +44,7 @@ export default defineConfig({
       "tests/item-type-page.test.tsx",
       "tests/markdown-editor-ui.test.ts",
       "tests/profile.test.tsx",
+      "tests/pro-upgrade-card.test.tsx",
       "tests/quick-copy-card-ui.test.ts",
       "tests/rate-limit.test.ts",
       "tests/s3-storage.test.ts",

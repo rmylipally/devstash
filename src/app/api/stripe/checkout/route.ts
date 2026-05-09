@@ -32,7 +32,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     input = await request.json();
-  } catch {
+  } catch (error) {
+    console.error("[checkout] Failed to parse JSON body:", error);
     return NextResponse.json(
       {
         success: false,
@@ -45,6 +46,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const parsedInput = checkoutInputSchema.safeParse(input);
 
   if (!parsedInput.success) {
+    console.error("[checkout] Input validation failed:", parsedInput.error.issues);
     return NextResponse.json(
       {
         success: false,
@@ -55,8 +57,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
+    console.log("[checkout] Starting checkout for user:", userId);
     const stripe = getStripeClient();
     const stripePriceIds = getStripePriceIds();
+    
+    console.log("[checkout] Price IDs:", stripePriceIds);
+
     const user = await prisma.user.findUnique({
       select: {
         email: true,
@@ -67,6 +73,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     if (!user) {
+      console.error("[checkout] User not found:", userId);
       return NextResponse.json(
         {
           success: false,
@@ -76,59 +83,93 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
+    console.log("[checkout] Found user:", { email: user.email, hasCustomerId: !!user.stripeCustomerId });
+
     let customerId = user.stripeCustomerId;
 
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          userId,
-        },
-        name: user.name ?? undefined,
-      });
-      customerId = customer.id;
+      console.log("[checkout] Creating Stripe customer for user:", userId);
+      try {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            userId,
+          },
+          name: user.name ?? undefined,
+        });
+        customerId = customer.id;
+        console.log("[checkout] Created Stripe customer:", customerId);
 
-      await prisma.user.update({
-        data: {
-          stripeCustomerId: customerId,
-        },
-        where: {
-          id: userId,
-        },
-      });
+        await prisma.user.update({
+          data: {
+            stripeCustomerId: customerId,
+          },
+          where: {
+            id: userId,
+          },
+        });
+        console.log("[checkout] Saved customer ID to database");
+      } catch (error) {
+        console.error("[checkout] Failed to create Stripe customer:", error);
+        throw error;
+      }
     }
 
     const billingCycle = parsedInput.data.billingCycle as BillingCycle;
     const priceId = getPriceIdForCycle(billingCycle, stripePriceIds);
-    const baseUrl = getAppBaseUrl();
-    const checkoutSession = await stripe.checkout.sessions.create({
-      cancel_url: `${baseUrl}/settings?billing=cancelled`,
-      client_reference_id: userId,
-      customer: customerId,
-      line_items: [
+    
+    if (!priceId) {
+      console.error("[checkout] Could not find price ID for billing cycle:", billingCycle, stripePriceIds);
+      return NextResponse.json(
         {
-          price: priceId,
-          quantity: 1,
+          success: false,
+          error: "Invalid billing cycle. Try again.",
         },
-      ],
-      metadata: {
-        billingCycle,
-        userId,
-      },
-      mode: "subscription",
-      success_url: `${baseUrl}/settings?billing=success`,
-    });
+        { status: 400 },
+      );
+    }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          url: checkoutSession.url,
+    console.log("[checkout] Using price ID:", priceId, "for billing cycle:", billingCycle);
+
+    const baseUrl = getAppBaseUrl();
+    console.log("[checkout] Base URL:", baseUrl);
+
+    try {
+      const checkoutSession = await stripe.checkout.sessions.create({
+        cancel_url: `${baseUrl}/settings?billing=cancelled`,
+        client_reference_id: userId,
+        customer: customerId,
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          billingCycle,
+          userId,
         },
-      },
-      { status: 200 },
-    );
-  } catch {
+        mode: "subscription",
+        success_url: `${baseUrl}/settings?billing=success`,
+      });
+
+      console.log("[checkout] Created checkout session:", checkoutSession.id, "URL:", !!checkoutSession.url);
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            url: checkoutSession.url,
+          },
+        },
+        { status: 200 },
+      );
+    } catch (error) {
+      console.error("[checkout] Failed to create Stripe checkout session:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("[checkout] Unexpected error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,

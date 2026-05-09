@@ -78,7 +78,6 @@ describe("item type page", () => {
 
     assert.match(itemsByTypePageSource, /getItemKindPlanAccessResult/);
     assert.match(itemsByTypePageSource, /if \(!itemTypePlanAccess\.allowed\)/);
-    assert.match(itemsByTypePageSource, /ProUpgradeRequiredPage/);
-    assert.match(itemsByTypePageSource, /Upgrade to Pro/);
+    assert.match(itemsByTypePageSource, /ProUpgradeCard/);
   });
 });
