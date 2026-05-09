@@ -111,7 +111,7 @@ export default async function ItemsByTypePage({
         }
         recentCollections={recentSidebarCollections}
       >
-        <ProUpgradeRequiredPage itemTypeLabel={itemType.pluralLabel} />
+        <ProUpgradeCard currentPlan={dashboardUser.plan} itemTypeLabel={itemType.pluralLabel} />
       </DashboardFrame>
     );
   }
@@ -144,9 +144,7 @@ export default async function ItemsByTypePage({
       currentUser={dashboardUser}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
-      newItemAction={
-        <ItemCreateCard currentPlan={dashboardUser.plan}ableCollections={collectionOptions} />
-      }
+      newItemAction={typeCreateAction}
       recentCollections={recentSidebarCollections}
     >
       <ItemTypePage
