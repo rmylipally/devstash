@@ -1,25 +1,16 @@
-# Homepage Implementation
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Replace the current iframe/prototype root with a real Next.js homepage implementation
-- Use Tailwind + shadcn patterns consistent with the rest of the app
-- Keep implementation clean, reusable, and DRY
-- Ensure all buttons and links route to correct app destinations
-- Build the complete homepage sections from the approved mockup reference
-- Use server components by default and client components only for required interactivity
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Spec source: `context/features/homepage-spec.md`
-- Mockup references: `prototypes/homepage/index.html`, `prototypes/homepage/styles.css`, `prototypes/homepage/script.js`
-- Required interactive client behaviors: navbar scroll opacity, chaos icon animation/mouse repel, reveal-on-scroll, pricing cadence toggle
-- Routing: brand `/`, sign in `/sign-in`, get started and primary CTA `/register`, section anchors `#features` and `#pricing`
-- Preserve dark theme, accent colors, and responsive behavior from the homepage mockup spec
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -149,3 +140,4 @@ In Progress
 - 2026-05-08: Completed Add Favorite Toggle Buttons in Drawer, Collection Page, and Cards with server-backed favorite toggles for items and collections across drawer actions, collection cards/pages, and shared list/card surfaces.
 - 2026-05-08: Completed Add Client-Side Sorting to Favorites Page with in-page sort controls for name/date/item type, ascending/descending direction toggle, and client-side sorting for favorite items and collections.
 - 2026-05-09: Completed Homepage Mockup with a standalone marketing prototype in `prototypes/homepage` (HTML/CSS/JS), full spec sections and animations, and root route wiring to render the mockup from `/` via static assets in `public/prototypes/homepage`.
+- 2026-05-09: Completed Homepage Implementation by replacing the iframe prototype on `/` with real Next.js server/client components using Tailwind + shadcn patterns, preserving the approved mockup visual/animations, and wiring CTA/navigation links to in-app routes.
