@@ -42,6 +42,11 @@ AWS_REGION=us-east-1
 S3_AWS_PROFILE=
 AWS_SHARED_CREDENTIALS_FILE=
 S3_BUCKET_NAME=eapi-chc-dev-ets-attachments
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_PRICE_PRO_MONTHLY=
+STRIPE_PRICE_PRO_YEARLY=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 For SAML2AWS/local development, raw AWS key variables can be left empty. DevStash will read `~/.aws/credentials` using `S3_AWS_PROFILE`, then `AWS_PROFILE`, then `AWS_DEFAULT_PROFILE`, then `default`.

@@ -47,6 +47,9 @@ export default defineConfig({
       "tests/rate-limit.test.ts",
       "tests/s3-storage.test.ts",
       "tests/seed-data.test.ts",
+      "tests/stripe-checkout-route.test.ts",
+      "tests/stripe-portal-route.test.ts",
+      "tests/usage-limits.test.ts",
     ],
     server: {
       deps: {
