@@ -1,28 +1,16 @@
-# Homepage Mockup
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Set to: Not Started, In Progress, or Complete -->
 
 ## Goals
 
-- Create marketing homepage mockup for DevStash in `prototypes/homepage/`
-- Add fixed top navigation with logo, links, and auth CTAs
-- Build hero section with headline/subheadline/CTAs and chaos-to-order visual
-- Implement animated chaos container icons with drift, bounce, and mouse-repel behavior
-- Add transform arrow with pulse animation and dashboard preview mockup
-- Add features, AI capabilities, pricing, CTA, and footer sections
-- Implement scroll fade-in effects and navbar opacity-on-scroll behavior
-- Ensure responsive mobile layout with stacked hero visual and rotated arrow
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Spec source: `context/features/homepage-mockup-spec.md`
-- Output files required: `prototypes/homepage/index.html`, `prototypes/homepage/styles.css`, `prototypes/homepage/script.js`
-- Use dark theme with item-type accent colors provided in the spec
-- Chaos container should include 8 recognizable developer-tool icons
-- Keep the dashboard preview simplified and visually aligned to existing DevStash style
-- Pricing section needs free vs pro cards plus yearly toggle option
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -151,3 +139,4 @@ In Progress
 - 2026-05-08: Started Add Client-Side Sorting to Favorites Page implementation on `feature/client-side-sorting-favorites-page`.
 - 2026-05-08: Completed Add Favorite Toggle Buttons in Drawer, Collection Page, and Cards with server-backed favorite toggles for items and collections across drawer actions, collection cards/pages, and shared list/card surfaces.
 - 2026-05-08: Completed Add Client-Side Sorting to Favorites Page with in-page sort controls for name/date/item type, ascending/descending direction toggle, and client-side sorting for favorite items and collections.
+- 2026-05-09: Completed Homepage Mockup with a standalone marketing prototype in `prototypes/homepage` (HTML/CSS/JS), full spec sections and animations, and root route wiring to render the mockup from `/` via static assets in `public/prototypes/homepage`.
