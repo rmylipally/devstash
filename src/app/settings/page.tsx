@@ -14,7 +14,6 @@ import {
 } from "@/lib/db/collections";
 import { getDashboardItemTypes } from "@/lib/db/items";
 import { getProfileData } from "@/lib/db/profile";
-import { currentUser } from "@/lib/mock-data";
 import { DASHBOARD_COLLECTIONS_LIMIT } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
@@ -24,13 +23,13 @@ function getDashboardUser(profile: {
   id: string;
   image?: string | null;
   name: string;
-}): DashboardUser {
+}, plan: "free" | "pro"): DashboardUser {
   return {
     email: profile.email,
     id: profile.id,
     image: profile.image ?? null,
     name: profile.name,
-    plan: currentUser.plan,
+    plan,
   };
 }
 
@@ -70,7 +69,7 @@ export default async function SettingsPage() {
 
   return (
     <DashboardFrame
-      currentUser={getDashboardUser(profile)}
+      currentUser={getDashboardUser(profile, session.user.plan ?? "free")}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
       newItemAction={<ItemCreateButton availableCollections={collectionOptions} />}
@@ -80,6 +79,7 @@ export default async function SettingsPage() {
         accountEmail={profile.email}
         accountName={profile.name}
         canChangePassword={profile.canChangePassword}
+        currentPlan={session.user.plan ?? "free"}
       />
     </DashboardFrame>
   );
@@ -89,10 +89,12 @@ function SettingsMain({
   accountEmail,
   accountName,
   canChangePassword,
+  currentPlan,
 }: {
   accountEmail: string;
   accountName: string;
   canChangePassword: boolean;
+  currentPlan: "free" | "pro";
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
@@ -130,6 +132,27 @@ function SettingsMain({
             accountEmail={accountEmail}
             canChangePassword={canChangePassword}
           />
+        </section>
+
+        <section className="rounded-lg border border-border bg-card p-5 text-card-foreground">
+          <h2 className="text-xl font-semibold">Billing</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Current plan: <span className="font-medium text-foreground">{currentPlan === "pro" ? "Pro" : "Free"}</span>
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              type="button"
+            >
+              Upgrade to Pro
+            </button>
+            <button
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              type="button"
+            >
+              Manage subscription
+            </button>
+          </div>
         </section>
 
         <EditorPreferencesSettings />

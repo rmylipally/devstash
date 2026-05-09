@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Stripe Integration - Phase 1 (Core Infrastructure)
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Install and configure Stripe core infrastructure for server-side billing operations.
+- Add checkout and customer portal API routes for Pro monthly/yearly subscription flows.
+- Extend auth/session typing and callbacks so user plan is available from real session data.
+- Create a reusable usage-limits module for free-tier constraints.
+- Add unit tests for usage-limits and route tests for checkout/portal endpoints.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Source spec: context/features/stripe-phase-1-spec.md
+- Reference plan: docs/stripe-integration-plan.md
+- This phase includes core infrastructure only and excludes webhook handling and full feature gating.
+- Required environment variables in scope include Stripe secret and price IDs; webhook secret is phase 2.
+- Unit testing for usage-limits is mandatory in this phase.
 
 ## History
 
@@ -142,3 +150,5 @@
 - 2026-05-09: Completed Homepage Mockup with a standalone marketing prototype in `prototypes/homepage` (HTML/CSS/JS), full spec sections and animations, and root route wiring to render the mockup from `/` via static assets in `public/prototypes/homepage`.
 - 2026-05-09: Completed Homepage Implementation by replacing the iframe prototype on `/` with real Next.js server/client components using Tailwind + shadcn patterns, preserving the approved mockup visual/animations, and wiring CTA/navigation links to in-app routes.
 - 2026-05-09: Completed Auth Nav and Dashboard Logo Alignment by reusing homepage top nav on sign-in/register screens, switching homepage and dashboard brand marks to the same folder icon, and removing the boxed DS mark from dashboard branding.
+- 2026-05-09: Loaded Stripe Integration - Phase 1 (Core Infrastructure) from `context/features/stripe-phase-1-spec.md` and set the feature status to Not Started.
+- 2026-05-09: Started Stripe Integration - Phase 1 (Core Infrastructure) implementation on `feature/stripe-integration-phase-1-core-infrastructure`.
