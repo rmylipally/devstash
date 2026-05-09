@@ -69,4 +69,16 @@ describe("item type page", () => {
     );
     assert.match(itemsByTypePageSource, /action={typeCreateAction}/);
   });
+
+  it("gates pro-only file and image routes behind an upgrade view", async () => {
+    const itemsByTypePageSource = await readFile(
+      "src/app/items/[type]/page.tsx",
+      "utf8",
+    );
+
+    assert.match(itemsByTypePageSource, /getItemKindPlanAccessResult/);
+    assert.match(itemsByTypePageSource, /if \(!itemTypePlanAccess\.allowed\)/);
+    assert.match(itemsByTypePageSource, /ProUpgradeRequiredPage/);
+    assert.match(itemsByTypePageSource, /Upgrade to Pro/);
+  });
 });

@@ -112,13 +112,11 @@ describe("seed data contract", () => {
       "React Patterns",
       "AI Workflows",
       "DevOps",
-      "Terminal Commands",
-      "Design Resources",
     ]);
 
     assert.equal(
       itemSeeds.filter((item) => item.collectionSlug === "react-patterns").length,
-      3,
+      7,
     );
     assert.equal(
       itemSeeds.filter((item) => item.collectionSlug === "ai-workflows").length,
@@ -126,18 +124,11 @@ describe("seed data contract", () => {
     );
     assert.equal(
       itemSeeds.filter((item) => item.collectionSlug === "devops").length,
-      4,
+      8,
     );
-    assert.equal(
-      itemSeeds.filter((item) => item.collectionSlug === "terminal-commands")
-        .length,
-      4,
-    );
-    assert.equal(
-      itemSeeds.filter((item) => item.collectionSlug === "design-resources")
-        .length,
-      4,
-    );
+    assert.equal(itemSeeds.length, 18);
+    assert.ok(itemSeeds.length < 50);
+    assert.ok(collectionSeeds.length <= 3);
   });
 
   it("uses real URLs for all seeded links", () => {
