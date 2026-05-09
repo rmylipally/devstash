@@ -6,7 +6,6 @@ import {
   File,
   Folder,
   Image,
-  Layers3,
   Link as LinkIcon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -235,9 +234,7 @@ function SidebarContent({
           href="/dashboard"
           onClick={onClose}
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Layers3 className="size-5" />
-          </span>
+          <Folder className="size-6 shrink-0 text-blue-400" />
           {!collapsed ? (
             <span className="truncate text-xl font-semibold tracking-tight">
               DevStash

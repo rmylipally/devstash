@@ -1,5 +1,6 @@
 "use client";
 
+import { Folder } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -33,17 +34,17 @@ export function HomepageNav() {
     >
       <div className="mx-auto flex min-h-[70px] w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link className="inline-flex items-center gap-2 font-semibold" href="/">
-          <span className="grid size-8 place-items-center rounded-md bg-gradient-to-br from-slate-700 to-blue-500 font-mono text-xs text-slate-50">
-            DS
+          <span className="grid size-8 place-items-center rounded-md bg-linear-to-br from-slate-700 to-blue-500 text-slate-50">
+            <Folder className="size-4" />
           </span>
           <span>DevStash</span>
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-          <a className="hover:text-slate-100" href="#features">
+          <a className="hover:text-slate-100" href="/#features">
             Features
           </a>
-          <a className="hover:text-slate-100" href="#pricing">
+          <a className="hover:text-slate-100" href="/#pricing">
             Pricing
           </a>
         </nav>

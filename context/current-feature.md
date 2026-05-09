@@ -1,16 +1,23 @@
-# Current Feature
+# Auth Nav and Dashboard Logo Alignment
 
 ## Status
 
-<!-- Set to: Not Started, In Progress, or Complete -->
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add the homepage top navigation to the sign-in page
+- Add the homepage top navigation to the sign-up/register page
+- Add the same folder icon used in homepage nav to the dashboard nav logo area
+- Remove the existing boxed DS logo mark from dashboard nav branding
+- Keep branding and navigation behavior visually consistent across public auth pages and dashboard
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Feature loaded from inline description
+- Reuse existing homepage nav styles/components where practical to keep implementation DRY
+- Ensure sign-in and sign-up buttons/links still point to correct auth routes
+- Dashboard logo should use the homepage folder icon treatment while removing the DS box
 
 ## History
 

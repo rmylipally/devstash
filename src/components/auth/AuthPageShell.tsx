@@ -2,6 +2,8 @@ import { Layers3 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { HomepageNav } from "@/components/homepage/HomepageNav";
+
 interface AuthPageShellProps {
   children: ReactNode;
   eyebrow: string;
@@ -16,7 +18,9 @@ export function AuthPageShell({
   title,
 }: AuthPageShellProps) {
   return (
-    <main className="flex min-h-dvh bg-background text-foreground">
+    <>
+      <HomepageNav />
+      <main className="flex min-h-dvh bg-background pt-20 text-foreground">
       <section className="flex min-h-dvh w-full flex-col justify-between px-5 py-5 sm:px-8 lg:w-[44%] lg:px-12">
         <Link className="flex w-fit items-center gap-3" href="/">
           <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -80,5 +84,6 @@ export function AuthPageShell({
         </div>
       </section>
     </main>
+    </>
   );
 }
