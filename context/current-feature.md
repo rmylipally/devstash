@@ -1,44 +1,16 @@
-# Current Feature: AI Auto-Tagging
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Create OpenAI Responses API client utility (gpt-5-nano model, not Chat Completions)
-- Implement `generateAutoTags` server action with auth, Pro gating, Zod validation, and rate limiting
-- Add "Suggest Tags" button (Sparkles icon) in create modal and drawer edit mode
-- Display 3-5 suggested tags as badges with accept (check) and reject (X) controls
-- Accepted tags get added to item's tag list; freeform (not limited to existing DB tags)
-- Pro-only feature with UI-level and server-side gating
-- Truncate content to 2000 chars before API call
-- Comprehensive error handling (Pro gating, rate limits, AI service)
-- Unit tests for server action
-- Establish OpenAI foundation for subsequent AI features
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-### CRITICAL: Responses API (NOT Chat Completions)
-- gpt-5-nano does NOT work with Chat Completions API — returns empty content
-- MUST use Responses API: `client.responses.create()` with `instructions` + `input`
-- Response structure: `response.output_text` (not `completion.choices[0].message.content`)
-- Use `text: { format: { type: 'json_object' } }` for JSON output
-- Model may return `{"tags": ["a", "b"]}` OR `["a", "b"]` — handle both formats
-- Always normalize tags to lowercase after receiving them
-
-### Implementation Details
-- Create `src/lib/ai/openai.ts` with Responses API client initialization
-- Add AI rate limit config: 20 requests/hour per user (in `src/lib/ai/rate-limit.ts`)
-- Server action: `src/actions/ai.ts` with `generateAutoTags(itemId)`
-- Suggested tags component with accept/reject UI
-- Pro-only button visibility (hide for free users)
-- Toast error handling for Pro gating, rate limits, AI service failures
-
-### References
-- AI integration plan: `docs/ai-integration-plan.md`
-- Spec: `context/features/ai-auto-tag-spec.md`
-- OpenAI Responses API docs vs Chat Completions differences
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -181,3 +153,4 @@ In Progress
 - 2026-05-10: Added language dropdown selectors in new item modal and edit drawer with 19 common languages (TypeScript, Python, Go, Rust, etc.), positioned above content field for syntax highlighting as you type.
 - 2026-05-10: Committed all changes to main: upgrade page, language dropdowns, AI integration plan.
 - 2026-05-10: Loaded AI Auto-Tagging from `context/features/ai-auto-tag-spec.md` and set the feature status to Not Started.
+- 2026-05-10: Completed AI Auto-Tagging with OpenAI Responses API integration (`gpt-5-nano`), server-side `generateAutoTags` action (auth, Pro gating, Zod validation, rate limiting, robust response parsing, actionable error mapping), Pro-only suggest-tags UI in create/edit flows with accept/reject chips, and focused unit/UI test coverage.
