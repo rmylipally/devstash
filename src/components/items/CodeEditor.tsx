@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Crown, Loader2, Sparkles } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useEffect, useMemo, useState } from "react";
 import type { EditorProps } from "@monaco-editor/react";
 
@@ -34,31 +36,46 @@ const languageAliases: Record<string, string> = {
 interface CodeEditorProps {
   ariaLabel: string;
   className?: string;
+  explanation?: string;
+  isExplainable?: boolean;
+  isGeneratingExplanation?: boolean;
+  isProUser?: boolean;
   language: string;
   maxEditorHeight?: number;
   minEditorHeight?: number;
   onChange?(value: string): void;
+  onExplain?(): void;
   placeholder?: string;
   readOnly?: boolean;
   value: string;
 }
 
+type CodeEditorView = "code" | "explain";
+
 export function CodeEditor({
   ariaLabel,
   className,
+  explanation,
+  isExplainable = false,
+  isGeneratingExplanation = false,
+  isProUser = true,
   language,
   maxEditorHeight = 400,
   minEditorHeight = 180,
   onChange,
+  onExplain,
   placeholder,
   readOnly = false,
   value,
 }: CodeEditorProps) {
   const { preferences } = useEditorPreferences();
+  const [activeView, setActiveView] = useState<CodeEditorView>("code");
   const [hasCopied, setHasCopied] = useState(false);
   const editorHeight = getEditorHeight(value, minEditorHeight, maxEditorHeight);
   const languageLabel = getLanguageLabel(language);
   const monacoLanguage = getMonacoLanguage(languageLabel);
+  const hasExplanation = Boolean(explanation?.trim());
+  const showExplainControls = readOnly && isExplainable;
 
   // Provide defaults while preferences load
   const fontSize = preferences?.fontSize ?? 13;
@@ -110,6 +127,12 @@ export function CodeEditor({
     return () => window.clearTimeout(timeoutId);
   }, [hasCopied]);
 
+  useEffect(() => {
+    if (activeView === "explain" && !hasExplanation && !isGeneratingExplanation) {
+      setActiveView("code");
+    }
+  }, [activeView, hasExplanation, isGeneratingExplanation]);
+
   async function handleCopy() {
     await navigator.clipboard.writeText(value);
     setHasCopied(true);
@@ -129,9 +152,45 @@ export function CodeEditor({
           <span className="size-3 rounded-full bg-green-500" />
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-2">
+          {showExplainControls ? (
+            <div className="flex items-center gap-1">
+              <EditorTabButton
+                active={activeView === "code"}
+                label="Code"
+                onClick={() => setActiveView("code")}
+              />
+              <EditorTabButton
+                active={activeView === "explain"}
+                disabled={!hasExplanation}
+                label="Explain"
+                onClick={() => setActiveView("explain")}
+              />
+            </div>
+          ) : null}
           <span className="truncate rounded-md border border-white/10 bg-white/5 px-2 py-1 font-mono text-xs text-slate-300">
             {languageLabel}
           </span>
+          {showExplainControls ? (
+            <Button
+              aria-label={isProUser ? "Explain code" : "AI features require Pro subscription"}
+              className="h-7 gap-1.5 px-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white"
+              disabled={!isProUser || isGeneratingExplanation}
+              onClick={onExplain}
+              size="sm"
+              title={isProUser ? "Explain code" : "AI features require Pro subscription"}
+              type="button"
+              variant="ghost"
+            >
+              {!isProUser ? (
+                <Crown className="size-3.5" />
+              ) : isGeneratingExplanation ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
+              Explain
+            </Button>
+          ) : null}
           <Button
             aria-label="Copy editor content"
             className="h-7 gap-1.5 px-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white"
@@ -145,22 +204,62 @@ export function CodeEditor({
           </Button>
         </div>
       </div>
-      <div className="relative bg-[#0f172a]">
-        {!value && placeholder ? (
-          <p className="pointer-events-none absolute left-[4.25rem] top-3 z-10 font-mono text-sm text-slate-500">
-            {placeholder}
-          </p>
-        ) : null}
-        <MonacoEditor
-          height={editorHeight}
-          language={monacoLanguage}
-          onChange={(nextValue) => onChange?.(nextValue ?? "")}
-          options={options}
-          theme={theme}
-          value={value}
-        />
-      </div>
+      {showExplainControls && activeView === "explain" ? (
+        <div
+          aria-label={`${ariaLabel} explanation`}
+          className="markdown-preview min-h-45 max-h-100 overflow-auto bg-[#0f172a] px-4 py-3 text-sm leading-6 text-slate-100"
+        >
+          {hasExplanation ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{explanation ?? ""}</ReactMarkdown>
+          ) : (
+            <p className="text-slate-500">No explanation generated yet.</p>
+          )}
+        </div>
+      ) : (
+        <div className="relative bg-[#0f172a]">
+          {!value && placeholder ? (
+            <p className="pointer-events-none absolute left-[4.25rem] top-3 z-10 font-mono text-sm text-slate-500">
+              {placeholder}
+            </p>
+          ) : null}
+          <MonacoEditor
+            height={editorHeight}
+            language={monacoLanguage}
+            onChange={(nextValue) => onChange?.(nextValue ?? "")}
+            options={options}
+            theme={theme}
+            value={value}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+interface EditorTabButtonProps {
+  active: boolean;
+  disabled?: boolean;
+  label: string;
+  onClick(): void;
+}
+
+function EditorTabButton({ active, disabled = false, label, onClick }: EditorTabButtonProps) {
+  return (
+    <button
+      aria-pressed={active}
+      className={cn(
+        "rounded-md px-2 py-1 text-xs font-medium text-slate-300 transition-colors",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "hover:bg-white/10 hover:text-white",
+        active && "bg-white/10 text-white",
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
   );
 }
 

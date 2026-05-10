@@ -11,6 +11,7 @@ import { buildRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_CONTENT_LENGTH = 2_000;
 const MAX_DESCRIPTION_LENGTH = 320;
+const MAX_EXPLANATION_WORDS = 300;
 const MAX_SUGGESTED_TAGS = 5;
 const itemKindSchema = z.enum([
   "snippet",
@@ -83,6 +84,34 @@ const autoDescriptionRequestSchema = z
     }
   });
 
+const explainCodeRequestSchema = z
+  .object({
+    content: optionalStringSchema,
+    description: optionalStringSchema,
+    itemId: optionalStringSchema,
+    kind: itemKindSchema.optional(),
+    language: optionalStringSchema,
+    title: optionalStringSchema,
+    url: optionalStringSchema,
+  })
+  .superRefine((value, context) => {
+    if (value.kind && !isExplainableKind(value.kind)) {
+      context.addIssue({
+        code: "custom",
+        message: "Code explanation is available only for snippets and commands.",
+        path: ["kind"],
+      });
+    }
+
+    if (!value.itemId && !value.content) {
+      context.addIssue({
+        code: "custom",
+        message: "Code content is required to generate an explanation.",
+        path: ["content"],
+      });
+    }
+  });
+
 type GenerateAutoTagsResult =
   | {
       data: string[];
@@ -94,6 +123,16 @@ type GenerateAutoTagsResult =
     };
 
 type GenerateAutoDescriptionResult =
+  | {
+      data: string;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+type ExplainCodeResult =
   | {
       data: string;
       success: true;
@@ -122,6 +161,20 @@ interface DescriptionSource {
   originalFileName: string | null;
   title: string | null;
   url: string | null;
+}
+
+interface ExplainCodeSource {
+  content: string;
+  description: string | null;
+  itemId: string | null;
+  kind: "command" | "snippet";
+  language: string | null;
+  title: string | null;
+  url: string | null;
+}
+
+function isExplainableKind(kind: DashboardItemKind) {
+  return kind === "snippet" || kind === "command";
 }
 
 function getValidationError(error: z.ZodError) {
@@ -316,6 +369,37 @@ function parseDescriptionFromResponse(rawOutputText: string) {
   return candidateText;
 }
 
+function parseExplanationFromResponse(rawOutputText: string) {
+  const normalizedText = rawOutputText.trim();
+
+  if (!normalizedText) {
+    return "";
+  }
+
+  const fencedJsonMatch = normalizedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidateText = fencedJsonMatch?.[1]?.trim() || normalizedText;
+
+  try {
+    const parsed = JSON.parse(candidateText) as unknown;
+
+    if (typeof parsed === "string") {
+      return parsed.trim();
+    }
+
+    if (parsed && typeof parsed === "object") {
+      const explanation = (parsed as { explanation?: unknown }).explanation;
+
+      if (typeof explanation === "string") {
+        return explanation.trim();
+      }
+    }
+  } catch {
+    // Fall through to plain text handling.
+  }
+
+  return candidateText;
+}
+
 function getPromptInput(source: TagSource) {
   const safeContent = truncateContent(source.content);
 
@@ -353,6 +437,25 @@ function getDescriptionPromptInput(source: DescriptionSource) {
   return promptParts.join("\n\n");
 }
 
+function getExplainCodePromptInput(source: ExplainCodeSource) {
+  const safeContent = truncateContent(source.content);
+
+  const promptParts = [
+    "Respond with valid json only.",
+    "Return a json object with one key: explanation.",
+    "Explain what this code/command does, what key concepts matter, and any notable behavior or risks.",
+    "Keep the explanation concise: around 200-300 words.",
+    `Item kind: ${source.kind}`,
+    `Title: ${source.title ?? "(none)"}`,
+    `Description: ${source.description ?? "(none)"}`,
+    `Language: ${source.language ?? "(none)"}`,
+    `URL: ${source.url ?? "(none)"}`,
+    `Code or command content (max ${MAX_CONTENT_LENGTH} chars):\n${safeContent ?? "(none)"}`,
+  ];
+
+  return promptParts.join("\n\n");
+}
+
 function toTwoSentenceDescription(value: string) {
   const normalizedValue = value.replace(/\s+/g, " ").trim();
 
@@ -380,6 +483,26 @@ function getProPlanError() {
 
 function getProPlanDescriptionError() {
   return "AI description generation is available on the Pro plan.";
+}
+
+function getProPlanExplainError() {
+  return "AI code explanation is available on the Pro plan.";
+}
+
+function normalizeExplanation(value: string) {
+  const normalizedValue = value.replace(/\s+/g, " ").trim();
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  const words = normalizedValue.split(" ").filter(Boolean);
+
+  if (words.length <= MAX_EXPLANATION_WORDS) {
+    return normalizedValue;
+  }
+
+  return `${words.slice(0, MAX_EXPLANATION_WORDS).join(" ")}…`;
 }
 
 export async function generateAutoTags(
@@ -670,6 +793,224 @@ export async function generateAutoDescription(
       error:
         userFacingError === "Could not generate tags right now. Please try again."
           ? "Could not generate description right now. Please try again."
+          : userFacingError,
+    };
+  }
+}
+
+export async function explainCode(
+  input: unknown,
+): Promise<ExplainCodeResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to explain code.",
+    };
+  }
+
+  if (session.user.plan !== "pro") {
+    return {
+      success: false,
+      error: getProPlanExplainError(),
+    };
+  }
+
+  const rateLimitKey = buildRateLimitKey(aiRateLimiters.explainCode.prefix, [userId]);
+  const rateLimitResult = await checkRateLimit({
+    key: rateLimitKey,
+    limiter: aiRateLimiters.explainCode.limiter,
+  });
+
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      error: "AI explanation limit reached. Try again in about an hour.",
+    };
+  }
+
+  const parsedInput = explainCodeRequestSchema.safeParse(input);
+
+  if (!parsedInput.success) {
+    return {
+      success: false,
+      error: getValidationError(parsedInput.error),
+    };
+  }
+
+  let source: ExplainCodeSource;
+
+  if (parsedInput.data.itemId) {
+    const item = await getItemDetail({
+      itemId: parsedInput.data.itemId,
+      userId,
+    });
+
+    if (!item) {
+      return {
+        success: false,
+        error: "Item not found.",
+      };
+    }
+
+    if (!isExplainableKind(item.kind)) {
+      return {
+        success: false,
+        error: "Code explanation is available only for snippets and commands.",
+      };
+    }
+
+    if (!item.content?.trim()) {
+      return {
+        success: false,
+        error: "Code content is required to generate an explanation.",
+      };
+    }
+
+    source = {
+      content: item.content,
+      description: item.description,
+      itemId: item.id,
+      kind: item.kind,
+      language: item.language,
+      title: item.title,
+      url: item.sourceUrl,
+    };
+  } else {
+    const kind = parsedInput.data.kind;
+
+    if (!kind || !isExplainableKind(kind)) {
+      return {
+        success: false,
+        error: "Code explanation is available only for snippets and commands.",
+      };
+    }
+
+    const content = parsedInput.data.content;
+
+    if (!content?.trim()) {
+      return {
+        success: false,
+        error: "Code content is required to generate an explanation.",
+      };
+    }
+
+    source = {
+      content,
+      description: parsedInput.data.description,
+      itemId: null,
+      kind,
+      language: parsedInput.data.language,
+      title: parsedInput.data.title,
+      url: parsedInput.data.url,
+    };
+  }
+
+  let aiJobId: string | null = null;
+
+  try {
+    if (source.itemId) {
+      const aiJob = await prisma.aiJob.create({
+        data: {
+          itemId: source.itemId,
+          model: AI_MODEL,
+          startedAt: new Date(),
+          status: "RUNNING",
+          type: "EXPLAIN_CODE",
+          userId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      aiJobId = aiJob.id;
+    }
+
+    const openAI = getOpenAIClient();
+    const response = await openAI.responses.create({
+      input: getExplainCodePromptInput(source),
+      instructions:
+        "Generate a concise developer-facing explanation. Return json only as {\"explanation\":\"text\"}. Keep it around 200-300 words and avoid markdown code fences.",
+      model: AI_MODEL,
+      text: {
+        format: {
+          type: "json_object",
+        },
+      },
+    });
+
+    const responseText = getResponseOutputText(response as {
+      output?: Array<{
+        content?: Array<{ text?: string; type?: string }>;
+        type?: string;
+      }>;
+      output_text?: string;
+    });
+    const rawExplanation = parseExplanationFromResponse(responseText);
+    const explanation = normalizeExplanation(rawExplanation);
+
+    if (!explanation) {
+      throw new Error("No valid explanation was returned by the AI service.");
+    }
+
+    if (aiJobId) {
+      await prisma.aiJob.update({
+        data: {
+          completedAt: new Date(),
+          result: {
+            explanation,
+          },
+          status: "SUCCEEDED",
+        },
+        where: {
+          id: aiJobId,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      data: explanation,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Could not generate explanation right now.";
+    const userFacingError = getUserFacingAiError(errorMessage, {
+      configMessage:
+        "AI code explanation is not configured yet. Add OPENAI_API_KEY and try again.",
+      unexpectedFormatMessage:
+        "AI returned an unexpected explanation format. Please try again.",
+    });
+
+    if (aiJobId) {
+      await prisma.aiJob.update({
+        data: {
+          completedAt: new Date(),
+          error: errorMessage,
+          status: "FAILED",
+        },
+        where: {
+          id: aiJobId,
+        },
+      }).catch(() => null);
+    }
+
+    console.error("explainCode failed", {
+      error: errorMessage,
+      itemId: source.itemId,
+      userId,
+    });
+
+    return {
+      success: false,
+      error:
+        userFacingError === "Could not generate tags right now. Please try again."
+          ? "Could not generate explanation right now. Please try again."
           : userFacingError,
     };
   }
