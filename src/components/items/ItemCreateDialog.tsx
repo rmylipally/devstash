@@ -22,7 +22,7 @@ import {
   type FormEvent,
 } from "react";
 
-import { generateAutoTags } from "@/actions/ai";
+import { generateAutoDescription, generateAutoTags } from "@/actions/ai";
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -221,6 +221,7 @@ function ItemCreateDialog({
     createDefaultDraft(initialKind),
   );
   const [error, setError] = useState<string | null>(null);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -320,6 +321,54 @@ function ItemCreateDialog({
       });
     } finally {
       setIsSuggestingTags(false);
+    }
+  }
+
+  async function handleGenerateDescription() {
+    if (isGeneratingDescription) {
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+
+    try {
+      const result = await generateAutoDescription({
+        content: draft.content,
+        description: draft.description,
+        kind: draft.kind,
+        language: draft.language,
+        mimeType: draft.uploadedFile?.mimeType ?? null,
+        originalFileName: draft.uploadedFile?.originalFileName ?? null,
+        title: draft.title,
+        url: draft.url,
+      });
+
+      if (!result.success) {
+        onToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        description: result.data,
+      }));
+      onToast({
+        message: "AI description ready.",
+        variant: "success",
+      });
+    } catch (error) {
+      onToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not generate description right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsGeneratingDescription(false);
     }
   }
 
@@ -552,8 +601,25 @@ function ItemCreateDialog({
               />
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Description
+                <span className="flex items-center justify-between gap-3 text-sm font-medium text-muted-foreground">
+                  <span>Description</span>
+                  {isProUser ? (
+                    <Button
+                      aria-label="Generate description"
+                      className="size-8"
+                      disabled={isSubmitting || isGeneratingDescription}
+                      onClick={() => void handleGenerateDescription()}
+                      title="Generate description"
+                      type="button"
+                      variant="ghost"
+                    >
+                      {isGeneratingDescription ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-3.5" />
+                      )}
+                    </Button>
+                  ) : null}
                 </span>
                 <CreateItemTextarea
                   onChange={(event) =>

@@ -10,7 +10,17 @@ import { prisma } from "@/lib/prisma";
 import { buildRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_CONTENT_LENGTH = 2_000;
+const MAX_DESCRIPTION_LENGTH = 320;
 const MAX_SUGGESTED_TAGS = 5;
+const itemKindSchema = z.enum([
+  "snippet",
+  "prompt",
+  "command",
+  "note",
+  "file",
+  "image",
+  "link",
+]);
 
 const optionalStringSchema = z
   .union([z.string(), z.null(), z.undefined()])
@@ -29,9 +39,7 @@ const autoTagRequestSchema = z
     content: optionalStringSchema,
     description: optionalStringSchema,
     itemId: optionalStringSchema,
-    kind: z
-      .enum(["snippet", "prompt", "command", "note", "file", "image", "link"])
-      .optional(),
+    kind: itemKindSchema.optional(),
     language: optionalStringSchema,
     title: optionalStringSchema,
     url: optionalStringSchema,
@@ -41,6 +49,35 @@ const autoTagRequestSchema = z
       context.addIssue({
         code: "custom",
         message: "A title is required to generate tags.",
+        path: ["title"],
+      });
+    }
+  });
+
+const autoDescriptionRequestSchema = z
+  .object({
+    content: optionalStringSchema,
+    description: optionalStringSchema,
+    kind: itemKindSchema.optional(),
+    language: optionalStringSchema,
+    mimeType: optionalStringSchema,
+    originalFileName: optionalStringSchema,
+    title: optionalStringSchema,
+    url: optionalStringSchema,
+  })
+  .superRefine((value, context) => {
+    const hasInput = Boolean(
+      value.title ||
+      value.content ||
+      value.url ||
+      value.originalFileName ||
+      value.mimeType,
+    );
+
+    if (!hasInput) {
+      context.addIssue({
+        code: "custom",
+        message: "Provide at least a title, content, URL, or file metadata to generate a description.",
         path: ["title"],
       });
     }
@@ -56,6 +93,16 @@ type GenerateAutoTagsResult =
       success: false;
     };
 
+type GenerateAutoDescriptionResult =
+  | {
+      data: string;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
 interface TagSource {
   content: string | null;
   description: string | null;
@@ -63,6 +110,17 @@ interface TagSource {
   kind: DashboardItemKind | null;
   language: string | null;
   title: string;
+  url: string | null;
+}
+
+interface DescriptionSource {
+  content: string | null;
+  currentDescription: string | null;
+  kind: DashboardItemKind | null;
+  language: string | null;
+  mimeType: string | null;
+  originalFileName: string | null;
+  title: string | null;
   url: string | null;
 }
 
@@ -179,7 +237,16 @@ function getResponseOutputText(response: {
   return chunks.join("\n").trim();
 }
 
-function getUserFacingAiError(errorMessage: string) {
+function getUserFacingAiError(
+  errorMessage: string,
+  {
+    configMessage = "AI tag suggestions are not configured yet. Add OPENAI_API_KEY and try again.",
+    unexpectedFormatMessage = "AI returned an unexpected format. Please try again.",
+  }: {
+    configMessage?: string;
+    unexpectedFormatMessage?: string;
+  } = {},
+) {
   const normalizedMessage = errorMessage.toLowerCase();
 
   if (
@@ -194,7 +261,7 @@ function getUserFacingAiError(errorMessage: string) {
     normalizedMessage.includes("openai_api_key") ||
     normalizedMessage.includes("missing credentials")
   ) {
-    return "AI tag suggestions are not configured yet. Add OPENAI_API_KEY and try again.";
+    return configMessage;
   }
 
   if (
@@ -204,8 +271,11 @@ function getUserFacingAiError(errorMessage: string) {
     return "AI service is temporarily busy. Please try again in a minute.";
   }
 
-  if (normalizedMessage.includes("no valid tags")) {
-    return "AI returned an unexpected format. Please try again.";
+  if (
+    normalizedMessage.includes("no valid tags") ||
+    normalizedMessage.includes("no valid description")
+  ) {
+    return unexpectedFormatMessage;
   }
 
   if (normalizedMessage.includes("database") || normalizedMessage.includes("prisma")) {
@@ -213,6 +283,37 @@ function getUserFacingAiError(errorMessage: string) {
   }
 
   return "Could not generate tags right now. Please try again.";
+}
+
+function parseDescriptionFromResponse(rawOutputText: string) {
+  const normalizedText = rawOutputText.trim();
+
+  if (!normalizedText) {
+    return "";
+  }
+
+  const fencedJsonMatch = normalizedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidateText = fencedJsonMatch?.[1]?.trim() || normalizedText;
+
+  try {
+    const parsed = JSON.parse(candidateText) as unknown;
+
+    if (typeof parsed === "string") {
+      return parsed.trim();
+    }
+
+    if (parsed && typeof parsed === "object" && "description" in parsed) {
+      const description = (parsed as { description?: unknown }).description;
+
+      if (typeof description === "string") {
+        return description.trim();
+      }
+    }
+  } catch {
+    // Fall through to plain text handling.
+  }
+
+  return candidateText;
 }
 
 function getPromptInput(source: TagSource) {
@@ -232,8 +333,53 @@ function getPromptInput(source: TagSource) {
   return promptParts.join("\n\n");
 }
 
+function getDescriptionPromptInput(source: DescriptionSource) {
+  const safeContent = truncateContent(source.content);
+
+  const promptParts = [
+    "Respond with valid json only.",
+    "Return a json object with one key: description.",
+    "Write a concise, useful 1-2 sentence description for this developer item.",
+    `Item kind: ${source.kind ?? "unknown"}`,
+    `Title: ${source.title ?? "(none)"}`,
+    `Current description: ${source.currentDescription ?? "(none)"}`,
+    `Language: ${source.language ?? "(none)"}`,
+    `URL: ${source.url ?? "(none)"}`,
+    `Original file name: ${source.originalFileName ?? "(none)"}`,
+    `MIME type: ${source.mimeType ?? "(none)"}`,
+    `Content (max ${MAX_CONTENT_LENGTH} chars):\n${safeContent ?? "(none)"}`,
+  ];
+
+  return promptParts.join("\n\n");
+}
+
+function toTwoSentenceDescription(value: string) {
+  const normalizedValue = value.replace(/\s+/g, " ").trim();
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  const sentences = normalizedValue
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const description = sentences.length > 0
+    ? sentences.slice(0, 2).join(" ")
+    : normalizedValue;
+
+  return description.length > MAX_DESCRIPTION_LENGTH
+    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH - 1).trimEnd()}…`
+    : description;
+}
+
 function getProPlanError() {
   return "AI tag suggestions are available on the Pro plan.";
+}
+
+function getProPlanDescriptionError() {
+  return "AI description generation is available on the Pro plan.";
 }
 
 export async function generateAutoTags(
@@ -413,6 +559,118 @@ export async function generateAutoTags(
     return {
       success: false,
       error: userFacingError,
+    };
+  }
+}
+
+export async function generateAutoDescription(
+  input: unknown,
+): Promise<GenerateAutoDescriptionResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to generate descriptions.",
+    };
+  }
+
+  if (session.user.plan !== "pro") {
+    return {
+      success: false,
+      error: getProPlanDescriptionError(),
+    };
+  }
+
+  const rateLimitKey = buildRateLimitKey(aiRateLimiters.autoDescription.prefix, [userId]);
+  const rateLimitResult = await checkRateLimit({
+    key: rateLimitKey,
+    limiter: aiRateLimiters.autoDescription.limiter,
+  });
+
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      error: "AI description limit reached. Try again in about an hour.",
+    };
+  }
+
+  const parsedInput = autoDescriptionRequestSchema.safeParse(input);
+
+  if (!parsedInput.success) {
+    return {
+      success: false,
+      error: getValidationError(parsedInput.error),
+    };
+  }
+
+  const source: DescriptionSource = {
+    content: parsedInput.data.content,
+    currentDescription: parsedInput.data.description,
+    kind: parsedInput.data.kind ?? null,
+    language: parsedInput.data.language,
+    mimeType: parsedInput.data.mimeType,
+    originalFileName: parsedInput.data.originalFileName,
+    title: parsedInput.data.title,
+    url: parsedInput.data.url,
+  };
+
+  try {
+    const openAI = getOpenAIClient();
+    const response = await openAI.responses.create({
+      input: getDescriptionPromptInput(source),
+      instructions:
+        "Generate a high-quality developer-facing summary. Return json only as {\"description\":\"text\"}. Keep it to 1-2 sentences and avoid markdown.",
+      model: AI_MODEL,
+      text: {
+        format: {
+          type: "json_object",
+        },
+      },
+    });
+
+    const responseText = getResponseOutputText(response as {
+      output?: Array<{
+        content?: Array<{ text?: string; type?: string }>;
+        type?: string;
+      }>;
+      output_text?: string;
+    });
+    const rawDescription = parseDescriptionFromResponse(responseText);
+    const description = toTwoSentenceDescription(rawDescription);
+
+    if (!description) {
+      throw new Error("No valid description was returned by the AI service.");
+    }
+
+    return {
+      success: true,
+      data: description,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Could not generate description right now.";
+    const userFacingError = getUserFacingAiError(errorMessage, {
+      configMessage:
+        "AI description generation is not configured yet. Add OPENAI_API_KEY and try again.",
+      unexpectedFormatMessage:
+        "AI returned an unexpected description format. Please try again.",
+    });
+
+    console.error("generateAutoDescription failed", {
+      error: errorMessage,
+      userId,
+    });
+
+    return {
+      success: false,
+      error:
+        userFacingError === "Could not generate tags right now. Please try again."
+          ? "Could not generate description right now. Please try again."
+          : userFacingError,
     };
   }
 }
