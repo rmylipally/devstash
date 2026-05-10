@@ -35,6 +35,10 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@/lib/ai/rate-limit", () => ({
   aiRateLimiters: {
+    autoDescription: {
+      limiter: {},
+      prefix: "ai:auto-description",
+    },
     autoTag: {
       limiter: {},
       prefix: "ai:auto-tag",
@@ -51,7 +55,7 @@ vi.mock("@/lib/ai/openai", () => ({
   }),
 }));
 
-const { generateAutoTags } = await import("../src/actions/ai");
+const { generateAutoDescription, generateAutoTags } = await import("../src/actions/ai");
 
 describe("generateAutoTags", () => {
   beforeEach(() => {
@@ -228,5 +232,78 @@ describe("generateAutoTags", () => {
       error:
         "AI quota has been exceeded for this OpenAI account. Check billing and usage limits, then try again.",
     });
+  });
+});
+
+describe("generateAutoDescription", () => {
+  beforeEach(() => {
+    mocks.aiJobCreate.mockReset();
+    mocks.aiJobUpdate.mockReset();
+    mocks.auth.mockReset();
+    mocks.buildRateLimitKey.mockReset();
+    mocks.checkRateLimit.mockReset();
+    mocks.getItemDetail.mockReset();
+    mocks.responsesCreate.mockReset();
+
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "pro" } });
+    mocks.buildRateLimitKey.mockReturnValue("ai:auto-description:user-123");
+    mocks.checkRateLimit.mockResolvedValue({ success: true });
+  });
+
+  it("generates a concise description from json response", async () => {
+    mocks.responsesCreate.mockResolvedValue({
+      output_text: JSON.stringify({
+        description:
+          "Reusable helper for formatting API responses and handling edge-case parsing.",
+      }),
+    });
+
+    const result = await generateAutoDescription({
+      content: "function formatResponse(payload) { ... }",
+      kind: "snippet",
+      title: "formatResponse helper",
+    });
+
+    assert.deepEqual(result, {
+      success: true,
+      data:
+        "Reusable helper for formatting API responses and handling edge-case parsing.",
+    });
+  });
+
+  it("limits output to two sentences", async () => {
+    mocks.responsesCreate.mockResolvedValue({
+      output_text: JSON.stringify({
+        description:
+          "First sentence. Second sentence. Third sentence that should be removed.",
+      }),
+    });
+
+    const result = await generateAutoDescription({
+      content: "Content",
+      kind: "note",
+      title: "Summary test",
+    });
+
+    assert.deepEqual(result, {
+      success: true,
+      data: "First sentence. Second sentence.",
+    });
+  });
+
+  it("requires meaningful draft inputs", async () => {
+    const result = await generateAutoDescription({
+      content: "",
+      description: "",
+      kind: "snippet",
+      title: "",
+      url: "",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(
+      result.error,
+      /Provide at least a title, content, URL, or file metadata/i,
+    );
   });
 });

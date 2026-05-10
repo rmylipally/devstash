@@ -8,7 +8,7 @@ import {
 
 export const AI_TAG_REQUESTS_PER_HOUR = 20;
 
-function createAiRateLimiter(): RateLimiterLike {
+function createAiRateLimiter(prefix: string): RateLimiterLike {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -25,7 +25,7 @@ function createAiRateLimiter(): RateLimiterLike {
     return new Ratelimit({
       analytics: true,
       limiter: Ratelimit.slidingWindow(AI_TAG_REQUESTS_PER_HOUR, "1 h"),
-      prefix: "ai:auto-tag",
+      prefix,
       redis: new Redis({ token, url }),
       timeout: 1_500,
     });
@@ -38,8 +38,12 @@ function createAiRateLimiter(): RateLimiterLike {
 }
 
 export const aiRateLimiters = {
+  autoDescription: {
+    limiter: createAiRateLimiter("ai:auto-description"),
+    prefix: "ai:auto-description",
+  },
   autoTag: {
-    limiter: createAiRateLimiter(),
+    limiter: createAiRateLimiter("ai:auto-tag"),
     prefix: "ai:auto-tag",
   },
 };

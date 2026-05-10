@@ -44,7 +44,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { generateAutoTags } from "@/actions/ai";
+import { generateAutoDescription, generateAutoTags } from "@/actions/ai";
 import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -694,6 +694,7 @@ function ItemDrawerContent({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFavoriteToggling, setIsFavoriteToggling] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [isPinToggling, setIsPinToggling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
@@ -803,6 +804,53 @@ function ItemDrawerContent({
       });
     } finally {
       setIsSuggestingTags(false);
+    }
+  }
+
+  async function handleGenerateDescription() {
+    if (!item || !draft || isGeneratingDescription) {
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+
+    try {
+      const result = await generateAutoDescription({
+        content: draft.content,
+        description: draft.description,
+        kind: item.kind,
+        language: draft.language,
+        mimeType: item.mimeType,
+        originalFileName: item.originalFileName,
+        title: draft.title,
+        url: draft.url,
+      });
+
+      if (!result.success) {
+        setToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      setDraft((currentDraft) =>
+        currentDraft ? { ...currentDraft, description: result.data } : currentDraft,
+      );
+      setToast({
+        message: "AI description ready.",
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not generate description right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsGeneratingDescription(false);
     }
   }
 
@@ -1056,12 +1104,14 @@ function ItemDrawerContent({
               draft={draft}
               error={formError}
               availableCollections={availableCollections}
+              isGeneratingDescription={isGeneratingDescription}
               isProUser={isProUser}
               isSuggestingTags={isSuggestingTags}
               item={item}
               onAcceptSuggestedTag={handleAcceptSuggestedTag}
               onCollectionIdsChange={handleCollectionIdsChange}
               onDraftChange={handleDraftChange}
+              onGenerateDescription={() => void handleGenerateDescription()}
               onRejectSuggestedTag={handleRejectSuggestedTag}
               onSuggestTags={() => void handleSuggestTags()}
               suggestedTags={suggestedTags}
@@ -1431,12 +1481,14 @@ interface ItemEditFormProps {
   availableCollections: DashboardCollectionOption[];
   draft: ItemDraft;
   error: string | null;
+  isGeneratingDescription: boolean;
   isProUser: boolean;
   isSuggestingTags: boolean;
   item: ItemDetail;
   onAcceptSuggestedTag(tag: string): void;
   onCollectionIdsChange(collectionIds: string[]): void;
   onDraftChange(key: Exclude<keyof ItemDraft, "collectionIds">, value: string): void;
+  onGenerateDescription(): void;
   onRejectSuggestedTag(tag: string): void;
   onSuggestTags(): void;
   suggestedTags: string[];
@@ -1446,12 +1498,14 @@ function ItemEditForm({
   availableCollections,
   draft,
   error,
+  isGeneratingDescription,
   isProUser,
   isSuggestingTags,
   item,
   onAcceptSuggestedTag,
   onCollectionIdsChange,
   onDraftChange,
+  onGenerateDescription,
   onRejectSuggestedTag,
   onSuggestTags,
   suggestedTags,
@@ -1468,6 +1522,23 @@ function ItemEditForm({
       ) : null}
 
       <DetailSection title="Description">
+        {isProUser ? (
+          <Button
+            aria-label="Generate description"
+            className="mb-2 size-8"
+            disabled={isGeneratingDescription}
+            onClick={onGenerateDescription}
+            title="Generate description"
+            type="button"
+            variant="ghost"
+          >
+            {isGeneratingDescription ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+          </Button>
+        ) : null}
         <DrawerTextarea
           onChange={(event) => onDraftChange("description", event.target.value)}
           placeholder="No description yet."

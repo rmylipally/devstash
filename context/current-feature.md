@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: AI Description Generator for Item Drafts
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add an icon button that generates a concise description for item drafts.
+- Generate 1-2 sentence summaries suitable for the Description input.
+- Support all item/content types (snippet, prompt, command, note, file, image, link).
+- Use currently available draft fields (title, content, language, URL, description context, metadata when available).
+- Work before save (no persisted item required).
+- Integrate into both create dialog and drawer edit mode.
+- Reuse existing AI action/error handling and Pro gating patterns.
+- Show generated summary in the description input so users can edit before saving.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Input source should be the current in-form draft values, not saved DB state.
+- Output should be concise, high-quality, and limited to 1-2 sentences.
+- Handle sparse data gracefully (e.g., only title present, no content).
+- For file/image/link items, build summary from whatever information exists (title, description, URL, filename, mime type, etc.).
+- Keep UX consistent with existing suggest-tags flow (loading state, actionable toasts, and button disable while generating).
+- Leverage Responses API with robust parsing and clear quota/configuration error messaging.
 
 ## History
 
@@ -154,3 +166,4 @@ Not Started
 - 2026-05-10: Committed all changes to main: upgrade page, language dropdowns, AI integration plan.
 - 2026-05-10: Loaded AI Auto-Tagging from `context/features/ai-auto-tag-spec.md` and set the feature status to Not Started.
 - 2026-05-10: Completed AI Auto-Tagging with OpenAI Responses API integration (`gpt-5-nano`), server-side `generateAutoTags` action (auth, Pro gating, Zod validation, rate limiting, robust response parsing, actionable error mapping), Pro-only suggest-tags UI in create/edit flows with accept/reject chips, and focused unit/UI test coverage.
+- 2026-05-10: Loaded AI Description Generator for Item Drafts from inline description and set the feature status to Not Started.
