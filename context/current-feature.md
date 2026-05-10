@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Prompt Optimization for Prompt Items
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add goals for the active feature -->
+- Add an AI-powered prompt optimization flow for prompt item types.
+- Evaluate the current prompt text and generate a refined version only when useful improvements are needed.
+- Show an Optimize button in the prompt editor header, aligned with the existing Explain button placement pattern used in snippet and command headers.
+- Ask the user whether to use the optimized prompt before replacing existing content.
+- Apply accepted optimized text into the prompt content field while preserving user control and cancellation.
+- Follow existing Pro gating, loading, and error-toast patterns used by other AI actions.
+- Add or update focused tests for server action behavior and UI interaction flow.
 
 ## Notes
 
-<!-- Add context, constraints, and references for the active feature -->
+- Source: inline feature description from user request.
+- Scope targets prompt item type editor experience and prompt content refinement workflow.
+- UX requirement: explicit confirmation step before updating prompt text.
+- Header control should mirror the established code/command Explain affordance style and location.
 
 ## History
 
@@ -159,3 +168,5 @@ Not Started
 - 2026-05-10: Loaded AI Explain Code from `context/features/ai-explain-spec.md` and set the feature status to Not Started.
 - 2026-05-10: Started AI Explain Code implementation on `feature/ai-explain-code`.
 - 2026-05-10: Completed AI Explain Code with a new `explainCode` server action (auth, Pro gating, Zod validation, rate limiting, robust JSON/text parsing, and AI error mapping), dedicated `ai:explain-code` limiter, drawer read-view integration for snippet/command items, Code/Explain editor tabs with inline markdown explanation rendering, Pro-gated Explain button UX (Crown tooltip + loader states), and focused server/UI test coverage.
+- 2026-05-10: Loaded Prompt Optimization for Prompt Items from inline description and set the feature status to Not Started.
+- 2026-05-10: Started Prompt Optimization for Prompt Items implementation on `feature/prompt-optimization-prompt-items`.

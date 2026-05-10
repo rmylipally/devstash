@@ -112,6 +112,33 @@ const explainCodeRequestSchema = z
     }
   });
 
+const optimizePromptRequestSchema = z
+  .object({
+    content: optionalStringSchema,
+    description: optionalStringSchema,
+    itemId: optionalStringSchema,
+    kind: itemKindSchema.optional(),
+    title: optionalStringSchema,
+    url: optionalStringSchema,
+  })
+  .superRefine((value, context) => {
+    if (value.kind && value.kind !== "prompt") {
+      context.addIssue({
+        code: "custom",
+        message: "Prompt optimization is available only for prompt items.",
+        path: ["kind"],
+      });
+    }
+
+    if (!value.itemId && !value.content) {
+      context.addIssue({
+        code: "custom",
+        message: "Prompt content is required to optimize the prompt.",
+        path: ["content"],
+      });
+    }
+  });
+
 type GenerateAutoTagsResult =
   | {
       data: string[];
@@ -135,6 +162,17 @@ type GenerateAutoDescriptionResult =
 type ExplainCodeResult =
   | {
       data: string;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+type OptimizePromptResult =
+  | {
+      data: string;
+      optimized: boolean;
       success: true;
     }
   | {
@@ -169,6 +207,14 @@ interface ExplainCodeSource {
   itemId: string | null;
   kind: "command" | "snippet";
   language: string | null;
+  title: string | null;
+  url: string | null;
+}
+
+interface OptimizePromptSource {
+  content: string;
+  description: string | null;
+  itemId: string | null;
   title: string | null;
   url: string | null;
 }
@@ -400,6 +446,63 @@ function parseExplanationFromResponse(rawOutputText: string) {
   return candidateText;
 }
 
+function parseOptimizedPromptFromResponse(rawOutputText: string) {
+  const normalizedText = rawOutputText.trim();
+
+  if (!normalizedText) {
+    return {
+      needsUpdate: false,
+      optimizedPrompt: "",
+    };
+  }
+
+  const fencedJsonMatch = normalizedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidateText = fencedJsonMatch?.[1]?.trim() || normalizedText;
+
+  try {
+    const parsed = JSON.parse(candidateText) as unknown;
+
+    if (typeof parsed === "string") {
+      return {
+        needsUpdate: true,
+        optimizedPrompt: parsed.trim(),
+      };
+    }
+
+    if (parsed && typeof parsed === "object") {
+      const parsedObject = parsed as {
+        needsImprovement?: unknown;
+        needsUpdate?: unknown;
+        optimizedPrompt?: unknown;
+        prompt?: unknown;
+      };
+      const optimizedPromptCandidate =
+        typeof parsedObject.optimizedPrompt === "string"
+          ? parsedObject.optimizedPrompt
+          : typeof parsedObject.prompt === "string"
+            ? parsedObject.prompt
+            : "";
+
+      return {
+        needsUpdate:
+          typeof parsedObject.needsUpdate === "boolean"
+            ? parsedObject.needsUpdate
+            : typeof parsedObject.needsImprovement === "boolean"
+              ? parsedObject.needsImprovement
+              : true,
+        optimizedPrompt: optimizedPromptCandidate.trim(),
+      };
+    }
+  } catch {
+    // Fall through to plain text handling.
+  }
+
+  return {
+    needsUpdate: true,
+    optimizedPrompt: candidateText,
+  };
+}
+
 function getPromptInput(source: TagSource) {
   const safeContent = truncateContent(source.content);
 
@@ -456,6 +559,23 @@ function getExplainCodePromptInput(source: ExplainCodeSource) {
   return promptParts.join("\n\n");
 }
 
+function getOptimizePromptInput(source: OptimizePromptSource) {
+  const safeContent = truncateContent(source.content);
+
+  const promptParts = [
+    "Respond with valid json only.",
+    "Return a json object with keys: optimizedPrompt and needsUpdate.",
+    "If the prompt is already high quality and clear, set needsUpdate to false and return the original prompt text.",
+    "If improvement is needed, set needsUpdate to true and provide a clearer, concise, and higher quality optimizedPrompt.",
+    `Title: ${source.title ?? "(none)"}`,
+    `Description: ${source.description ?? "(none)"}`,
+    `URL: ${source.url ?? "(none)"}`,
+    `Current prompt content (max ${MAX_CONTENT_LENGTH} chars):\n${safeContent ?? "(none)"}`,
+  ];
+
+  return promptParts.join("\n\n");
+}
+
 function toTwoSentenceDescription(value: string) {
   const normalizedValue = value.replace(/\s+/g, " ").trim();
 
@@ -489,6 +609,10 @@ function getProPlanExplainError() {
   return "AI code explanation is available on the Pro plan.";
 }
 
+function getProPlanOptimizePromptError() {
+  return "AI prompt optimization is available on the Pro plan.";
+}
+
 function normalizeExplanation(value: string) {
   const normalizedValue = value.replace(/\s+/g, " ").trim();
 
@@ -503,6 +627,10 @@ function normalizeExplanation(value: string) {
   }
 
   return `${words.slice(0, MAX_EXPLANATION_WORDS).join(" ")}…`;
+}
+
+function normalizePromptContent(value: string) {
+  return value.replace(/\r\n/g, "\n").trim();
 }
 
 export async function generateAutoTags(
@@ -1011,6 +1139,227 @@ export async function explainCode(
       error:
         userFacingError === "Could not generate tags right now. Please try again."
           ? "Could not generate explanation right now. Please try again."
+          : userFacingError,
+    };
+  }
+}
+
+export async function optimizePrompt(
+  input: unknown,
+): Promise<OptimizePromptResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return {
+      success: false,
+      error: "You must be signed in to optimize prompts.",
+    };
+  }
+
+  if (session.user.plan !== "pro") {
+    return {
+      success: false,
+      error: getProPlanOptimizePromptError(),
+    };
+  }
+
+  const rateLimitKey = buildRateLimitKey(aiRateLimiters.optimizePrompt.prefix, [userId]);
+  const rateLimitResult = await checkRateLimit({
+    key: rateLimitKey,
+    limiter: aiRateLimiters.optimizePrompt.limiter,
+  });
+
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      error: "AI prompt optimization limit reached. Try again in about an hour.",
+    };
+  }
+
+  const parsedInput = optimizePromptRequestSchema.safeParse(input);
+
+  if (!parsedInput.success) {
+    return {
+      success: false,
+      error: getValidationError(parsedInput.error),
+    };
+  }
+
+  let source: OptimizePromptSource;
+
+  if (parsedInput.data.itemId) {
+    const item = await getItemDetail({
+      itemId: parsedInput.data.itemId,
+      userId,
+    });
+
+    if (!item) {
+      return {
+        success: false,
+        error: "Item not found.",
+      };
+    }
+
+    if (item.kind !== "prompt") {
+      return {
+        success: false,
+        error: "Prompt optimization is available only for prompt items.",
+      };
+    }
+
+    if (!item.content?.trim()) {
+      return {
+        success: false,
+        error: "Prompt content is required to optimize the prompt.",
+      };
+    }
+
+    source = {
+      content: item.content,
+      description: item.description,
+      itemId: item.id,
+      title: item.title,
+      url: item.sourceUrl,
+    };
+  } else {
+    const kind = parsedInput.data.kind;
+
+    if (kind !== "prompt") {
+      return {
+        success: false,
+        error: "Prompt optimization is available only for prompt items.",
+      };
+    }
+
+    const content = parsedInput.data.content;
+
+    if (!content?.trim()) {
+      return {
+        success: false,
+        error: "Prompt content is required to optimize the prompt.",
+      };
+    }
+
+    source = {
+      content,
+      description: parsedInput.data.description,
+      itemId: null,
+      title: parsedInput.data.title,
+      url: parsedInput.data.url,
+    };
+  }
+
+  let aiJobId: string | null = null;
+
+  try {
+    if (source.itemId) {
+      const aiJob = await prisma.aiJob.create({
+        data: {
+          itemId: source.itemId,
+          model: AI_MODEL,
+          startedAt: new Date(),
+          status: "RUNNING",
+          type: "OPTIMIZE_PROMPT",
+          userId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      aiJobId = aiJob.id;
+    }
+
+    const openAI = getOpenAIClient();
+    const response = await openAI.responses.create({
+      input: getOptimizePromptInput(source),
+      instructions:
+        "Optimize the developer prompt only when it materially improves clarity, intent, structure, or constraints. Return json only as {\"optimizedPrompt\":\"text\",\"needsUpdate\":true|false}.",
+      model: AI_MODEL,
+      text: {
+        format: {
+          type: "json_object",
+        },
+      },
+    });
+
+    const responseText = getResponseOutputText(response as {
+      output?: Array<{
+        content?: Array<{ text?: string; type?: string }>;
+        type?: string;
+      }>;
+      output_text?: string;
+    });
+    const parsedResponse = parseOptimizedPromptFromResponse(responseText);
+    const optimizedPrompt = normalizePromptContent(parsedResponse.optimizedPrompt);
+    const originalPrompt = normalizePromptContent(source.content);
+
+    if (!optimizedPrompt) {
+      throw new Error("No valid optimized prompt was returned by the AI service.");
+    }
+
+    const optimized =
+      parsedResponse.needsUpdate &&
+      optimizedPrompt.localeCompare(originalPrompt, undefined, { sensitivity: "base" }) !== 0;
+
+    if (aiJobId) {
+      await prisma.aiJob.update({
+        data: {
+          completedAt: new Date(),
+          result: {
+            optimized,
+            optimizedPrompt,
+          },
+          status: "SUCCEEDED",
+        },
+        where: {
+          id: aiJobId,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      data: optimized ? optimizedPrompt : source.content,
+      optimized,
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Could not optimize prompt right now.";
+    const userFacingError = getUserFacingAiError(errorMessage, {
+      configMessage:
+        "AI prompt optimization is not configured yet. Add OPENAI_API_KEY and try again.",
+      unexpectedFormatMessage:
+        "AI returned an unexpected optimized prompt format. Please try again.",
+    });
+
+    if (aiJobId) {
+      await prisma.aiJob.update({
+        data: {
+          completedAt: new Date(),
+          error: errorMessage,
+          status: "FAILED",
+        },
+        where: {
+          id: aiJobId,
+        },
+      }).catch(() => null);
+    }
+
+    console.error("optimizePrompt failed", {
+      error: errorMessage,
+      itemId: source.itemId,
+      userId,
+    });
+
+    return {
+      success: false,
+      error:
+        userFacingError === "Could not generate tags right now. Please try again."
+          ? "Could not optimize prompt right now. Please try again."
           : userFacingError,
     };
   }

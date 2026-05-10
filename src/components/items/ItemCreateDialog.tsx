@@ -22,7 +22,7 @@ import {
   type FormEvent,
 } from "react";
 
-import { generateAutoDescription, generateAutoTags } from "@/actions/ai";
+import { generateAutoDescription, generateAutoTags, optimizePrompt } from "@/actions/ai";
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -222,6 +222,7 @@ function ItemCreateDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isOptimizingPrompt, setIsOptimizingPrompt] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -369,6 +370,67 @@ function ItemCreateDialog({
       });
     } finally {
       setIsGeneratingDescription(false);
+    }
+  }
+
+  async function handleOptimizePrompt() {
+    if (draft.kind !== "prompt" || isOptimizingPrompt) {
+      return;
+    }
+
+    setIsOptimizingPrompt(true);
+
+    try {
+      const result = await optimizePrompt({
+        content: draft.content,
+        description: draft.description,
+        kind: draft.kind,
+        title: draft.title,
+        url: draft.url,
+      });
+
+      if (!result.success) {
+        onToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      if (!result.optimized) {
+        onToast({
+          message: "Prompt already looks strong. No optimization needed.",
+          variant: "success",
+        });
+        return;
+      }
+
+      const shouldApply = window.confirm(
+        `Use this optimized prompt?\n\n${result.data}`,
+      );
+
+      if (!shouldApply) {
+        return;
+      }
+
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        content: result.data,
+      }));
+      onToast({
+        message: "Optimized prompt applied.",
+        variant: "success",
+      });
+    } catch (error) {
+      onToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not optimize prompt right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsOptimizingPrompt(false);
     }
   }
 
@@ -670,7 +732,12 @@ function ItemCreateDialog({
                   ) : isMarkdownItemKind(draft.kind) ? (
                     <MarkdownEditor
                       ariaLabel={`${itemKindLabels[draft.kind]} content`}
+                      isOptimizable={draft.kind === "prompt"}
+                      isOptimizing={isOptimizingPrompt}
+                      isProUser={isProUser}
                       onChange={(value) => handleDraftChange("content", value)}
+                      onOptimize={() => void handleOptimizePrompt()}
+                      optimizeLabel="Optimize"
                       placeholder="Paste the reusable content"
                       value={draft.content}
                     />

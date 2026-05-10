@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Crown, Loader2, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useState } from "react";
@@ -13,9 +13,14 @@ type MarkdownEditorTab = "preview" | "write";
 interface MarkdownEditorProps {
   ariaLabel: string;
   className?: string;
+  isOptimizable?: boolean;
+  isOptimizing?: boolean;
+  isProUser?: boolean;
   maxEditorRows?: number;
   minEditorRows?: number;
   onChange?(value: string): void;
+  onOptimize?(): void;
+  optimizeLabel?: string;
   placeholder?: string;
   readOnly?: boolean;
   value: string;
@@ -24,9 +29,14 @@ interface MarkdownEditorProps {
 export function MarkdownEditor({
   ariaLabel,
   className,
+  isOptimizable = false,
+  isOptimizing = false,
+  isProUser = true,
   maxEditorRows = 16,
   minEditorRows = 8,
   onChange,
+  onOptimize,
+  optimizeLabel = "Optimize",
   placeholder,
   readOnly = false,
   value,
@@ -81,22 +91,45 @@ export function MarkdownEditor({
             </>
           )}
         </div>
-        <Button
-          aria-label="Copy markdown content"
-          className="ml-auto h-7 gap-1.5 px-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white"
-          onClick={handleCopy}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
-          {hasCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          {hasCopied ? "Copied" : "Copy"}
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          {isOptimizable ? (
+            <Button
+              aria-label={isProUser ? "Optimize prompt" : "AI features require Pro subscription"}
+              className="h-7 gap-1.5 px-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white"
+              disabled={!isProUser || isOptimizing}
+              onClick={onOptimize}
+              size="sm"
+              title={isProUser ? "Optimize prompt" : "AI features require Pro subscription"}
+              type="button"
+              variant="ghost"
+            >
+              {!isProUser ? (
+                <Crown className="size-3.5" />
+              ) : isOptimizing ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
+              {optimizeLabel}
+            </Button>
+          ) : null}
+          <Button
+            aria-label="Copy markdown content"
+            className="h-7 gap-1.5 px-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white"
+            onClick={handleCopy}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            {hasCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            {hasCopied ? "Copied" : "Copy"}
+          </Button>
+        </div>
       </div>
       {visibleTab === "write" ? (
         <textarea
           aria-label={ariaLabel}
-          className="min-h-44 max-h-[400px] w-full resize-y overflow-auto bg-[#1e1e1e] px-4 py-3 font-mono text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-500 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="min-h-44 max-h-100 w-full resize-y overflow-auto bg-[#1e1e1e] px-4 py-3 font-mono text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-500 focus-visible:ring-3 focus-visible:ring-ring/50"
           onChange={(event) => onChange?.(event.target.value)}
           placeholder={placeholder}
           rows={editorRows}
@@ -147,7 +180,7 @@ function MarkdownPreview({ ariaLabel, placeholder, value }: MarkdownPreviewProps
   return (
     <div
       aria-label={ariaLabel}
-      className="markdown-preview min-h-44 max-h-[400px] overflow-auto bg-[#1e1e1e] px-4 py-3 text-sm leading-6"
+      className="markdown-preview min-h-44 max-h-100 overflow-auto bg-[#1e1e1e] px-4 py-3 text-sm leading-6"
     >
       {previewValue ? (
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
