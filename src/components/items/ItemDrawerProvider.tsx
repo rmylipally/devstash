@@ -44,7 +44,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { generateAutoDescription, generateAutoTags } from "@/actions/ai";
+import { explainCode, generateAutoDescription, generateAutoTags } from "@/actions/ai";
 import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -694,11 +694,13 @@ function ItemDrawerContent({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFavoriteToggling, setIsFavoriteToggling] = useState(false);
+  const [isExplainingCode, setIsExplainingCode] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [isPinToggling, setIsPinToggling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [mode, setMode] = useState<DrawerMode>("view");
+  const [codeExplanation, setCodeExplanation] = useState<string | null>(null);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [toast, setToast] = useState<DrawerToast>(null);
 
@@ -851,6 +853,58 @@ function ItemDrawerContent({
       });
     } finally {
       setIsGeneratingDescription(false);
+    }
+  }
+
+  async function handleExplainCode() {
+    if (!item || isExplainingCode || !isCodeItemKind(item.kind)) {
+      return;
+    }
+
+    if (!isProUser) {
+      setToast({
+        message: "AI code explanation is available on the Pro plan.",
+        variant: "error",
+      });
+      return;
+    }
+
+    setIsExplainingCode(true);
+
+    try {
+      const result = await explainCode({
+        content: item.content,
+        description: item.description,
+        itemId: item.id,
+        kind: item.kind,
+        language: item.language,
+        title: item.title,
+        url: item.sourceUrl,
+      });
+
+      if (!result.success) {
+        setToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      setCodeExplanation(result.data);
+      setToast({
+        message: "AI explanation ready.",
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not generate explanation right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsExplainingCode(false);
     }
   }
 
@@ -1117,7 +1171,13 @@ function ItemDrawerContent({
               suggestedTags={suggestedTags}
             />
           ) : (
-            <ItemDrawerDetails item={item} />
+            <ItemDrawerDetails
+              explanation={codeExplanation}
+              isExplainingCode={isExplainingCode}
+              isProUser={isProUser}
+              item={item}
+              onExplainCode={() => void handleExplainCode()}
+            />
           )
         ) : null}
       </div>
@@ -1439,7 +1499,21 @@ function DrawerToastMessage({ toast }: { toast: DrawerToast }) {
   );
 }
 
-function ItemDrawerDetails({ item }: { item: ItemDetail }) {
+interface ItemDrawerDetailsProps {
+  explanation: string | null;
+  isExplainingCode: boolean;
+  isProUser: boolean;
+  item: ItemDetail;
+  onExplainCode(): void;
+}
+
+function ItemDrawerDetails({
+  explanation,
+  isExplainingCode,
+  isProUser,
+  item,
+  onExplainCode,
+}: ItemDrawerDetailsProps) {
   return (
     <div className="space-y-8">
       <DetailSection title="Description">
@@ -1449,7 +1523,13 @@ function ItemDrawerDetails({ item }: { item: ItemDetail }) {
       </DetailSection>
 
       <DetailSection title={getContentTitle(item)}>
-        <ItemContent item={item} />
+        <ItemContent
+          explanation={explanation}
+          isExplainingCode={isExplainingCode}
+          isProUser={isProUser}
+          item={item}
+          onExplainCode={onExplainCode}
+        />
       </DetailSection>
 
       <IconSection icon={Tag} title="Tags">
@@ -1678,7 +1758,21 @@ function ItemEditForm({
   );
 }
 
-function ItemContent({ item }: { item: ItemDetail }) {
+interface ItemContentProps {
+  explanation: string | null;
+  isExplainingCode: boolean;
+  isProUser: boolean;
+  item: ItemDetail;
+  onExplainCode(): void;
+}
+
+function ItemContent({
+  explanation,
+  isExplainingCode,
+  isProUser,
+  item,
+  onExplainCode,
+}: ItemContentProps) {
   if (item.contentKind === "url") {
     return item.sourceUrl ? (
       <a
@@ -1724,7 +1818,12 @@ function ItemContent({ item }: { item: ItemDetail }) {
     return item.content ? (
       <CodeEditor
         ariaLabel={`${itemKindLabels[item.kind]} content`}
+        explanation={explanation ?? undefined}
+        isExplainable
+        isGeneratingExplanation={isExplainingCode}
+        isProUser={isProUser}
         language={getCodeEditorLanguage(item.kind, item.language ?? "")}
+        onExplain={onExplainCode}
         readOnly
         value={item.content}
       />

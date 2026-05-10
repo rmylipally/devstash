@@ -43,6 +43,10 @@ vi.mock("@/lib/ai/rate-limit", () => ({
       limiter: {},
       prefix: "ai:auto-tag",
     },
+    explainCode: {
+      limiter: {},
+      prefix: "ai:explain-code",
+    },
   },
 }));
 
@@ -55,7 +59,7 @@ vi.mock("@/lib/ai/openai", () => ({
   }),
 }));
 
-const { generateAutoDescription, generateAutoTags } = await import("../src/actions/ai");
+const { explainCode, generateAutoDescription, generateAutoTags } = await import("../src/actions/ai");
 
 describe("generateAutoTags", () => {
   beforeEach(() => {
@@ -305,5 +309,89 @@ describe("generateAutoDescription", () => {
       result.error,
       /Provide at least a title, content, URL, or file metadata/i,
     );
+  });
+});
+
+describe("explainCode", () => {
+  beforeEach(() => {
+    mocks.aiJobCreate.mockReset();
+    mocks.aiJobUpdate.mockReset();
+    mocks.auth.mockReset();
+    mocks.buildRateLimitKey.mockReset();
+    mocks.checkRateLimit.mockReset();
+    mocks.getItemDetail.mockReset();
+    mocks.responsesCreate.mockReset();
+
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "pro" } });
+    mocks.buildRateLimitKey.mockReturnValue("ai:explain-code:user-123");
+    mocks.checkRateLimit.mockResolvedValue({ success: true });
+    mocks.aiJobUpdate.mockResolvedValue({ id: "job-123" });
+  });
+
+  it("rejects free-plan users", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "free" } });
+
+    const result = await explainCode({
+      content: "console.log('hello')",
+      kind: "snippet",
+    });
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "AI code explanation is available on the Pro plan.",
+    });
+  });
+
+  it("rejects non-code kinds", async () => {
+    const result = await explainCode({
+      content: "https://example.com",
+      kind: "link",
+    });
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /only for snippets and commands/i);
+  });
+
+  it("returns a normalized explanation from json response", async () => {
+    mocks.responsesCreate.mockResolvedValue({
+      output_text: JSON.stringify({
+        explanation:
+          "This snippet defines a memoized formatter that standardizes API payloads before rendering. It reduces duplicated parsing logic, centralizes edge-case handling, and keeps downstream components focused on presentation. The helper also makes behavior easier to test because transformation rules are isolated in one place.",
+      }),
+    });
+
+    const result = await explainCode({
+      content: "function formatResponse(payload) { return payload; }",
+      kind: "snippet",
+      language: "typescript",
+      title: "formatResponse",
+    });
+
+    assert.equal(result.success, true);
+    if (!result.success) {
+      throw new Error("Expected explainCode success.");
+    }
+    assert.match(result.data, /memoized formatter/i);
+    assert.equal(mocks.responsesCreate.mock.calls.length, 1);
+  });
+
+  it("maps OpenAI quota errors to user guidance", async () => {
+    mocks.responsesCreate.mockRejectedValue(
+      new Error(
+        "429 You exceeded your current quota, please check your plan and billing details.",
+      ),
+    );
+
+    const result = await explainCode({
+      content: "echo 'hi'",
+      kind: "command",
+      language: "shell",
+    });
+
+    assert.deepEqual(result, {
+      success: false,
+      error:
+        "AI quota has been exceeded for this OpenAI account. Check billing and usage limits, then try again.",
+    });
   });
 });

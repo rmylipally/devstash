@@ -46,4 +46,8 @@ export const aiRateLimiters = {
     limiter: createAiRateLimiter("ai:auto-tag"),
     prefix: "ai:auto-tag",
   },
+  explainCode: {
+    limiter: createAiRateLimiter("ai:explain-code"),
+    prefix: "ai:explain-code",
+  },
 };
