@@ -62,11 +62,17 @@ export default async function FavoritesPage() {
       favoriteCollections={favoriteCollectionsForSidebar}
       itemTypes={sidebarItemTypes}
       newItemAction={
-        <ItemCreateButton availableCollections={collectionOptions} />
+        <ItemCreateButton
+          availableCollections={collectionOptions}
+          isProUser={dashboardUser.plan === "pro"}
+        />
       }
       recentCollections={recentSidebarCollections}
     >
-      <ItemDrawerProvider availableCollections={collectionOptions}>
+      <ItemDrawerProvider
+        availableCollections={collectionOptions}
+        isProUser={dashboardUser.plan === "pro"}
+      >
         <FavoritesList
           items={favoriteItems}
           collections={favoriteCollections}

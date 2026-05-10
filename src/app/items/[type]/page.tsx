@@ -6,7 +6,6 @@ import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import type { DashboardUser } from "@/components/dashboard/DashboardFrame";
 import { ItemCreateButton } from "@/components/items/ItemCreateDialog";
 import { ItemTypePage } from "@/components/items/ItemTypePage";
-import { ProUpgradeCard } from "@/components/items/ProUpgradeCard";
 import {
   getDashboardCollectionOptions,
   getDashboardCollections,
@@ -121,6 +120,7 @@ export default async function ItemsByTypePage({
     <ItemCreateButton
       availableCollections={collectionOptions}
       initialKind={createInitialKind}
+      isProUser={dashboardUser.plan === "pro"}
     />
   ) : undefined;
 
@@ -137,6 +137,7 @@ export default async function ItemsByTypePage({
         availableCollections={collectionOptions}
         basePath={`/items/${itemType.slug}`}
         currentPage={currentPage}
+        isProUser={dashboardUser.plan === "pro"}
         itemType={itemType}
         items={items}
         totalItems={totalItems}

@@ -179,7 +179,10 @@ export async function DashboardShell() {
       newItemAction={
         <div className="flex shrink-0 items-center gap-2">
           <CollectionCreateButton />
-          <ItemCreateButton availableCollections={collectionOptions} />
+          <ItemCreateButton
+            availableCollections={collectionOptions}
+            isProUser={dashboardUser.plan === "pro"}
+          />
         </div>
       }
       recentCollections={recentSidebarCollections}
@@ -187,6 +190,7 @@ export async function DashboardShell() {
       <DashboardMain
         pinnedDashboardItems={pinnedDashboardItems}
         collectionOptions={collectionOptions}
+        isProUser={dashboardUser.plan === "pro"}
         recentDashboardCollections={recentDashboardCollections}
         recentDashboardItems={recentDashboardItems}
         stats={stats}
@@ -197,6 +201,7 @@ export async function DashboardShell() {
 
 interface DashboardMainProps {
   collectionOptions: DashboardCollectionOption[];
+  isProUser: boolean;
   pinnedDashboardItems: DashboardItem[];
   recentDashboardCollections: DashboardCollection[];
   recentDashboardItems: DashboardItem[];
@@ -205,13 +210,17 @@ interface DashboardMainProps {
 
 function DashboardMain({
   collectionOptions,
+  isProUser,
   pinnedDashboardItems,
   recentDashboardCollections,
   recentDashboardItems,
   stats,
 }: DashboardMainProps) {
   return (
-    <ItemDrawerProvider availableCollections={collectionOptions}>
+    <ItemDrawerProvider
+      availableCollections={collectionOptions}
+      isProUser={isProUser}
+    >
       <DashboardItemOpenHandler />
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">

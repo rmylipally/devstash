@@ -134,7 +134,10 @@ export default async function ProfilePage() {
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
       newItemAction={
-        <ItemCreateButton availableCollections={collectionOptions} />
+        <ItemCreateButton
+          availableCollections={collectionOptions}
+          isProUser={session.user.plan === "pro"}
+        />
       }
       recentCollections={recentSidebarCollections}
     >

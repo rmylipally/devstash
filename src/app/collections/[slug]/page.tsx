@@ -114,7 +114,10 @@ export default async function CollectionDetailPage({
       newItemAction={
         <div className="flex shrink-0 items-center gap-2">
           <CollectionCreateButton />
-          <ItemCreateButton availableCollections={collectionOptions} />
+          <ItemCreateButton
+            availableCollections={collectionOptions}
+            isProUser={dashboardUser.plan === "pro"}
+          />
         </div>
       }
       recentCollections={recentSidebarCollections}
@@ -124,6 +127,7 @@ export default async function CollectionDetailPage({
         collectionItems={collectionItems}
         collectionOptions={collectionOptions}
         currentPage={currentPage}
+        isProUser={dashboardUser.plan === "pro"}
         totalItemCount={collectionItemCount}
         totalPages={totalPages}
       />
@@ -136,6 +140,7 @@ function CollectionDetailMain({
   collectionItems,
   collectionOptions,
   currentPage,
+  isProUser,
   totalItemCount,
   totalPages,
 }: {
@@ -149,11 +154,15 @@ function CollectionDetailMain({
   collectionItems: DashboardItem[];
   collectionOptions: DashboardCollectionOption[];
   currentPage: number;
+  isProUser: boolean;
   totalItemCount: number;
   totalPages: number;
 }) {
   return (
-    <ItemDrawerProvider availableCollections={collectionOptions}>
+    <ItemDrawerProvider
+      availableCollections={collectionOptions}
+      isProUser={isProUser}
+    >
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
           <div className="space-y-4">

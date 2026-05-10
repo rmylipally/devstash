@@ -73,7 +73,12 @@ export default async function SettingsPage() {
       currentUser={getDashboardUser(profile, session.user.plan ?? "free")}
       favoriteCollections={favoriteCollections}
       itemTypes={sidebarItemTypes}
-      newItemAction={<ItemCreateButton availableCollections={collectionOptions} />}
+      newItemAction={
+        <ItemCreateButton
+          availableCollections={collectionOptions}
+          isProUser={session.user.plan === "pro"}
+        />
+      }
       recentCollections={recentSidebarCollections}
     >
       <SettingsMain
