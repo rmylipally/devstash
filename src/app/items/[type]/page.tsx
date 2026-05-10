@@ -97,23 +97,8 @@ export default async function ItemsByTypePage({
     plan: dashboardUser.plan,
   });
 
-  if (!itemTypePlanAccess.allowed) {
-    const recentSidebarCollections = recentDashboardCollections.slice(0, 4);
-    const favoriteCollections = sidebarFavoriteCollections.slice(0, 4);
-
-    return (
-      <DashboardFrame
-        currentUser={dashboardUser}
-        favoriteCollections={favoriteCollections}
-        itemTypes={sidebarItemTypes}
-        newItemAction={
-          <ItemCreateButton availableCollections={collectionOptions} />
-        }
-        recentCollections={recentSidebarCollections}
-      >
-        <ProUpgradeCard currentPlan={dashboardUser.plan} itemTypeLabel={itemType.pluralLabel} />
-      </DashboardFrame>
-    );
+  if (!itemTypePlanAccess.allowed && (itemType.id === "image" || itemType.id === "file")) {
+    redirect("/upgrade");
   }
 
   const requestedPage = parsePageParam(page);

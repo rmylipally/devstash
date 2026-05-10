@@ -111,6 +111,28 @@ const itemKindAccentStyles: Record<DashboardItemKind, string> = {
   snippet: "border-l-blue-500",
 };
 
+const COMMON_LANGUAGES = [
+  { label: "TypeScript", value: "typescript" },
+  { label: "JavaScript", value: "javascript" },
+  { label: "Python", value: "python" },
+  { label: "Java", value: "java" },
+  { label: "C++", value: "cpp" },
+  { label: "C#", value: "csharp" },
+  { label: "Go", value: "go" },
+  { label: "Rust", value: "rust" },
+  { label: "Ruby", value: "ruby" },
+  { label: "PHP", value: "php" },
+  { label: "SQL", value: "sql" },
+  { label: "HTML", value: "html" },
+  { label: "CSS", value: "css" },
+  { label: "JSON", value: "json" },
+  { label: "YAML", value: "yaml" },
+  { label: "XML", value: "xml" },
+  { label: "Markdown", value: "markdown" },
+  { label: "Shell/Bash", value: "shell" },
+  { label: "PowerShell", value: "powershell" },
+];
+
 type ItemDetailResponse =
   | {
       data: ItemDetail;
@@ -1363,6 +1385,25 @@ function ItemEditForm({
         />
       </DetailSection>
 
+      {shouldShowLanguageField(item.kind) ? (
+        <DetailSection title="Language">
+          <select
+            className="h-11 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-sm dark:bg-input/30"
+            onChange={(event) => onDraftChange("language", event.target.value)}
+            value={draft.language}
+          >
+            <option value="">
+              {item.kind === "command" ? "Select language (shell)" : "Select language (typescript)"}
+            </option>
+            {COMMON_LANGUAGES.map((lang) => (
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+        </DetailSection>
+      ) : null}
+
       {shouldShowContentField(item.kind) ? (
         <DetailSection title={getContentTitle(item)}>
           {isCodeItemKind(item.kind) ? (
@@ -1388,17 +1429,6 @@ function ItemEditForm({
               value={draft.content}
             />
           )}
-        </DetailSection>
-      ) : null}
-
-      {shouldShowLanguageField(item.kind) ? (
-        <DetailSection title="Language">
-          <Input
-            className="h-11"
-            onChange={(event) => onDraftChange("language", event.target.value)}
-            placeholder="typescript"
-            value={draft.language}
-          />
         </DetailSection>
       ) : null}
 

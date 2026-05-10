@@ -183,6 +183,15 @@ export function DashboardFrame({
                 <Star className="size-5" />
               </NextLink>
 
+              {/* Subtle Upgrade button for free users only */}
+              {currentUser.plan === "free" && (
+                <NextLink href="/upgrade">
+                  <Button variant="ghost" size="sm" className="h-9 px-3 font-semibold text-blue-600 hover:text-blue-700 border border-transparent hover:border-blue-200">
+                    Upgrade
+                  </Button>
+                </NextLink>
+              )}
+
               {newItemAction ?? (
                 <Button className="h-11 gap-2 px-4" type="button">
                   <Plus className="size-5" />
@@ -286,7 +295,7 @@ function SidebarContent({
                     </span>
                     {proItemKinds.has(itemType.id) ? (
                       <Badge
-                        className="h-5 border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-semibold text-muted-foreground"
+                        className="h-5 border-sidebar-border/80 bg-sidebar-accent px-1.5 text-[10px] font-semibold text-sidebar-accent-foreground"
                         variant="outline"
                       >
                         PRO
