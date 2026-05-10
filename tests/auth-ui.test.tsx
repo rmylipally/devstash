@@ -193,10 +193,17 @@ describe("auth ui", () => {
     assert.match(signInForm, /AuthToast/);
     assert.match(signInForm, /signIn\("credentials"/);
     assert.match(signInForm, /signIn\("github"/);
+    assert.match(signInForm, /aria-describedby=\{errors\.email \? "sign-in-email-error" : undefined\}/);
+    assert.match(signInForm, /aria-describedby=\{errors\.password \? "sign-in-password-error" : undefined\}/);
     assert.match(signInForm, /\/forgot-password/);
     assert.match(signInForm, /email_not_verified/);
     assert.doesNotMatch(signInForm, /initialMessage \? \(/);
     assert.match(registerForm, /\/api\/auth\/register/);
+    assert.match(registerForm, /signIn\("github"/);
+    assert.match(registerForm, /aria-describedby=\{errors\.name \? "register-name-error" : undefined\}/);
+    assert.match(registerForm, /aria-describedby=\{errors\.email \? "register-email-error" : undefined\}/);
+    assert.match(registerForm, /aria-describedby=\{errors\.password \? "register-password-error" : undefined\}/);
+    assert.match(registerForm, /aria-describedby=\{errors\.confirmPassword \? "register-confirm-password-error" : undefined\}/);
     assert.match(registerForm, /verificationStatus/);
     assert.match(registerForm, /"sent"/);
     assert.match(registerForm, /"skipped"/);

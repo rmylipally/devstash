@@ -50,7 +50,7 @@ export function HomepageNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")} href="/sign-in">
+          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/sign-in">
             Sign In
           </Link>
           <Link className={buttonVariants({ variant: "default", size: "sm" })} href="/register">

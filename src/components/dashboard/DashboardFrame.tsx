@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -57,6 +58,10 @@ const itemKindStyles: Record<DashboardItemKind, string> = {
 };
 
 const proItemKinds = new Set<DashboardItemKind>(["file", "image"]);
+const sidebarLinkClassName =
+  "flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+const sidebarLinkActiveClassName =
+  "bg-sidebar-accent text-sidebar-accent-foreground font-medium";
 
 interface DashboardFrameProps {
   children: ReactNode;
@@ -227,6 +232,8 @@ function SidebarContent({
   onClose,
   recentCollections,
 }: SidebarContentProps) {
+  const pathname = usePathname();
+
   return (
     <div className="flex min-h-0 w-full flex-col">
       <div
@@ -239,7 +246,9 @@ function SidebarContent({
           className={cn(
             "flex min-w-0 items-center gap-3",
             collapsed && "justify-center",
+            pathname === "/dashboard" && !collapsed && "text-sidebar-accent-foreground",
           )}
+          aria-current={pathname === "/dashboard" ? "page" : undefined}
           href="/dashboard"
           onClick={onClose}
         >
@@ -271,8 +280,10 @@ function SidebarContent({
 
             return (
               <NextLink
+                aria-current={pathname === `/items/${itemType.slug}` ? "page" : undefined}
                 className={cn(
-                  "flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  sidebarLinkClassName,
+                  pathname === `/items/${itemType.slug}` && sidebarLinkActiveClassName,
                   collapsed && "justify-center px-0",
                 )}
                 href={`/items/${itemType.slug}`}
@@ -318,6 +329,7 @@ function SidebarContent({
               collection={collection}
               key={collection.id}
               onNavigate={onClose}
+              pathname={pathname}
               showStar
             />
           ))}
@@ -330,9 +342,10 @@ function SidebarContent({
               collection={collection}
               key={collection.id}
               onNavigate={onClose}
+              pathname={pathname}
             />
           ))}
-          <ViewAllCollectionsLink collapsed={collapsed} onNavigate={onClose} />
+          <ViewAllCollectionsLink collapsed={collapsed} onNavigate={onClose} pathname={pathname} />
         </SidebarSection>
       </div>
 
@@ -369,6 +382,7 @@ interface CollectionLinkProps {
     "dominantItemKind" | "id" | "itemCount" | "name" | "slug"
   >;
   onNavigate?: () => void;
+  pathname: string;
   showStar?: boolean;
 }
 
@@ -376,15 +390,20 @@ function CollectionLink({
   collapsed,
   collection,
   onNavigate,
+  pathname,
   showStar = false,
 }: CollectionLinkProps) {
+  const href = `/collections/${collection.slug}`;
+
   return (
     <NextLink
+      aria-current={pathname === href ? "page" : undefined}
       className={cn(
-        "flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        sidebarLinkClassName,
+        pathname === href && sidebarLinkActiveClassName,
         collapsed && "justify-center px-0",
       )}
-      href={`/collections/${collection.slug}`}
+      href={href}
       onClick={onNavigate}
       title={collapsed ? collection.name : undefined}
     >
@@ -437,19 +456,26 @@ function CollectionLinkMarker({
 interface ViewAllCollectionsLinkProps {
   collapsed: boolean;
   onNavigate?: () => void;
+  pathname: string;
 }
 
 function ViewAllCollectionsLink({
   collapsed,
   onNavigate,
+  pathname,
 }: ViewAllCollectionsLinkProps) {
+  const href = "/collections";
+
   return (
     <NextLink
+      aria-current={pathname === href ? "page" : undefined}
       className={cn(
-        "mt-2 flex h-10 items-center gap-3 rounded-lg px-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        "mt-2",
+        sidebarLinkClassName,
+        pathname === href && sidebarLinkActiveClassName,
         collapsed && "justify-center px-0",
       )}
-      href="/collections"
+      href={href}
       onClick={onNavigate}
       title={collapsed ? "View all collections" : undefined}
     >

@@ -1,8 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { GitBranch, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,7 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
           <span className="text-sm font-medium">Name</span>
           <Input
             aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? "register-name-error" : undefined}
             autoComplete="name"
             className="h-11"
             onChange={(event) => setName(event.target.value)}
@@ -101,7 +103,9 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
             value={name}
           />
           {errors.name ? (
-            <span className="text-sm text-destructive">{errors.name}</span>
+            <span className="text-sm text-destructive" id="register-name-error">
+              {errors.name}
+            </span>
           ) : null}
         </label>
 
@@ -109,6 +113,7 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
           <span className="text-sm font-medium">Email</span>
           <Input
             aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "register-email-error" : undefined}
             autoComplete="email"
             className="h-11"
             onChange={(event) => setEmail(event.target.value)}
@@ -117,7 +122,9 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
             value={email}
           />
           {errors.email ? (
-            <span className="text-sm text-destructive">{errors.email}</span>
+            <span className="text-sm text-destructive" id="register-email-error">
+              {errors.email}
+            </span>
           ) : null}
         </label>
 
@@ -125,6 +132,7 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
           <span className="text-sm font-medium">Password</span>
           <Input
             aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? "register-password-error" : undefined}
             autoComplete="new-password"
             className="h-11"
             onChange={(event) => setPassword(event.target.value)}
@@ -133,7 +141,9 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
             value={password}
           />
           {errors.password ? (
-            <span className="text-sm text-destructive">{errors.password}</span>
+            <span className="text-sm text-destructive" id="register-password-error">
+              {errors.password}
+            </span>
           ) : null}
         </label>
 
@@ -141,6 +151,7 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
           <span className="text-sm font-medium">Confirm password</span>
           <Input
             aria-invalid={Boolean(errors.confirmPassword)}
+            aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
             autoComplete="new-password"
             className="h-11"
             onChange={(event) => setConfirmPassword(event.target.value)}
@@ -149,7 +160,7 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
             value={confirmPassword}
           />
           {errors.confirmPassword ? (
-            <span className="text-sm text-destructive">
+            <span className="text-sm text-destructive" id="register-confirm-password-error">
               {errors.confirmPassword}
             </span>
           ) : null}
@@ -160,6 +171,22 @@ export function RegisterForm({ callbackUrl }: RegisterFormProps) {
           Create account
         </Button>
       </form>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">or</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <Button
+        className="h-11 w-full gap-2"
+        onClick={() => void signIn("github", { redirectTo: callbackUrl })}
+        type="button"
+        variant="outline"
+      >
+        <GitBranch className="size-4" />
+        Continue with GitHub
+      </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it, vi } from "vitest";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -7,6 +7,10 @@ import { DashboardFrame } from "../src/components/dashboard/DashboardFrame";
 import { CommandPaletteContextProvider } from "../src/components/search/CommandPaletteContext";
 import type { DashboardCollection } from "../src/lib/db/collections";
 import type { DashboardItemType } from "../src/lib/db/items";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/items/snippets",
+}));
 
 const currentUser = {
   email: "demo@devstash.io",
@@ -82,6 +86,7 @@ describe("dashboard frame sidebar", () => {
     const html = renderDashboardFrame();
 
     assert.match(html, /href="\/items\/snippets"/);
+    assert.match(html, /<a[^>]*aria-current="page"[^>]*href="\/items\/snippets"/);
     assert.match(html, /Snippets/);
     assert.match(html, />7</);
     assert.match(html, /href="\/items\/prompts"/);

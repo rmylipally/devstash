@@ -89,6 +89,7 @@ export function SignInForm({
           <span className="text-sm font-medium">Email</span>
           <Input
             aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "sign-in-email-error" : undefined}
             autoComplete="email"
             className="h-11"
             onChange={(event) => setEmail(event.target.value)}
@@ -97,7 +98,9 @@ export function SignInForm({
             value={email}
           />
           {errors.email ? (
-            <span className="text-sm text-destructive">{errors.email}</span>
+            <span className="text-sm text-destructive" id="sign-in-email-error">
+              {errors.email}
+            </span>
           ) : null}
         </label>
 
@@ -113,6 +116,7 @@ export function SignInForm({
           </span>
           <Input
             aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? "sign-in-password-error" : undefined}
             autoComplete="current-password"
             className="h-11"
             onChange={(event) => setPassword(event.target.value)}
@@ -121,7 +125,9 @@ export function SignInForm({
             value={password}
           />
           {errors.password ? (
-            <span className="text-sm text-destructive">{errors.password}</span>
+            <span className="text-sm text-destructive" id="sign-in-password-error">
+              {errors.password}
+            </span>
           ) : null}
         </label>
 

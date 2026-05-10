@@ -47,6 +47,21 @@ export function Homepage() {
                   See Features
                 </a>
               </div>
+
+              <div className="mt-6 grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-500/25 bg-slate-900/60 px-4 py-3">
+                  <p className="text-lg font-semibold text-slate-100">10k+</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Items Organized</p>
+                </div>
+                <div className="rounded-lg border border-slate-500/25 bg-slate-900/60 px-4 py-3">
+                  <p className="text-lg font-semibold text-slate-100">400+</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Teams & Solo Devs</p>
+                </div>
+                <div className="rounded-lg border border-slate-500/25 bg-slate-900/60 px-4 py-3">
+                  <p className="text-lg font-semibold text-slate-100">4.9/5</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Average Rating</p>
+                </div>
+              </div>
             </Reveal>
 
             <Reveal className="mt-10 grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr]">
