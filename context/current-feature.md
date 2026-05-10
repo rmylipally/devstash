@@ -1,26 +1,16 @@
-# Current Feature: AI Explain Code
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Create an `explainCode` server action with auth checks, Pro gating, Zod validation, and rate limiting.
-- Add an `Explain` button (Sparkles icon) in code editor header controls next to `Copy`.
-- Show explain functionality only for snippet and command items in the drawer read view.
-- Render concise AI explanations (~200-300 words) in the same editor container via `Code` and `Explain` tabs.
-- Show loading feedback while generating and toast-based error handling for expected failure modes.
-- Show Pro gating UI (`Crown` icon + tooltip) for free users.
-- Add or update unit tests for server action behavior.
+<!-- Add goals for the active feature -->
 
 ## Notes
 
-- Source spec: `context/features/ai-explain-spec.md`.
-- Explanations are generated on demand and are not persisted in the database.
-- Scope is item drawer read mode only (not create/edit forms).
-- `isPro` needs to be passed through item drawer and code editor props.
-- Use OpenAI model `gpt-5-nano` and follow existing AI integration patterns.
+<!-- Add context, constraints, and references for the active feature -->
 
 ## History
 
@@ -168,3 +158,4 @@ In Progress
 - 2026-05-10: Completed AI Description Generator for Item Drafts with a new server-side `generateAutoDescription` action (auth, Pro gating, draft-input validation, dedicated AI rate limit, robust JSON/text parsing, concise 1-2 sentence normalization, and actionable error mapping), plus Pro-only generate-description icon controls in both create and drawer edit forms that fill the Description field from current unsaved draft inputs across all item types.
 - 2026-05-10: Loaded AI Explain Code from `context/features/ai-explain-spec.md` and set the feature status to Not Started.
 - 2026-05-10: Started AI Explain Code implementation on `feature/ai-explain-code`.
+- 2026-05-10: Completed AI Explain Code with a new `explainCode` server action (auth, Pro gating, Zod validation, rate limiting, robust JSON/text parsing, and AI error mapping), dedicated `ai:explain-code` limiter, drawer read-view integration for snippet/command items, Code/Explain editor tabs with inline markdown explanation rendering, Pro-gated Explain button UX (Crown tooltip + loader states), and focused server/UI test coverage.
