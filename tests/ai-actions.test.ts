@@ -47,6 +47,10 @@ vi.mock("@/lib/ai/rate-limit", () => ({
       limiter: {},
       prefix: "ai:explain-code",
     },
+    optimizePrompt: {
+      limiter: {},
+      prefix: "ai:optimize-prompt",
+    },
   },
 }));
 
@@ -59,7 +63,7 @@ vi.mock("@/lib/ai/openai", () => ({
   }),
 }));
 
-const { explainCode, generateAutoDescription, generateAutoTags } = await import("../src/actions/ai");
+const { explainCode, generateAutoDescription, generateAutoTags, optimizePrompt } = await import("../src/actions/ai");
 
 describe("generateAutoTags", () => {
   beforeEach(() => {
@@ -386,6 +390,99 @@ describe("explainCode", () => {
       content: "echo 'hi'",
       kind: "command",
       language: "shell",
+    });
+
+    assert.deepEqual(result, {
+      success: false,
+      error:
+        "AI quota has been exceeded for this OpenAI account. Check billing and usage limits, then try again.",
+    });
+  });
+});
+
+describe("optimizePrompt", () => {
+  beforeEach(() => {
+    mocks.aiJobCreate.mockReset();
+    mocks.aiJobUpdate.mockReset();
+    mocks.auth.mockReset();
+    mocks.buildRateLimitKey.mockReset();
+    mocks.checkRateLimit.mockReset();
+    mocks.getItemDetail.mockReset();
+    mocks.responsesCreate.mockReset();
+
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "pro" } });
+    mocks.buildRateLimitKey.mockReturnValue("ai:optimize-prompt:user-123");
+    mocks.checkRateLimit.mockResolvedValue({ success: true });
+    mocks.aiJobUpdate.mockResolvedValue({ id: "job-123" });
+  });
+
+  it("rejects free-plan users", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "user-123", plan: "free" } });
+
+    const result = await optimizePrompt({
+      content: "Write a prompt for extracting action items.",
+      kind: "prompt",
+    });
+
+    assert.deepEqual(result, {
+      success: false,
+      error: "AI prompt optimization is available on the Pro plan.",
+    });
+  });
+
+  it("returns optimized prompt when update is needed", async () => {
+    mocks.responsesCreate.mockResolvedValue({
+      output_text: JSON.stringify({
+        needsUpdate: true,
+        optimizedPrompt:
+          "You are an assistant that extracts action items from meeting notes. Return a JSON array where each item includes owner, task, and due date.",
+      }),
+    });
+
+    const result = await optimizePrompt({
+      content: "Extract action items from notes.",
+      kind: "prompt",
+      title: "Action items prompt",
+    });
+
+    assert.deepEqual(result, {
+      success: true,
+      optimized: true,
+      data:
+        "You are an assistant that extracts action items from meeting notes. Return a JSON array where each item includes owner, task, and due date.",
+    });
+  });
+
+  it("returns optimized false when no update is needed", async () => {
+    mocks.responsesCreate.mockResolvedValue({
+      output_text: JSON.stringify({
+        needsUpdate: false,
+        optimizedPrompt: "Use this prompt as-is.",
+      }),
+    });
+
+    const result = await optimizePrompt({
+      content: "Use this prompt as-is.",
+      kind: "prompt",
+    });
+
+    assert.deepEqual(result, {
+      success: true,
+      optimized: false,
+      data: "Use this prompt as-is.",
+    });
+  });
+
+  it("maps quota errors to user guidance", async () => {
+    mocks.responsesCreate.mockRejectedValue(
+      new Error(
+        "429 You exceeded your current quota, please check your plan and billing details.",
+      ),
+    );
+
+    const result = await optimizePrompt({
+      content: "Prompt body",
+      kind: "prompt",
     });
 
     assert.deepEqual(result, {

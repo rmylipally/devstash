@@ -50,4 +50,8 @@ export const aiRateLimiters = {
     limiter: createAiRateLimiter("ai:explain-code"),
     prefix: "ai:explain-code",
   },
+  optimizePrompt: {
+    limiter: createAiRateLimiter("ai:optimize-prompt"),
+    prefix: "ai:optimize-prompt",
+  },
 };

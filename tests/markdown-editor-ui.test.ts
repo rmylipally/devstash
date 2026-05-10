@@ -23,6 +23,8 @@ describe("markdown editor UI", () => {
     assert.match(source, /Write/);
     assert.match(source, /Preview/);
     assert.match(source, /aria-label="Copy markdown content"/);
+    assert.match(source, /Optimize prompt/);
+    assert.match(source, /isOptimizable/);
     assert.match(source, /readOnly/);
     assert.match(source, /bg-\[#1e1e1e\]/);
     assert.match(source, /bg-\[#2d2d2d\]/);
@@ -49,6 +51,10 @@ describe("markdown editor UI", () => {
     assert.match(drawerSource, /function isMarkdownItemKind/);
     assert.match(createDialogSource, /isMarkdownItemKind\(draft\.kind\)/);
     assert.match(drawerSource, /isMarkdownItemKind\(item\.kind\)/);
+    assert.match(createDialogSource, /isOptimizable=\{draft\.kind === "prompt"\}/);
+    assert.match(drawerSource, /isOptimizable=\{item\.kind === "prompt"\}/);
+    assert.match(createDialogSource, /onOptimize=\{\(\) => void handleOptimizePrompt\(\)\}/);
+    assert.match(drawerSource, /onOptimize=\{item\.kind === "prompt" \? onOptimizePrompt : undefined\}/);
     assert.match(createDialogSource, /<CreateItemTextarea/);
     assert.match(drawerSource, /<DrawerTextarea/);
   });

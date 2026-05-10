@@ -44,7 +44,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { explainCode, generateAutoDescription, generateAutoTags } from "@/actions/ai";
+import { explainCode, generateAutoDescription, generateAutoTags, optimizePrompt } from "@/actions/ai";
 import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -696,6 +696,7 @@ function ItemDrawerContent({
   const [isFavoriteToggling, setIsFavoriteToggling] = useState(false);
   const [isExplainingCode, setIsExplainingCode] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isOptimizingPrompt, setIsOptimizingPrompt] = useState(false);
   const [isPinToggling, setIsPinToggling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
@@ -853,6 +854,74 @@ function ItemDrawerContent({
       });
     } finally {
       setIsGeneratingDescription(false);
+    }
+  }
+
+  async function handleOptimizePrompt() {
+    if (!item || !draft || item.kind !== "prompt" || isOptimizingPrompt) {
+      return;
+    }
+
+    if (!isProUser) {
+      setToast({
+        message: "AI prompt optimization is available on the Pro plan.",
+        variant: "error",
+      });
+      return;
+    }
+
+    setIsOptimizingPrompt(true);
+
+    try {
+      const result = await optimizePrompt({
+        content: draft.content,
+        description: draft.description,
+        kind: item.kind,
+        title: draft.title,
+        url: draft.url,
+      });
+
+      if (!result.success) {
+        setToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      if (!result.optimized) {
+        setToast({
+          message: "Prompt already looks strong. No optimization needed.",
+          variant: "success",
+        });
+        return;
+      }
+
+      const shouldApply = window.confirm(
+        `Use this optimized prompt?\n\n${result.data}`,
+      );
+
+      if (!shouldApply) {
+        return;
+      }
+
+      setDraft((currentDraft) =>
+        currentDraft ? { ...currentDraft, content: result.data } : currentDraft,
+      );
+      setToast({
+        message: "Optimized prompt applied.",
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not optimize prompt right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsOptimizingPrompt(false);
     }
   }
 
@@ -1159,6 +1228,7 @@ function ItemDrawerContent({
               error={formError}
               availableCollections={availableCollections}
               isGeneratingDescription={isGeneratingDescription}
+              isOptimizingPrompt={isOptimizingPrompt}
               isProUser={isProUser}
               isSuggestingTags={isSuggestingTags}
               item={item}
@@ -1166,6 +1236,7 @@ function ItemDrawerContent({
               onCollectionIdsChange={handleCollectionIdsChange}
               onDraftChange={handleDraftChange}
               onGenerateDescription={() => void handleGenerateDescription()}
+              onOptimizePrompt={() => void handleOptimizePrompt()}
               onRejectSuggestedTag={handleRejectSuggestedTag}
               onSuggestTags={() => void handleSuggestTags()}
               suggestedTags={suggestedTags}
@@ -1562,6 +1633,7 @@ interface ItemEditFormProps {
   draft: ItemDraft;
   error: string | null;
   isGeneratingDescription: boolean;
+  isOptimizingPrompt: boolean;
   isProUser: boolean;
   isSuggestingTags: boolean;
   item: ItemDetail;
@@ -1569,6 +1641,7 @@ interface ItemEditFormProps {
   onCollectionIdsChange(collectionIds: string[]): void;
   onDraftChange(key: Exclude<keyof ItemDraft, "collectionIds">, value: string): void;
   onGenerateDescription(): void;
+  onOptimizePrompt(): void;
   onRejectSuggestedTag(tag: string): void;
   onSuggestTags(): void;
   suggestedTags: string[];
@@ -1579,6 +1652,7 @@ function ItemEditForm({
   draft,
   error,
   isGeneratingDescription,
+  isOptimizingPrompt,
   isProUser,
   isSuggestingTags,
   item,
@@ -1586,6 +1660,7 @@ function ItemEditForm({
   onCollectionIdsChange,
   onDraftChange,
   onGenerateDescription,
+  onOptimizePrompt,
   onRejectSuggestedTag,
   onSuggestTags,
   suggestedTags,
@@ -1658,7 +1733,12 @@ function ItemEditForm({
           ) : isMarkdownItemKind(item.kind) ? (
             <MarkdownEditor
               ariaLabel={`${itemKindLabels[item.kind]} content`}
+              isOptimizable={item.kind === "prompt"}
+              isOptimizing={isOptimizingPrompt}
+              isProUser={isProUser}
               onChange={(value) => onDraftChange("content", value)}
+              onOptimize={item.kind === "prompt" ? onOptimizePrompt : undefined}
+              optimizeLabel="Optimize"
               placeholder="No content saved."
               value={draft.content}
             />
