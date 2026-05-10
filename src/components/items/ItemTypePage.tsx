@@ -17,6 +17,7 @@ interface ItemTypePageProps {
   availableCollections: DashboardCollectionOption[];
   basePath: string;
   currentPage: number;
+  isProUser: boolean;
   itemType: DashboardItemType;
   items: DashboardItem[];
   totalItems?: number;
@@ -32,6 +33,7 @@ export function ItemTypePage({
   availableCollections,
   basePath,
   currentPage,
+  isProUser,
   itemType,
   items,
   totalItems,
@@ -43,7 +45,10 @@ export function ItemTypePage({
   const pageCount = totalPages ?? 1;
 
   return (
-    <ItemDrawerProvider availableCollections={availableCollections}>
+    <ItemDrawerProvider
+      availableCollections={availableCollections}
+      isProUser={isProUser}
+    >
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-8 lg:py-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

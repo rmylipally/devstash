@@ -21,7 +21,7 @@ describe("item create UI", () => {
     assert.match(dashboardFrameSource, /newItemAction/);
     assert.match(
       dashboardShellSource,
-      /<ItemCreateButton availableCollections=\{collectionOptions\} \/>/,
+      /<ItemCreateButton[\s\S]*availableCollections=\{collectionOptions\}[\s\S]*isProUser=\{dashboardUser\.plan === "pro"\}[\s\S]*\/>/,
     );
     assert.match(createDialogSource, /function ItemCreateButton/);
     assert.match(createDialogSource, /initialKind\?: ItemCreateKind/);

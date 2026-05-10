@@ -16,6 +16,7 @@ export default defineConfig({
     fileParallelism: false,
     include: [
       "tests/account-delete-route.test.ts",
+      "tests/ai-actions.test.ts",
       "tests/auth-credentials.test.ts",
       "tests/auth-password-reset.test.ts",
       "tests/auth-setup.test.ts",

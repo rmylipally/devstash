@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Check,
   Code2,
   File,
   Image,
@@ -21,6 +22,7 @@ import {
   type FormEvent,
 } from "react";
 
+import { generateAutoTags } from "@/actions/ai";
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/items/CodeEditor";
 import { CollectionMultiSelect } from "@/components/items/CollectionMultiSelect";
@@ -133,19 +135,23 @@ type ItemCreateStringDraftField = Exclude<
 interface ItemCreateDialogProps {
   availableCollections: DashboardCollectionOption[];
   initialKind: ItemCreateKind;
+  isProUser: boolean;
   onCreated(): void;
   onOpenChange(open: boolean): void;
+  onToast(toast: NonNullable<CreateItemToast>): void;
   open: boolean;
 }
 
 interface ItemCreateButtonProps {
   availableCollections?: DashboardCollectionOption[];
   initialKind?: ItemCreateKind;
+  isProUser?: boolean;
 }
 
 export function ItemCreateButton({
   availableCollections = [],
   initialKind,
+  isProUser = false,
 }: ItemCreateButtonProps) {
   const router = useRouter();
   const selectedInitialKind = initialKind ?? "snippet";
@@ -166,11 +172,15 @@ export function ItemCreateButton({
   }, [toast]);
 
   function handleCreated() {
-    setToast({
+    handleToast({
       message: "Item created.",
       variant: "success",
     });
     router.refresh();
+  }
+
+  function handleToast(nextToast: NonNullable<CreateItemToast>) {
+    setToast(nextToast);
   }
 
   return (
@@ -187,8 +197,10 @@ export function ItemCreateButton({
       <ItemCreateDialog
         availableCollections={availableCollections}
         initialKind={selectedInitialKind}
+        isProUser={isProUser}
         onCreated={handleCreated}
         onOpenChange={setIsOpen}
+        onToast={handleToast}
         open={isOpen}
       />
       <CreateItemToastMessage toast={toast} />
@@ -199,15 +211,19 @@ export function ItemCreateButton({
 function ItemCreateDialog({
   availableCollections,
   initialKind,
+  isProUser,
   onCreated,
   onOpenChange,
+  onToast,
   open,
 }: ItemCreateDialogProps) {
   const [draft, setDraft] = useState<ItemCreateDraft>(() =>
     createDefaultDraft(initialKind),
   );
   const [error, setError] = useState<string | null>(null);
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
 
   function handleDraftChange(key: ItemCreateStringDraftField, value: string) {
     setDraft((currentDraft) => ({
@@ -243,6 +259,7 @@ function ItemCreateDialog({
       title: currentDraft.title,
     }));
     setError(null);
+    setSuggestedTags([]);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -257,9 +274,69 @@ function ItemCreateDialog({
 
       setDraft(createDefaultDraft(initialKind));
       setError(null);
+      setSuggestedTags([]);
     }
 
     onOpenChange(nextOpen);
+  }
+
+  async function handleSuggestTags() {
+    if (isSuggestingTags) {
+      return;
+    }
+
+    setIsSuggestingTags(true);
+
+    try {
+      const result = await generateAutoTags({
+        content: draft.content,
+        description: draft.description,
+        kind: draft.kind,
+        language: draft.language,
+        title: draft.title,
+        url: draft.url,
+      });
+
+      if (!result.success) {
+        onToast({
+          message: result.error,
+          variant: "error",
+        });
+        return;
+      }
+
+      setSuggestedTags(result.data);
+      onToast({
+        message: "AI suggested tags ready.",
+        variant: "success",
+      });
+    } catch (error) {
+      onToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not generate tags right now. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsSuggestingTags(false);
+    }
+  }
+
+  function handleAcceptSuggestedTag(tag: string) {
+    setDraft((currentDraft) => {
+      const nextTags = mergeTagIntoCommaList(currentDraft.tags, tag);
+
+      return {
+        ...currentDraft,
+        tags: nextTags,
+      };
+    });
+    setSuggestedTags((currentTags) => currentTags.filter((value) => value !== tag));
+  }
+
+  function handleRejectSuggestedTag(tag: string) {
+    setSuggestedTags((currentTags) => currentTags.filter((value) => value !== tag));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -409,8 +486,24 @@ function ItemCreateDialog({
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Tags
+                  <span className="flex items-center justify-between gap-3 text-sm font-medium text-muted-foreground">
+                    <span>Tags</span>
+                    {isProUser ? (
+                      <Button
+                        className="h-8 gap-2 px-2 text-xs"
+                        disabled={isSubmitting || isSuggestingTags}
+                        onClick={() => void handleSuggestTags()}
+                        type="button"
+                        variant="ghost"
+                      >
+                        {isSuggestingTags ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="size-3.5" />
+                        )}
+                        Suggest tags
+                      </Button>
+                    ) : null}
                   </span>
                   <Input
                     className="h-11"
@@ -420,6 +513,34 @@ function ItemCreateDialog({
                     placeholder="react, hooks"
                     value={draft.tags}
                   />
+                  {isProUser && suggestedTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedTags.map((tag) => (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-1 text-xs text-foreground"
+                          key={tag}
+                        >
+                          <span>{tag}</span>
+                          <button
+                            aria-label={`Accept ${tag} tag suggestion`}
+                            className="rounded p-0.5 text-emerald-300 transition-colors hover:bg-emerald-500/20"
+                            onClick={() => handleAcceptSuggestedTag(tag)}
+                            type="button"
+                          >
+                            <Check className="size-3" />
+                          </button>
+                          <button
+                            aria-label={`Reject ${tag} tag suggestion`}
+                            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted"
+                            onClick={() => handleRejectSuggestedTag(tag)}
+                            type="button"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </label>
               </div>
 
@@ -623,6 +744,24 @@ function getDraftTags(value: string) {
     .filter(Boolean);
 
   return Array.from(new Set(tags));
+}
+
+function mergeTagIntoCommaList(value: string, tag: string) {
+  const nextTag = tag.trim().toLowerCase();
+
+  if (!nextTag) {
+    return value;
+  }
+
+  const existingTags = getDraftTags(value).map((currentTag) =>
+    currentTag.toLowerCase(),
+  );
+
+  if (!existingTags.includes(nextTag)) {
+    existingTags.push(nextTag);
+  }
+
+  return existingTags.join(", ");
 }
 
 function getItemCreatePayload(draft: ItemCreateDraft) {

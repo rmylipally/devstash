@@ -95,7 +95,10 @@ export default async function CollectionsPage({
       newItemAction={
         <div className="flex shrink-0 items-center gap-2">
           <CollectionCreateButton />
-          <ItemCreateButton availableCollections={collectionOptions} />
+          <ItemCreateButton
+            availableCollections={collectionOptions}
+            isProUser={dashboardUser.plan === "pro"}
+          />
         </div>
       }
       recentCollections={recentSidebarCollections}
