@@ -8,6 +8,18 @@ Read the following to get the full context of the project:
 - @context/ai-interaction.md
 - @context/current-feature.md
 
+## Custom Agents
+
+- **refactor-scanner** — Scan folders for duplicate code patterns and consolidation opportunities.
+  - Invoke: `runSubagent { agentName: "refactor-scanner", prompt: "Scan the components folder for duplicate patterns" }`
+  - Folder-specific analysis: tailors recommendations for actions, components, lib, api, hooks, routes, types
+  - Returns findings with before/after examples, risk assessment, and migration guidance
+
+- **refactor-codex** — Generate consolidation patterns and documentation from refactoring findings.
+  - Invoke: `runSubagent { agentName: "refactor-codex", prompt: "Generate a consolidation pattern guide for form validation duplication" }`
+  - Creates reusable templates, best practices, and code patterns library
+  - Produces step-by-step migration guides and anti-patterns documentation
+
 ## Neon MCP Defaults and Safety
 
 When using the Neon MCP for this project, always use the DevStash Neon project and development branch by default.
